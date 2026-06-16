@@ -1,11 +1,12 @@
 // Offline cache for Waikiki '26. Bump VERSION to force an update after edits.
-const VERSION = "waikiki-v6";
+const VERSION = "waikiki-v7";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./icon-192.png",
-  "./icon-512.png"
+  "./icon-512.png",
+  "./BANNER2.png"
 ];
 
 self.addEventListener("install", e => {
@@ -23,6 +24,7 @@ self.addEventListener("activate", e => {
 // Cache-first so the app opens with no signal (e.g. at Kualoa).
 self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
+  if (e.request.url.includes("open-meteo.com")) return; // live weather: always network, never cache
   e.respondWith(
     caches.match(e.request).then(hit => hit || fetch(e.request).then(res => {
       const copy = res.clone();

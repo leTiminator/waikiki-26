@@ -17,21 +17,24 @@
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0}
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--sand); color:var(--ink); padding-bottom:calc(76px + env(safe-area-inset-bottom)); -webkit-font-smoothing:antialiased;}
-  header{background:linear-gradient(160deg,var(--ocean),var(--surf)); color:#fff; padding:calc(18px + env(safe-area-inset-top)) 20px 18px; position:relative; overflow:hidden;}
+  header{color:#fff; padding:calc(16px + env(safe-area-inset-top)) 18px 16px; position:relative; overflow:hidden; min-height:158px; display:flex; flex-direction:column; align-items:flex-end; text-align:right;
+    background-image:linear-gradient(180deg,rgba(6,28,42,.6),rgba(6,28,42,.15) 42%,rgba(6,28,42,0) 62%), url("BANNER2.png");
+    background-size:cover,cover; background-position:top center,center; background-repeat:no-repeat,no-repeat;}
   header::after{content:""; position:absolute; right:-30px; top:-30px; width:140px; height:140px; background:radial-gradient(circle,rgba(255,107,74,.55),transparent 70%); border-radius:50%;}
-  header h1{margin:0; font-size:26px; font-weight:800; letter-spacing:-.5px}
-  header .sub{margin:3px 0 0; font-size:13px; opacity:.85; font-weight:500}
-  .hrow{display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap}
+  header h1{margin:0; font-size:26px; font-weight:800; letter-spacing:-.5px; text-shadow:0 1px 8px rgba(0,0,0,.5)}
+  header .sub{margin:3px 0 0; font-size:13px; opacity:.95; font-weight:500; text-shadow:0 1px 6px rgba(0,0,0,.5)}
+  .hrow{display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap; justify-content:flex-end}
   .pill{display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:700; background:rgba(255,255,255,.15); padding:4px 11px; border-radius:20px; cursor:pointer; border:0; color:#fff; font-family:inherit}
   .pill.sync .dot{width:7px;height:7px;border-radius:50%;background:#9bdcc4}
   .pill.sync.off .dot{background:#ffb38a}
-  .meter-wrap{margin:14px 0 2px; position:relative; z-index:1}
-  .meter-row{display:flex; justify-content:space-between; align-items:baseline; font-size:12px; opacity:.9; margin-bottom:6px}
-  .meter-row b{font-size:15px}
-  .meter{height:14px; background:rgba(255,255,255,.18); border-radius:8px; overflow:hidden; position:relative}
+  .meterbar{background:var(--sand); padding:12px 18px 12px}
+  .meter-wrap{margin:0; position:relative; z-index:1}
+  .meter-row{display:flex; justify-content:space-between; align-items:baseline; font-size:12px; color:var(--muted); margin-bottom:6px}
+  .meter-row b{font-size:15px; color:var(--ink)}
+  .meter{height:14px; background:rgba(11,42,61,.10); border-radius:8px; overflow:hidden; position:relative}
   .meter .fill{height:100%; width:0%; background:linear-gradient(90deg,var(--coral),#ffd36b); border-radius:8px; transition:width .5s ease}
   .meter.over .fill{background:linear-gradient(90deg,#ff4d4d,#ff8a5c)}
-  .meter-foot{display:flex; justify-content:space-between; font-size:11px; opacity:.8; margin-top:6px}
+  .meter-foot{display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-top:6px}
   nav.tabs{position:sticky; top:0; z-index:20; display:flex; background:var(--card); box-shadow:var(--shadow); border-bottom:1px solid var(--line);}
   nav.tabs button{flex:1; border:0; background:none; padding:13px 2px; font-size:12.5px; font-weight:700; color:var(--muted); cursor:pointer; position:relative; font-family:inherit;}
   nav.tabs button.active{color:var(--ocean)}
@@ -51,6 +54,9 @@
   .day-tag{display:inline-block; font-size:9.5px; font-weight:800; padding:2px 7px; border-radius:20px; margin-top:5px; letter-spacing:.3px}
   .tag-book{background:#ffe3d6; color:var(--coral-dk)}
   .tag-anchor{background:#d8efe6; color:var(--good)}
+  .wx{display:flex; align-items:center; gap:5px; color:var(--muted); font-size:12px; white-space:nowrap}
+  .wx-ic{font-size:16px; line-height:1}
+  .wx b{color:var(--ink); font-weight:700}
   .chev{color:var(--muted); transition:transform .25s; font-size:18px}
   .day.open .chev{transform:rotate(90deg)}
   .day-body{max-height:0; overflow:hidden; transition:max-height .35s ease}
@@ -134,12 +140,14 @@
     <button class="pill" id="namePill">\ud83d\udc64 Set name</button>
     <button class="pill sync off" id="syncPill"><span class="dot"></span><span id="syncText">Connecting</span></button>
   </div>
+</header>
+<div class="meterbar">
   <div class="meter-wrap">
     <div class="meter-row"><span>Spent so far</span><b id="mSpent">$0</b></div>
     <div class="meter" id="meter"><div class="fill" id="mFill"></div></div>
     <div class="meter-foot"><span id="mPlan">Planned budget $0</span><span id="mLeft">$0 left</span></div>
   </div>
-</header>
+</div>
 
 <nav class="tabs">
   <button class="active" data-tab="itin">Plan</button>
@@ -395,6 +403,30 @@ function renderCountdown(){
   else if(days<=0&&days>-13) el.textContent="In Waikiki \ud83c\udf1e"; else el.textContent="Aloha \ud83e\udd19";
 }
 function renderName(){ document.getElementById("namePill").textContent = myName? "\ud83d\udc64 "+myName : "\ud83d\udc64 Set name"; }
+/* ============ LIVE WEATHER (Open-Meteo, Waikiki) ============ */
+const MONTHS={Jan:"01",Feb:"02",Mar:"03",Apr:"04",May:"05",Jun:"06",Jul:"07",Aug:"08",Sep:"09",Oct:"10",Nov:"11",Dec:"12"};
+const isoOf = day => `2026-${MONTHS[day.m]}-${String(day.d).padStart(2,"0")}`;
+let WX={};
+function wxIcon(c){
+  if(c===0) return "☀️";
+  if(c<=2) return "\u{1F324}️";
+  if(c===3) return "☁️";
+  if(c===45||c===48) return "\u{1F32B}️";
+  if(c>=51&&c<=67) return "\u{1F327}️";
+  if(c>=71&&c<=77) return "❄️";
+  if(c>=80&&c<=82) return "\u{1F326}️";
+  if(c>=95) return "⛈️";
+  return "\u{1F321}️";
+}
+async function loadWeather(){
+  try{
+    const u="https://api.open-meteo.com/v1/forecast?latitude=21.2793&longitude=-157.8293&daily=weathercode,temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=Pacific%2FHonolulu&forecast_days=16";
+    const r=await fetch(u); if(!r.ok) return; const j=await r.json(); const d=j.daily;
+    if(!d||!d.time) return;
+    const map={}; d.time.forEach((t,i)=>{ map[t]={c:d.weathercode[i], hi:Math.round(d.temperature_2m_max[i]), lo:Math.round(d.temperature_2m_min[i])}; });
+    WX=map; renderItin();
+  }catch(e){}
+}
 function renderItin(){
   document.getElementById("itin").innerHTML = ITIN.map((day,di)=>{
     const slots=day.slots.map((s,si)=>{ const id=`d${di}_${si}`; const noteCls=s.flag?"note flag":"note";
@@ -402,9 +434,10 @@ function renderItin(){
       return `<div class="slot ${state.done[id]?'done':''}"><input type="checkbox" class="ck slot-ck" data-id="${id}" ${state.done[id]?"checked":""}>
         <div class="time">${s.t}</div><div class="body"><div class="act">${s.a}</div>${note}</div></div>`; }).join("");
     let tag=""; if(day.tag==="book") tag=`<span class="day-tag tag-book">BOOK AHEAD</span>`; if(day.tag==="anchor") tag=`<span class="day-tag tag-anchor">PAIR THESE</span>`;
+    const _w=WX[isoOf(day)]; const wx=_w?`<div class="wx"><span class="wx-ic">${wxIcon(_w.c)}</span><b>${_w.hi}°/${_w.lo}°</b></div>`:"";
     return `<div class="day ${di===0?'open':''}"><div class="day-head">
       <div class="day-date"><span class="d">${day.d}</span><span class="m">${day.m}</span></div>
-      <div class="day-meta"><div class="day-dow">${day.dow}</div><div class="day-theme">${day.theme}</div>${tag}</div>
+      <div class="day-meta"><div class="day-dow">${day.dow}</div><div class="day-theme">${day.theme}</div>${tag}</div>${wx}
       <span class="chev">\u203a</span></div><div class="day-body">${slots}</div></div>`;
   }).join("");
 }
@@ -534,7 +567,7 @@ document.getElementById("nameSave").onclick=async ()=>{
 };
 
 /* boot */
-loadLocal(); renderAll(); initFirebase();
+loadLocal(); renderAll(); initFirebase(); loadWeather();
 if(!myName || !ROOM) setTimeout(openName, 600);
 if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
 </script>
