@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b2a3d">
+<title>Waikiki '26</title>
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  :root{
+    --ocean:#0b2a3d; --ocean2:#123a52; --surf:#1f6f8b;
+    --coral:#ff6b4a; --coral-dk:#e0492a; --sand:#f6efe4; --sand2:#efe5d3;
+    --ink:#13202a; --muted:#6c7a83; --line:#dccfb8;
+    --good:#2e8b6f; --warn:#c0473a; --card:#fffdf8; --groupon:#53a318;
+    --shadow:0 2px 10px rgba(11,42,61,.08);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--sand); color:var(--ink); padding-bottom:calc(76px + env(safe-area-inset-bottom)); -webkit-font-smoothing:antialiased;}
+  header{background:linear-gradient(160deg,var(--ocean),var(--surf)); color:#fff; padding:calc(18px + env(safe-area-inset-top)) 20px 18px; position:relative; overflow:hidden;}
+  header::after{content:""; position:absolute; right:-30px; top:-30px; width:140px; height:140px; background:radial-gradient(circle,rgba(255,107,74,.55),transparent 70%); border-radius:50%;}
+  header h1{margin:0; font-size:26px; font-weight:800; letter-spacing:-.5px}
+  header .sub{margin:3px 0 0; font-size:13px; opacity:.85; font-weight:500}
+  .hrow{display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap}
+  .pill{display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:700; background:rgba(255,255,255,.15); padding:4px 11px; border-radius:20px; cursor:pointer; border:0; color:#fff; font-family:inherit}
+  .pill.sync .dot{width:7px;height:7px;border-radius:50%;background:#9bdcc4}
+  .pill.sync.off .dot{background:#ffb38a}
+  .meter-wrap{margin:14px 0 2px; position:relative; z-index:1}
+  .meter-row{display:flex; justify-content:space-between; align-items:baseline; font-size:12px; opacity:.9; margin-bottom:6px}
+  .meter-row b{font-size:15px}
+  .meter{height:14px; background:rgba(255,255,255,.18); border-radius:8px; overflow:hidden; position:relative}
+  .meter .fill{height:100%; width:0%; background:linear-gradient(90deg,var(--coral),#ffd36b); border-radius:8px; transition:width .5s ease}
+  .meter.over .fill{background:linear-gradient(90deg,#ff4d4d,#ff8a5c)}
+  .meter-foot{display:flex; justify-content:space-between; font-size:11px; opacity:.8; margin-top:6px}
+  nav.tabs{position:sticky; top:0; z-index:20; display:flex; background:var(--card); box-shadow:var(--shadow); border-bottom:1px solid var(--line);}
+  nav.tabs button{flex:1; border:0; background:none; padding:13px 2px; font-size:12.5px; font-weight:700; color:var(--muted); cursor:pointer; position:relative; font-family:inherit;}
+  nav.tabs button.active{color:var(--ocean)}
+  nav.tabs button.active::after{content:""; position:absolute; left:14%; right:14%; bottom:0; height:3px; background:var(--coral); border-radius:3px 3px 0 0;}
+  main{padding:14px 14px 0}
+  .tab-panel{display:none; animation:fade .25s ease}
+  .tab-panel.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .day{background:var(--card); border-radius:14px; margin-bottom:12px; box-shadow:var(--shadow); overflow:hidden; border:1px solid var(--line)}
+  .day-head{display:flex; align-items:center; gap:12px; padding:14px 16px; cursor:pointer; user-select:none}
+  .day-date{display:flex; flex-direction:column; align-items:center; min-width:46px; line-height:1}
+  .day-date .d{font-size:20px; font-weight:800; color:var(--ocean)}
+  .day-date .m{font-size:10px; font-weight:700; color:var(--coral); text-transform:uppercase; letter-spacing:.5px; margin-top:2px}
+  .day-meta{flex:1}
+  .day-dow{font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.4px}
+  .day-theme{font-size:15px; font-weight:700; margin-top:1px}
+  .day-tag{display:inline-block; font-size:9.5px; font-weight:800; padding:2px 7px; border-radius:20px; margin-top:5px; letter-spacing:.3px}
+  .tag-book{background:#ffe3d6; color:var(--coral-dk)}
+  .tag-anchor{background:#d8efe6; color:var(--good)}
+  .chev{color:var(--muted); transition:transform .25s; font-size:18px}
+  .day.open .chev{transform:rotate(90deg)}
+  .day-body{max-height:0; overflow:hidden; transition:max-height .35s ease}
+  .day.open .day-body{max-height:1400px}
+  .slot{display:flex; gap:12px; padding:11px 16px; border-top:1px solid var(--sand2); align-items:flex-start}
+  .slot:first-child{border-top:1px solid var(--line)}
+  .slot .time{min-width:58px; font-size:11px; font-weight:800; color:var(--surf); padding-top:2px}
+  .slot .body{flex:1}
+  .slot .act{font-size:14px; font-weight:600}
+  .slot .note{font-size:12px; color:var(--muted); margin-top:2px; line-height:1.4}
+  .slot .note.flag{color:var(--warn); font-weight:600}
+  .ck{appearance:none; width:22px; height:22px; min-width:22px; border:2px solid var(--line); border-radius:6px; margin-top:1px; cursor:pointer; position:relative; transition:.15s; background:#fff}
+  .ck:checked{background:var(--good); border-color:var(--good)}
+  .ck:checked::after{content:"\2713"; position:absolute; inset:0; color:#fff; font-size:14px; font-weight:900; display:flex; align-items:center; justify-content:center}
+  .slot.done .act{text-decoration:line-through; color:var(--muted)}
+  .group-label{font-size:11px; font-weight:800; color:var(--surf); text-transform:uppercase; letter-spacing:.6px; margin:18px 4px 8px}
+  .li{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:8px; box-shadow:var(--shadow)}
+  .li-top{display:flex; align-items:center; gap:12px}
+  .li .body{flex:1}
+  .li .name{font-size:14px; font-weight:600}
+  .li .sub{font-size:11.5px; color:var(--muted); margin-top:1px}
+  .li .amt{font-size:15px; font-weight:800; color:var(--ocean)}
+  .li.done .name{text-decoration:line-through; color:var(--muted)}
+  .li.done{background:#fbfaf6}
+  .book{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; align-items:center}
+  .book a{font-size:11.5px; font-weight:700; text-decoration:none; padding:6px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:4px; border:1px solid var(--line); color:var(--ocean); background:#fff}
+  .book a.official{background:var(--ocean); color:#fff; border-color:var(--ocean)}
+  .book a.groupon{background:var(--groupon); color:#fff; border-color:var(--groupon)}
+  .book a.call{background:#fff; color:var(--surf); border-color:var(--surf)}
+  .booked-row{display:flex; align-items:center; gap:8px; margin-top:10px; font-size:12px; color:var(--muted); flex-wrap:wrap}
+  .booked-row.is-booked{color:var(--good); font-weight:700}
+  .conf{flex:1; min-width:120px; padding:7px 10px; font-size:13px; border:1px dashed var(--line); border-radius:8px; background:#fff; font-family:inherit; color:var(--ink)}
+  .exp{display:flex; align-items:center; gap:10px; background:#fff; border:1px solid var(--line); border-left:4px solid var(--coral); border-radius:10px; padding:10px 12px; margin-bottom:8px; box-shadow:var(--shadow)}
+  .exp .body{flex:1}
+  .exp .name{font-size:14px; font-weight:600}
+  .exp .sub{font-size:11px; color:var(--muted)}
+  .exp .amt{font-size:15px; font-weight:800; color:var(--coral-dk)}
+  .exp .del{border:0; background:none; color:var(--muted); font-size:20px; cursor:pointer; padding:0 4px; line-height:1}
+  .empty{text-align:center; color:var(--muted); font-size:13px; padding:20px; line-height:1.5}
+  .summary{background:linear-gradient(160deg,var(--ocean),var(--ocean2)); color:#fff; border-radius:14px; padding:16px; margin:6px 0 4px; box-shadow:var(--shadow)}
+  .summary .row{display:flex; justify-content:space-between; padding:6px 0; font-size:14px}
+  .summary .row.tot{border-top:1px solid rgba(255,255,255,.2); margin-top:6px; padding-top:10px; font-size:16px; font-weight:800}
+  .summary .row .v{font-weight:700}
+  .summary .muted{opacity:.75; font-size:12px}
+  .tip{background:var(--card); border:1px solid var(--line); border-left:4px solid var(--surf); border-radius:10px; padding:12px 14px; margin-bottom:10px; font-size:13px; line-height:1.5; box-shadow:var(--shadow)}
+  .tip b{color:var(--ocean)}
+  .quick{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap}
+  .quick a{flex:1; min-width:90px; text-align:center; text-decoration:none; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 8px; font-size:12px; font-weight:700; color:var(--ocean); box-shadow:var(--shadow)}
+  .quick a .ic{display:block; font-size:20px; margin-bottom:3px}
+  /* activity feed */
+  .feed-item{display:flex; gap:10px; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:7px; box-shadow:var(--shadow)}
+  .feed-item .who{width:30px; height:30px; min-width:30px; border-radius:50%; background:var(--surf); color:#fff; font-size:13px; font-weight:800; display:flex; align-items:center; justify-content:center}
+  .feed-item .body{flex:1}
+  .feed-item .txt{font-size:13px; line-height:1.4}
+  .feed-item .txt b{color:var(--ocean)}
+  .feed-item .ts{font-size:11px; color:var(--muted); margin-top:2px}
+  .fab{position:fixed; right:18px; bottom:calc(18px + env(safe-area-inset-bottom)); z-index:40; width:58px; height:58px; border-radius:50%; border:0; background:var(--coral); color:#fff; font-size:30px; font-weight:300; box-shadow:0 6px 18px rgba(224,73,42,.45); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:transform .15s;}
+  .fab:active{transform:scale(.92)}
+  .scrim{position:fixed; inset:0; background:rgba(11,42,61,.5); z-index:45; opacity:0; pointer-events:none; transition:.25s}
+  .scrim.show{opacity:1; pointer-events:auto}
+  .sheet{position:fixed; left:0; right:0; bottom:0; z-index:50; background:var(--sand); border-radius:20px 20px 0 0; padding:18px 18px calc(20px + env(safe-area-inset-bottom)); transform:translateY(110%); transition:transform .3s cubic-bezier(.3,.8,.3,1); box-shadow:0 -4px 24px rgba(0,0,0,.2);}
+  .sheet.show{transform:translateY(0)}
+  .sheet h3{margin:4px 0 6px; font-size:18px}
+  .sheet p.hint{margin:0 0 10px; font-size:12.5px; color:var(--muted); line-height:1.45}
+  .sheet label{display:block; font-size:12px; font-weight:700; color:var(--muted); margin:10px 0 4px; text-transform:uppercase; letter-spacing:.4px}
+  .sheet input, .sheet select{width:100%; padding:13px; font-size:16px; border:1.5px solid var(--line); border-radius:10px; background:#fff; font-family:inherit; color:var(--ink);}
+  .sheet .save{width:100%; margin-top:18px; padding:15px; border:0; border-radius:12px; background:var(--coral); color:#fff; font-size:16px; font-weight:800; cursor:pointer}
+  .sheet .cancel{width:100%; margin-top:8px; padding:12px; border:0; background:none; color:var(--muted); font-size:14px; font-weight:600; cursor:pointer}
+  .grip{width:40px; height:4px; background:var(--line); border-radius:4px; margin:0 auto 6px}
+  .reset{display:block; margin:24px auto 8px; background:none; border:1px solid var(--line); color:var(--muted); font-size:12px; padding:8px 16px; border-radius:20px; cursor:pointer}
+  .foot{text-align:center; font-size:11px; color:var(--muted); padding:8px 0 20px}
+  .banner{background:#fff4e6; border:1px solid #ffd9b0; color:#9a5b1e; font-size:12px; padding:10px 12px; border-radius:10px; margin-bottom:12px; line-height:1.45}
+</style>
+</head>
+<body>
+<header>
+  <h1>Waikiki '26 🌺</h1>
+  <p class="sub">Jun 25 – Jul 6 · Twin Fins · 2 people</p>
+  <div class="hrow">
+    <span class="pill" id="countdown"></span>
+    <button class="pill" id="namePill">\ud83d\udc64 Set name</button>
+    <button class="pill sync off" id="syncPill"><span class="dot"></span><span id="syncText">Connecting</span></button>
+  </div>
+  <div class="meter-wrap">
+    <div class="meter-row"><span>Spent so far</span><b id="mSpent">$0</b></div>
+    <div class="meter" id="meter"><div class="fill" id="mFill"></div></div>
+    <div class="meter-foot"><span id="mPlan">Planned budget $0</span><span id="mLeft">$0 left</span></div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="active" data-tab="itin">Plan</button>
+  <button data-tab="book">Book</button>
+  <button data-tab="budget">Budget</button>
+  <button data-tab="feed">Activity</button>
+  <button data-tab="tips">Tips</button>
+</nav>
+
+<main>
+  <section class="tab-panel active" id="itin"></section>
+  <section class="tab-panel" id="book"></section>
+  <section class="tab-panel" id="budget"></section>
+  <section class="tab-panel" id="feed"></section>
+  <section class="tab-panel" id="tips"></section>
+</main>
+
+<button class="fab" id="fab" title="Add expense">+</button>
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet">
+  <div class="grip"></div>
+  <h3>Add an expense</h3>
+  <label>What was it?</label>
+  <input id="eName" placeholder="e.g. Shave ice, parking, ABC Store" />
+  <label>Amount ($)</label>
+  <input id="eAmt" type="number" inputmode="decimal" placeholder="0.00" />
+  <label>Category</label>
+  <select id="eCat"><option>Food &amp; drink</option><option>Activities</option><option>Transport</option><option>Shopping</option><option>Other</option></select>
+  <button class="save" id="eSave">Add expense</button>
+  <button class="cancel" id="eCancel">Cancel</button>
+</div>
+
+<!-- name sheet -->
+<div class="sheet" id="nameSheet">
+  <div class="grip"></div>
+  <h3>What's your name?</h3>
+  <p class="hint">Used to label your edits in the Activity feed so you both know who changed what. Just a first name is fine.</p>
+  <label>Your name</label>
+  <input id="nameInput" placeholder="e.g. Tim" maxlength="20" />
+  <button class="save" id="nameSave">Save</button>
+</div>
+
+<!-- Firebase (compat SDK = no build step). Loads from CDN; needs internet the first time. -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+/* ============================================================
+   FIREBASE CONFIG  —  PASTE YOUR PROJECT VALUES BELOW.
+   Get them from: Firebase console > Project settings > "Your apps" > Web app.
+   See README "FIREBASE SETUP" for the 5-minute walkthrough.
+   ============================================================ */
+const firebaseConfig = {
+  apiKey: "PASTE_API_KEY",
+  authDomain: "PASTE_PROJECT.firebaseapp.com",
+  databaseURL: "https://PASTE_PROJECT-default-rtdb.firebaseio.com",
+  projectId: "PASTE_PROJECT",
+  appId: "PASTE_APP_ID"
+};
+const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE_");
+</script>
+
+<script>
+/* ============ TRIP DATA (static) ============ */
+const ITIN = [
+  {d:"25",m:"Jun",dow:"Thursday",theme:"Arrive & settle in",slots:[
+    {t:"Day",a:"Check in, grab beach gear",n:"Twin Fins: 3 beach rentals/day \u2014 boards & chairs. Hit the beach out front."},
+    {t:"Aft",a:"Walk Kalakaua Ave, find a food truck",n:"Ease in, scope dinner spots. Don't over-schedule day one."},
+    {t:"Eve",a:"Sunset on the beach",n:"Free. Do PADI eLearning tonight if you bought it \u2014 saves class time."}]},
+  {d:"26",m:"Jun",dow:"Friday",theme:"Scuba \u2014 Cert Day 1",tag:"book",slots:[
+    {t:"AM",a:"Confined-water session + skills",n:"Manny's Diving, Kewalo Basin (~10 min). Day 1 is the heavy learning day."},
+    {t:"Aft",a:"First open-water dive(s)",n:"Most of the day is committed. Plan a low-key evening."},
+    {t:"Note",a:"Gear reminder",n:"Bring own mask/snorkel/fins or rent. Confirm eLearning is included.",flag:true}]},
+  {d:"27",m:"Jun",dow:"Saturday",theme:"Scuba \u2014 Cert Day 2 (finish)",tag:"book",slots:[
+    {t:"AM",a:"Remaining OW dives + exam",n:"Complete all 4 dives & the test. Certified for life after this."},
+    {t:"Aft",a:"Recover, easy beach time",n:"No flying or strenuous activity right after diving."},
+    {t:"Win",a:"Cert done early = max flight buffer",n:"9+ days before your Jul 6 flight. Zero risk."}]},
+  {d:"28",m:"Jun",dow:"Sunday",theme:"Rest / explore Waikiki",slots:[
+    {t:"AM",a:"Diamond Head hike OR pool day",n:"Crater hike ~$5/pp, iconic. Reserve entry in advance. Go early."},
+    {t:"Lunch",a:"Food trucks (Kapahulu / North Shore)",n:"Good day for the North Shore shrimp-truck drive if you want it."},
+    {t:"Eve",a:"Nicer sit-down dinner",n:"Use one of your 3 dinner buffers tonight."}]},
+  {d:"29",m:"Jun",dow:"Monday",theme:"KUALOA \u2014 all-day 3-tour",tag:"book",slots:[
+    {t:"8:30a",a:"Check-in at Kualoa Ranch",n:"~45 min drive, windward coast. Check-in is 8:30am sharp.",flag:true},
+    {t:"9\u20133:30",a:"Movie Sites + Jungle + Grown + buffet",n:"Jurassic Park / Jumanji / Kong sites. Lunch included."},
+    {t:"Go",a:"Rental car OR hotel shuttle",n:"If driving, this is your main car day. Else add ~$30/pp shuttle."}]},
+  {d:"30",m:"Jun",dow:"Tuesday",theme:"Maunalua Bay \u2014 Parasail + Jet Ski",tag:"anchor",slots:[
+    {t:"AM",a:"Parasailing (500\u2013700 ft)",n:"Maunalua Bay, Hawai\u02bbi Kai (~20 min east). H2O Sports combo covers both."},
+    {t:"Same",a:"Jet Ski \u2014 tandem, 30 min",n:"H2O Sports combo = parasail + jet ski + transport, $159/pp. One booking."},
+    {t:"Aft",a:"East-side beaches & coastline",n:"You're already out east \u2014 enjoy it before heading back."}]},
+  {d:"1",m:"Jul",dow:"Wednesday",theme:"Glass-bottom boat + Waikiki",slots:[
+    {t:"Mid",a:"Glass-bottom boat (1 hr)",n:"Kewalo Basin, ~$46/pp. Turtles & reef, stay dry. Easy half-day."},
+    {t:"Aft",a:"Ala Moana / souvenirs",n:"Mall is right by the harbor. Knock out shopping."},
+    {t:"Eve",a:"Food trucks or casual dinner",n:""}]},
+  {d:"2",m:"Jul",dow:"Thursday",theme:"Flex / open beach day",slots:[
+    {t:"Open",a:"Buffer day",n:"Catch anything rained out, or repeat a favorite. Use beach rentals."},
+    {t:"Idea",a:"Snorkel / surf lesson / pool",n:"Cheap or free with hotel gear. Keep it loose."}]},
+  {d:"3",m:"Jul",dow:"Friday",theme:"North Shore OR relax",slots:[
+    {t:"Day",a:"North Shore loop (if not done)",n:"Haleiwa, shrimp trucks, turtle beach. Scenic \u2014 2nd car day if added."},
+    {t:"Eve",a:"Nicer sit-down dinner",n:"Second dinner buffer."}]},
+  {d:"4",m:"Jul",dow:"Saturday",theme:"July 4th in Waikiki",slots:[
+    {t:"Day",a:"Beach + low-key",n:"Waikiki does 4th fireworks \u2014 check the schedule. Free show."},
+    {t:"Eve",a:"Fireworks off Waikiki / Ala Moana",n:"Heavy crowds. Walk, don't drive, if you can."},
+    {t:"OK",a:"Water activities fine today",n:"Well clear of your Jul 6 flight."}]},
+  {d:"5",m:"Jul",dow:"Sunday",theme:"Wind-down / pack",slots:[
+    {t:"Day",a:"Final beach & food-truck runs",n:"NO scuba today \u2014 within ~24h of flying. Snorkel/surf is fine.",flag:true},
+    {t:"Aft",a:"Pack, souvenirs, return rental car",n:"Return the car today to avoid an airport-morning scramble."},
+    {t:"Eve",a:"Final dinner",n:"Third dinner buffer \u2014 send the trip off right."}]},
+  {d:"6",m:"Jul",dow:"Monday",theme:"Depart",slots:[
+    {t:"AM",a:"Check out, head to HNL",n:"Allow buffer for security + rental return. A hui hou \ud83e\udd19"}]},
+];
+const BOOKINGS = [
+  {id:"bk_scuba", name:"Scuba \u2014 Open Water Cert", when:"Jun 26\u201327", price:"~$142\u2013158/pp",
+    note:"Manny's Diving. Real PADI cert, boat from Kewalo Basin. Call to confirm dates & ask if eLearning is included.",
+    official:"https://mannysdivingadventures.com/", groupon:"https://www.groupon.com/deals/mannys-diving-adventures",
+    phone:"+18087489367", map:"https://maps.google.com/?q=Manny's+Diving+Adventures+Honolulu"},
+  {id:"bk_kualoa", name:"Kualoa 'Best of' 3-Tour", when:"Jun 29, 8:30am", price:"$164.95/pp",
+    note:"Movie Sites + Jungle Expedition + Grown + buffet. Non-refundable, sells out 2\u20133 wks ahead \u2014 book first.",
+    official:"https://www.kualoa.com/tours-and-activities/best-of-kualoa-experience", groupon:"https://www.groupon.com/local/honolulu/things-to-do?query=kualoa",
+    phone:"+18082377321", map:"https://maps.google.com/?q=Kualoa+Ranch"},
+  {id:"bk_combo", name:"Parasail + Jet Ski combo", when:"Jun 30", price:"$159/pp",
+    note:"H2O Sports 'Book Now' package: parasail + tandem jet ski + Waikiki transport, all in one. Best value for the day.",
+    official:"https://www.h2osportshawaii.com/book-now-package/", groupon:null,
+    phone:"+18083964386", map:"https://maps.google.com/?q=H2O+Sports+Hawaii+Hawaii+Kai"},
+  {id:"bk_parasail_alt", name:"Parasail only (alt operator)", when:"Jun 30", price:"~$80/pp",
+    note:"Hawaiian Parasail (since 1977), Ala Wai Boat Harbor. Use if you'd rather not do the combo.",
+    official:"https://hawaiianparasail.com/parasailing/", groupon:null,
+    phone:"+18085911280", map:"https://maps.google.com/?q=Ala+Wai+Boat+Harbor"},
+  {id:"bk_glass", name:"Glass-bottom boat", when:"Jul 1", price:"~$39\u201346/pp",
+    note:"Hawaii Glass Bottom Boats, Kewalo Basin. 1 hr, turtles & reef. Groupon often cheaper.",
+    official:"https://www.hawaiiglassbottomboats.com/tours/daytime-boat-ride/", groupon:"https://www.groupon.com/deals/hawaii-glass-bottom-boats",
+    phone:null, map:"https://maps.google.com/?q=Kewalo+Basin+Harbor+slip+F26"},
+  {id:"bk_diamond", name:"Diamond Head entry", when:"Jun 28 (flex)", price:"$5/pp",
+    note:"Out-of-state visitors MUST reserve entry + parking in advance online. Don't just show up.",
+    official:"https://gostateparks.hawaii.gov/", groupon:null, phone:null, map:"https://maps.google.com/?q=Diamond+Head+State+Monument"},
+  {id:"bk_car", name:"Rental car (1\u20132 days)", when:"Jun 29 / flex", price:"~$75\u201385/day",
+    note:"Compare aggregators. You mainly need it for Kualoa + maybe North Shore.",
+    official:"https://www.costcotravel.com/Rental-Cars", groupon:null, phone:null, map:null},
+];
+const BUDGET = [
+  {g:"Activities",items:[
+    {id:"b_para",name:"Parasailing \u2014 2 pax",sub:"Maunalua Bay, $80/pp",amt:160},
+    {id:"b_scuba",name:"Scuba Open Water cert \u2014 2 pax",sub:"Manny's (Groupon), $158/pp",amt:316},
+    {id:"b_kualoa",name:"Kualoa 'Best of' 3-tour \u2014 2 pax",sub:"$164.95/pp incl. buffet",amt:330},
+    {id:"b_glass",name:"Glass-bottom boat \u2014 2 pax",sub:"$46/pp",amt:92},
+    {id:"b_jet",name:"Jet ski tandem 30 min \u2014 2 pax",sub:"$89/pp (or in combo)",amt:178}]},
+  {g:"Food & dining",items:[
+    {id:"b_food",name:"Food trucks / casual (13 days)",sub:"~$55/day for two",amt:715},
+    {id:"b_groc",name:"Groceries / snacks / water",sub:"ABC + Foodland runs",amt:120},
+    {id:"b_dinner",name:"Nicer sit-down dinners",sub:"3 occasions",amt:270}]},
+  {g:"Transport",items:[
+    {id:"b_car",name:"Rental car (1\u20132 days)",sub:"Peak rate, all-in",amt:164},
+    {id:"b_gas",name:"Gas / parking",sub:"Rental days",amt:70},
+    {id:"b_ride",name:"Rideshare",sub:"Airport + activities",amt:180}]},
+  {g:"Miscellaneous",items:[
+    {id:"b_tips",name:"Activity gratuities",sub:"Tip guides & crew",amt:100},
+    {id:"b_sun",name:"Reef-safe sunscreen + aloe",sub:"Required by HI law",amt:40},
+    {id:"b_souv",name:"Souvenirs / gifts",sub:"",amt:100},
+    {id:"b_buf",name:"Unexpected / buffer",sub:"Always keep a cushion",amt:200}]},
+];
+const TIPS = [
+  "<b>Dive-before-flight:</b> cert dives are Jun 26\u201327, leaving 9+ days before your Jul 6 flight. Never scuba within 18\u201324 hrs of flying.",
+  "<b>Kualoa:</b> non-refundable on most rates and sells out 2\u20133 weeks ahead. Book the moment dates are firm \u2014 check Groupon for a flash combo first.",
+  "<b>Parasail + jet ski same day (Jun 30):</b> H2O Sports has a combo with both + Waikiki transport for $159/pp. One booking, one trip east.",
+  "<b>Diamond Head:</b> out-of-state visitors must reserve entry AND parking online ahead of time \u2014 walk-ups are turned away.",
+  "<b>Rental car:</b> you really only need it for Kualoa and maybe North Shore. 1\u20132 days + rideshare beats a 12-day rental.",
+  "<b>Reef-safe sunscreen is law in Hawaii.</b> Oxybenzone/octinoxate sunscreens are banned \u2014 buy mineral (zinc) before or on-island.",
+  "<b>Price-check everything</b> on Groupon vs Viator vs the operator's own site before booking. The gap can top 50%.",
+];
+const labelOf = id => {
+  const b = BOOKINGS.find(x=>x.id===id); if(b) return b.name;
+  const it = BUDGET.flatMap(g=>g.items).find(x=>x.id===id); if(it) return it.name;
+  const m = id.match(/^d(\d+)_(\d+)$/); if(m){ const dd=ITIN[+m[1]]; return dd? dd.slots[+m[2]].a : id; }
+  return id;
+};
+
+/* ============ STATE + SYNC ============ */
+const NAMEKEY="waikiki26_name";
+let myName = localStorage.getItem(NAMEKEY) || "";
+let state = {done:{}, booked:{}, conf:{}, expenses:[], feed:[]};
+let db=null, online=false;
+
+const money = n => "$"+Math.round(n).toLocaleString();
+const esc = s => (s||"").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+const PLANNED = BUDGET.flatMap(g=>g.items).reduce((s,i)=>s+i.amt,0);
+const initials = n => (n||"?").trim().slice(0,2).toUpperCase();
+function timeAgo(ts){ if(!ts) return ""; const s=Math.floor((Date.now()-ts)/1000);
+  if(s<60) return "just now"; if(s<3600) return Math.floor(s/60)+"m ago";
+  if(s<86400) return Math.floor(s/3600)+"h ago"; return Math.floor(s/86400)+"d ago"; }
+
+/* local fallback so the app still works before Firebase config is added / offline */
+const LKEY="waikiki26_local";
+function loadLocal(){ try{ state = JSON.parse(localStorage.getItem(LKEY)) || state; }catch(e){} }
+function saveLocal(){ localStorage.setItem(LKEY, JSON.stringify(state)); }
+
+function logFeed(text){
+  const entry = {who: myName||"Someone", text, ts: Date.now()};
+  state.feed = state.feed || [];
+  state.feed.unshift(entry);
+  if(state.feed.length>60) state.feed = state.feed.slice(0,60);
+  if(online && db){ db.ref("trip/feed").set(state.feed); }
+}
+
+/* write a path to Firebase (or local) */
+function push(path, value){
+  if(online && db){ db.ref("trip/"+path).set(value); }
+  else { saveLocal(); }
+}
+
+function initFirebase(){
+  if(!CONFIGURED){ // no keys yet -> local-only mode
+    loadLocal(); setSync(false,"Local only"); renderAll(); return;
+  }
+  try{
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    db.ref(".info/connected").on("value", s=>{ setSync(!!s.val(), s.val()?"Synced":"Offline"); });
+    db.ref("trip").on("value", snap=>{
+      const v = snap.val() || {};
+      state.done = v.done||{}; state.booked = v.booked||{}; state.conf = v.conf||{};
+      state.expenses = v.expenses||[]; state.feed = v.feed||[];
+      saveLocal(); renderAll();
+    });
+    online = true;
+  }catch(e){
+    loadLocal(); setSync(false,"Local only"); renderAll();
+  }
+}
+function setSync(ok,text){ online = ok || online && !CONFIGURED?false:ok;
+  const p=document.getElementById("syncPill"); p.classList.toggle("off",!ok);
+  document.getElementById("syncText").textContent = CONFIGURED? text : "Local only";
+  online = ok;
+}
+
+/* ============ RENDER ============ */
+function renderCountdown(){
+  const start=new Date("2026-06-25T00:00:00"), now=new Date();
+  const days=Math.ceil((start-now)/86400000); const el=document.getElementById("countdown");
+  if(days>1) el.textContent=days+" days \u2708\ufe0f"; else if(days===1) el.textContent="Tomorrow! \u2708\ufe0f";
+  else if(days<=0&&days>-13) el.textContent="In Waikiki \ud83c\udf1e"; else el.textContent="Aloha \ud83e\udd19";
+}
+function renderName(){ document.getElementById("namePill").textContent = myName? "\ud83d\udc64 "+myName : "\ud83d\udc64 Set name"; }
+function renderItin(){
+  document.getElementById("itin").innerHTML = ITIN.map((day,di)=>{
+    const slots=day.slots.map((s,si)=>{ const id=`d${di}_${si}`; const noteCls=s.flag?"note flag":"note";
+      const note=s.n?`<div class="${noteCls}">${s.n}</div>`:"";
+      return `<div class="slot ${state.done[id]?'done':''}"><input type="checkbox" class="ck slot-ck" data-id="${id}" ${state.done[id]?"checked":""}>
+        <div class="time">${s.t}</div><div class="body"><div class="act">${s.a}</div>${note}</div></div>`; }).join("");
+    let tag=""; if(day.tag==="book") tag=`<span class="day-tag tag-book">BOOK AHEAD</span>`; if(day.tag==="anchor") tag=`<span class="day-tag tag-anchor">PAIR THESE</span>`;
+    return `<div class="day ${di===0?'open':''}"><div class="day-head">
+      <div class="day-date"><span class="d">${day.d}</span><span class="m">${day.m}</span></div>
+      <div class="day-meta"><div class="day-dow">${day.dow}</div><div class="day-theme">${day.theme}</div>${tag}</div>
+      <span class="chev">\u203a</span></div><div class="day-body">${slots}</div></div>`;
+  }).join("");
+}
+function renderBook(){
+  const rows=BOOKINGS.map(b=>{ const isB=state.booked[b.id]; const links=[];
+    if(b.official) links.push(`<a class="official" href="${b.official}" target="_blank" rel="noopener">Book direct \u2197</a>`);
+    if(b.groupon) links.push(`<a class="groupon" href="${b.groupon}" target="_blank" rel="noopener">Groupon \u2197</a>`);
+    if(b.phone) links.push(`<a class="call" href="tel:${b.phone}">\ud83d\udcde Call</a>`);
+    if(b.map) links.push(`<a href="${b.map}" target="_blank" rel="noopener">\ud83d\udccd Map</a>`);
+    return `<div class="li ${isB?'done':''}"><div class="li-top"><div class="body"><div class="name">${b.name}</div><div class="sub">${b.when} \u00b7 ${b.price}</div></div></div>
+      <div class="note" style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45">${b.note}</div>
+      <div class="book">${links.join("")}</div>
+      <div class="booked-row ${isB?'is-booked':''}"><input type="checkbox" class="ck bk-ck" data-id="${b.id}" ${isB?"checked":""} style="width:18px;height:18px;min-width:18px">
+        <span>${isB?"Booked":"Mark booked"}</span><input class="conf" data-id="${b.id}" placeholder="Confirmation #" value="${esc(state.conf[b.id])}"></div></div>`;
+  }).join("");
+  document.getElementById("book").innerHTML=`<div class="group-label">Tap to book \u2014 then mark it & save your confirmation #</div>${rows}<div class="foot">Direct = operator's site \u00b7 green = Groupon \u00b7 edits sync to both phones</div>`;
+}
+function renderBudget(){
+  let sp=BUDGET.flatMap(g=>g.items).filter(i=>state.done[i.id]).reduce((s,i)=>s+i.amt,0);
+  let ex=(state.expenses||[]).reduce((s,e)=>s+e.amt,0);
+  const groups=BUDGET.map(g=>{ const rows=g.items.map(i=>{ const sub=i.sub?`<div class="sub">${i.sub}</div>`:"";
+    return `<div class="li ${state.done[i.id]?'done':''}"><div class="li-top"><input type="checkbox" class="ck bud-ck" data-id="${i.id}" ${state.done[i.id]?"checked":""}>
+      <div class="body"><div class="name">${i.name}</div>${sub}</div><div class="amt">${money(i.amt)}</div></div></div>`; }).join("");
+    return `<div class="group-label">${g.g}</div>${rows}`; }).join("");
+  const expRows=(state.expenses&&state.expenses.length)? state.expenses.map((e,idx)=>`<div class="exp"><div class="body"><div class="name">${esc(e.name)||"Expense"}</div><div class="sub">${e.cat}${e.by?" \u00b7 "+esc(e.by):""}</div></div><div class="amt">${money(e.amt)}</div><button class="del" data-idx="${idx}">\u00d7</button></div>`).join("") : `<div class="empty">No extra expenses logged yet.<br>Tap <b>+</b> to add real spending \u2014 it shows on both phones.</div>`;
+  document.getElementById("budget").innerHTML=`<div class="summary">
+    <div class="row"><span>Planned items checked off</span><span class="v">${money(sp)}</span></div>
+    <div class="row"><span>Extra expenses logged</span><span class="v">${money(ex)}</span></div>
+    <div class="row tot"><span>Total spent</span><span class="v">${money(sp+ex)}</span></div>
+    <div class="row"><span class="muted">Full planned budget</span><span class="muted">${money(PLANNED)}</span></div></div>
+    <div class="group-label">Planned \u2014 check off as you book / pay</div>${groups}
+    <div class="group-label">Actual expenses on the trip</div>${expRows}
+    <button class="reset" id="reset">Reset everything (both phones)</button><div class="foot">Shared trip \u00b7 synced live</div>`;
+}
+function renderFeed(){
+  const f=state.feed||[];
+  const banner = CONFIGURED? "" : `<div class="banner">Sync isn't set up yet \u2014 the app is running in local-only mode on this device. Add Firebase keys (see README) to share live with your travel partner.</div>`;
+  const items = f.length? f.map(e=>`<div class="feed-item"><div class="who">${initials(e.who)}</div><div class="body"><div class="txt"><b>${esc(e.who)}</b> ${e.text}</div><div class="ts">${timeAgo(e.ts)}</div></div></div>`).join("") : `<div class="empty">No activity yet. Changes either of you make \u2014 booking something, logging an expense, checking off a plan \u2014 show up here.</div>`;
+  document.getElementById("feed").innerHTML = banner + `<div class="group-label">Who changed what</div>` + items;
+}
+function renderTips(){
+  document.getElementById("tips").innerHTML=`<div class="quick">
+    <a href="https://www.google.com/search?q=Waikiki+weather" target="_blank" rel="noopener"><span class="ic">\u26c5</span>Weather</a>
+    <a href="https://maps.google.com/?q=Twin+Fins+Waikiki" target="_blank" rel="noopener"><span class="ic">\ud83c\udfe8</span>Hotel</a>
+    <a href="tel:911"><span class="ic">\ud83c\udd98</span>911</a></div>`+
+    TIPS.map(t=>`<div class="tip">${t}</div>`).join("")+`<div class="foot">Add to home screen for an app-like view</div>`;
+}
+function renderMeter(){
+  let sp=BUDGET.flatMap(g=>g.items).filter(i=>state.done[i.id]).reduce((s,i)=>s+i.amt,0);
+  let ex=(state.expenses||[]).reduce((s,e)=>s+e.amt,0); let spent=sp+ex;
+  document.getElementById("mSpent").textContent=money(spent);
+  document.getElementById("mPlan").textContent="Planned budget "+money(PLANNED);
+  document.getElementById("mFill").style.width=Math.min(100,PLANNED?spent/PLANNED*100:0)+"%";
+  const left=PLANNED-spent;
+  document.getElementById("mLeft").textContent=(left>=0?money(left)+" left":money(-left)+" over");
+  document.getElementById("meter").classList.toggle("over",left<0);
+}
+function renderAll(){ renderCountdown(); renderName(); renderItin(); renderBook(); renderBudget(); renderFeed(); renderTips(); renderMeter(); }
+
+/* ============ EVENTS ============ */
+document.querySelectorAll("nav.tabs button").forEach(b=>{ b.onclick=()=>{
+  document.querySelectorAll("nav.tabs button").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".tab-panel").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active"); document.getElementById(b.dataset.tab).classList.add("active");
+  window.scrollTo({top:0,behavior:"smooth"}); }; });
+
+document.addEventListener("click",e=>{
+  const head=e.target.closest(".day-head");
+  if(head&&!e.target.classList.contains("ck")) head.closest(".day").classList.toggle("open");
+  if(e.target.classList.contains("del")){ const idx=+e.target.dataset.idx; const rm=state.expenses[idx];
+    state.expenses.splice(idx,1); push("expenses",state.expenses); logFeed(`deleted expense ${rm?'"'+esc(rm.name)+'"':''}`); }
+  if(e.target.id==="reset"){ if(confirm("Reset ALL checks, bookings, expenses and history for BOTH phones? Can't be undone.")){
+    state={done:{},booked:{},conf:{},expenses:[],feed:[]};
+    if(online&&db){ db.ref("trip").set(state);} else saveLocal(); renderAll(); } }
+});
+document.addEventListener("change",e=>{
+  if(e.target.classList.contains("slot-ck")){ const id=e.target.dataset.id;
+    if(e.target.checked) state.done[id]=true; else delete state.done[id];
+    push("done",state.done); logFeed(`${e.target.checked?"checked off":"un-checked"} \u201c${esc(labelOf(id))}\u201d`); }
+  if(e.target.classList.contains("bud-ck")){ const id=e.target.dataset.id;
+    if(e.target.checked) state.done[id]=true; else delete state.done[id];
+    push("done",state.done); logFeed(`${e.target.checked?"paid/checked":"un-checked"} \u201c${esc(labelOf(id))}\u201d`); }
+  if(e.target.classList.contains("bk-ck")){ const id=e.target.dataset.id;
+    if(e.target.checked) state.booked[id]=true; else delete state.booked[id];
+    push("booked",state.booked); logFeed(`marked \u201c${esc(labelOf(id))}\u201d as ${e.target.checked?"booked":"not booked"}`); }
+});
+let confTimer;
+document.addEventListener("input",e=>{
+  if(e.target.classList.contains("conf")){ const id=e.target.dataset.id; state.conf[id]=e.target.value;
+    clearTimeout(confTimer); confTimer=setTimeout(()=>{ push("conf",state.conf);
+      logFeed(`saved a confirmation # for \u201c${esc(labelOf(id))}\u201d`); },800); }
+});
+
+/* sheets */
+const scrim=document.getElementById("scrim");
+const expSheet=document.getElementById("sheet"), nameSheet=document.getElementById("nameSheet");
+function openExp(){ scrim.classList.add("show"); expSheet.classList.add("show"); document.getElementById("eName").focus(); }
+function closeSheets(){ scrim.classList.remove("show"); expSheet.classList.remove("show"); nameSheet.classList.remove("show");
+  document.getElementById("eName").value=""; document.getElementById("eAmt").value=""; }
+document.getElementById("fab").onclick=()=>{ if(!myName){ openName(); } else openExp(); };
+document.getElementById("eCancel").onclick=closeSheets;
+scrim.onclick=closeSheets;
+document.getElementById("eSave").onclick=()=>{
+  const name=document.getElementById("eName").value.trim();
+  const amt=parseFloat(document.getElementById("eAmt").value);
+  const cat=document.getElementById("eCat").value;
+  if(!amt||amt<=0){ alert("Enter an amount."); return; }
+  state.expenses = state.expenses||[]; state.expenses.unshift({name,amt,cat,by:myName||"Someone",ts:Date.now()});
+  push("expenses",state.expenses); logFeed(`added expense ${money(amt)} \u2014 ${esc(name)||cat}`);
+  closeSheets();
+};
+function openName(){ scrim.classList.add("show"); nameSheet.classList.add("show");
+  const inp=document.getElementById("nameInput"); inp.value=myName; inp.focus(); }
+document.getElementById("namePill").onclick=openName;
+document.getElementById("nameSave").onclick=()=>{
+  const v=document.getElementById("nameInput").value.trim(); if(!v){ alert("Enter a name."); return; }
+  const first=!myName; myName=v; localStorage.setItem(NAMEKEY,v); renderName(); closeSheets();
+  if(first) logFeed("joined the trip \ud83d\udc4b");
+};
+
+/* boot */
+loadLocal(); renderAll(); initFirebase();
+if(!myName) setTimeout(openName, 600);
+if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
+</script>
+</body>
+</html>
