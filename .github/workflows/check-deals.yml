@@ -1,0 +1,42 @@
+name: Deal watch
+
+# Checks each booking's Groupon / operator page on a schedule and posts a tappable
+# entry into the shared Activity feed (Firebase trip/feed) when a deal changes.
+# No-ops cleanly until FIREBASE_SERVICE_ACCOUNT and FIREBASE_DB_URL secrets are set.
+
+on:
+  schedule:
+    - cron: "0 */3 * * *"   # every 3 hours (UTC, best-effort)
+  workflow_dispatch: {}       # plus a manual "Run workflow" button in the Actions tab
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deal-watch
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        working-directory: scripts
+        run: npm install
+
+      - name: Install headless Chromium
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Check deals
+        working-directory: scripts
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DB_URL: ${{ secrets.FIREBASE_DB_URL }}
+        run: node check-deals.mjs

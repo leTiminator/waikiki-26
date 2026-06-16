@@ -1,0 +1,14 @@
+{
+  "name": "waikiki-deal-watch",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Scheduled deal checker that posts new Groupon/operator deals into the shared trip's Activity feed.",
+  "scripts": {
+    "check": "node check-deals.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.3.1",
+    "playwright": "^1.47.0"
+  }
+}
