@@ -18,11 +18,14 @@ It reads your booking links straight from the `BOOKINGS` array in `index.html`
 (single source of truth — no duplicated URLs to keep in sync), and writes **only** to
 Firebase:
 
+`<room>` below is the private room id — `SHA-256(passcode)`'s first 24 hex chars — derived
+identically by the app and this job, so neither ever stores the raw passcode.
+
 | Path | Shape | Purpose |
 |---|---|---|
-| `trip/feed` | array of `{ who, text, ts }` | the line the app shows ("🆕 Groupon update — … view ↗"). Same shape the app already uses. |
-| `trip/deals/<bookingId>` | `{ fp, title, price, url, source, ts }` | the checker's own fingerprint state for change detection (the app ignores this). |
-| `trip/dealsCheckedAt` | epoch-ms number | last time the job ran. |
+| `trip/<room>/feed` | array of `{ who, text, ts }` | the line the app shows ("🆕 Groupon update — … view ↗"). Same shape the app already uses. |
+| `trip/<room>/deals/<bookingId>` | `{ fp, title, price, url, source, ts }` | the checker's own fingerprint state for change detection (the app ignores this). |
+| `trip/<room>/dealsCheckedAt` | epoch-ms number | last time the job ran. |
 
 ## Activate it (one-time, ~3 min)
 
@@ -36,7 +39,8 @@ scheduled run exits immediately and does nothing.
 2. **Add the secrets** at
    `https://github.com/leTiminator/waikiki-26/settings/secrets/actions` → **New repository secret**:
    - `FIREBASE_SERVICE_ACCOUNT` → paste the whole service-account JSON.
-   - `FIREBASE_DB_URL` → your `databaseURL`, e.g. `https://your-project-default-rtdb.firebaseio.com`.
+   - `FIREBASE_DB_URL` → your `databaseURL`, e.g. `https://waikiki-2026-default-rtdb.firebaseio.com`.
+   - `TRIP_PASSCODE` → the exact passcode you set in the app, so the watcher posts into your private room. It is never logged.
 
 3. **Test it now:** repo → **Actions** tab → **Deal watch** → **Run workflow**.
    The first run records a silent **baseline** for every booking (no feed spam). After

@@ -179,6 +179,9 @@
   <p class="hint">Used to label your edits in the Activity feed so you both know who changed what. Just a first name is fine.</p>
   <label>Your name</label>
   <input id="nameInput" placeholder="e.g. Tim" maxlength="20" />
+  <label>Trip passcode</label>
+  <input id="passInput" placeholder="a secret you both type" maxlength="40" />
+  <p class="hint">You and your travel partner must type the same passcode to share one trip. It unlocks your private data, so keep it between you. Case-sensitive.</p>
   <button class="save" id="nameSave">Save</button>
 </div>
 
@@ -315,8 +318,14 @@ const labelOf = id => {
 };
 
 /* ============ STATE + SYNC ============ */
-const NAMEKEY="waikiki26_name";
+const NAMEKEY="waikiki26_name", PASSKEY="waikiki26_pass", ROOMKEY="waikiki26_room", JOINKEY="waikiki26_join";
 let myName = localStorage.getItem(NAMEKEY) || "";
+let myPass = localStorage.getItem(PASSKEY) || "";
+let ROOM = localStorage.getItem(ROOMKEY) || "";
+async function deriveRoom(pass){
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode((pass||"").trim()));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,24);
+}
 let state = {done:{}, booked:{}, conf:{}, expenses:[], feed:[]};
 let db=null, online=false;
 
@@ -338,12 +347,12 @@ function logFeed(text){
   state.feed = state.feed || [];
   state.feed.unshift(entry);
   if(state.feed.length>60) state.feed = state.feed.slice(0,60);
-  if(online && db){ db.ref("trip/feed").set(state.feed); }
+  if(online && db){ db.ref("trip/"+ROOM+"/feed").set(state.feed); }
 }
 
 /* write a path to Firebase (or local) */
 function push(path, value){
-  if(online && db){ db.ref("trip/"+path).set(value); }
+  if(online && db){ db.ref("trip/"+ROOM+"/"+path).set(value); }
   else { saveLocal(); }
 }
 
@@ -351,15 +360,19 @@ function initFirebase(){
   if(!CONFIGURED){ // no keys yet -> local-only mode
     loadLocal(); setSync(false,"Local only"); renderAll(); return;
   }
+  if(!ROOM){ // passcode not entered yet -> wait for it
+    loadLocal(); setSync(false,"Enter passcode"); renderAll(); return;
+  }
   try{
     firebase.initializeApp(firebaseConfig);
     db = firebase.database();
     db.ref(".info/connected").on("value", s=>{ setSync(!!s.val(), s.val()?"Synced":"Offline"); });
-    db.ref("trip").on("value", snap=>{
+    db.ref("trip/"+ROOM).on("value", snap=>{
       const v = snap.val() || {};
       state.done = v.done||{}; state.booked = v.booked||{}; state.conf = v.conf||{};
       state.expenses = v.expenses||[]; state.feed = v.feed||[];
       saveLocal(); renderAll();
+      if(localStorage.getItem(JOINKEY)){ localStorage.removeItem(JOINKEY); logFeed("joined the trip 👋"); }
     });
     online = true;
   }catch(e){
@@ -463,7 +476,7 @@ document.addEventListener("click",e=>{
     state.expenses.splice(idx,1); push("expenses",state.expenses); logFeed(`deleted expense ${rm?'"'+esc(rm.name)+'"':''}`); }
   if(e.target.id==="reset"){ if(confirm("Reset ALL checks, bookings, expenses and history for BOTH phones? Can't be undone.")){
     state={done:{},booked:{},conf:{},expenses:[],feed:[]};
-    if(online&&db){ db.ref("trip").set(state);} else saveLocal(); renderAll(); } }
+    if(online&&db){ db.ref("trip/"+ROOM).set(state);} else saveLocal(); renderAll(); } }
 });
 document.addEventListener("change",e=>{
   if(e.target.classList.contains("slot-ck")){ const id=e.target.dataset.id;
@@ -502,17 +515,23 @@ document.getElementById("eSave").onclick=()=>{
   closeSheets();
 };
 function openName(){ scrim.classList.add("show"); nameSheet.classList.add("show");
-  const inp=document.getElementById("nameInput"); inp.value=myName; inp.focus(); }
+  const inp=document.getElementById("nameInput"); inp.value=myName;
+  document.getElementById("passInput").value=myPass; inp.focus(); }
 document.getElementById("namePill").onclick=openName;
-document.getElementById("nameSave").onclick=()=>{
+document.getElementById("nameSave").onclick=async ()=>{
   const v=document.getElementById("nameInput").value.trim(); if(!v){ alert("Enter a name."); return; }
-  const first=!myName; myName=v; localStorage.setItem(NAMEKEY,v); renderName(); closeSheets();
-  if(first) logFeed("joined the trip \ud83d\udc4b");
+  const pc=document.getElementById("passInput").value.trim(); if(!pc){ alert("Enter the trip passcode."); return; }
+  const first=!myName && !ROOM;
+  const room=await deriveRoom(pc);
+  myName=v; myPass=pc;
+  localStorage.setItem(NAMEKEY,v); localStorage.setItem(PASSKEY,pc); localStorage.setItem(ROOMKEY,room);
+  if(first) localStorage.setItem(JOINKEY,"1");
+  location.reload();
 };
 
 /* boot */
 loadLocal(); renderAll(); initFirebase();
-if(!myName) setTimeout(openName, 600);
+if(!myName || !ROOM) setTimeout(openName, 600);
 if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
 </script>
 </body>

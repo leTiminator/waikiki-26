@@ -5,8 +5,9 @@
 // and when that fingerprint CHANGES it drops a tappable entry into the shared
 // Activity feed (trip/feed) so both phones see the new deal live.
 //
-// It writes ONLY to Firebase (trip/feed, trip/deals, trip/dealsCheckedAt) and
-// never touches index.html. It no-ops cleanly until the GH secrets are set.
+// It writes ONLY to Firebase (trip/<room>/feed, /deals, /dealsCheckedAt — the same
+// passcode-derived room the app uses) and never touches index.html. It no-ops
+// cleanly until the GH secrets are set.
 
 import admin from "firebase-admin";
 import { chromium } from "playwright";
@@ -15,15 +16,20 @@ import { createHash } from "node:crypto";
 
 const SA = process.env.FIREBASE_SERVICE_ACCOUNT;
 const DB_URL = process.env.FIREBASE_DB_URL;
+const PASS = process.env.TRIP_PASSCODE;
 
-// --- Guard: stay inert until the trip's Firebase is wired up ---
-if (!SA || !DB_URL) {
+// --- Guard: stay inert until Firebase + the trip passcode are wired up ---
+if (!SA || !DB_URL || !PASS) {
   console.log(
-    "Firebase secrets not set (FIREBASE_SERVICE_ACCOUNT / FIREBASE_DB_URL). " +
+    "Secrets not set (FIREBASE_SERVICE_ACCOUNT / FIREBASE_DB_URL / TRIP_PASSCODE). " +
       "Nothing to do yet — exiting cleanly."
   );
   process.exit(0);
 }
+
+// Derive the same private room id the app uses: SHA-256(passcode) -> first 24 hex.
+const ROOM = createHash("sha256").update(PASS.trim()).digest("hex").slice(0, 24);
+const BASE = `trip/${ROOM}`;
 
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
@@ -98,7 +104,7 @@ function fingerprint(title, prices) {
 
 async function main() {
   const targets = targetsFrom(loadBookings());
-  const prevSnap = await db.ref("trip/deals").get();
+  const prevSnap = await db.ref(`${BASE}/deals`).get();
   const prev = prevSnap.exists() ? prevSnap.val() || {} : {};
 
   const browser = await chromium.launch({ args: ["--no-sandbox"] });
@@ -147,16 +153,16 @@ async function main() {
   await browser.close();
 
   if (Object.keys(dealUpdates).length) {
-    await db.ref("trip/deals").update(dealUpdates);
+    await db.ref(`${BASE}/deals`).update(dealUpdates);
   }
   if (newEntries.length) {
     // Prepend new deal lines, newest first, respecting the app's 60-item cap.
-    await db.ref("trip/feed").transaction((cur) => {
+    await db.ref(`${BASE}/feed`).transaction((cur) => {
       const arr = Array.isArray(cur) ? cur : cur ? Object.values(cur) : [];
       return [...newEntries, ...arr].slice(0, MAX_FEED);
     });
   }
-  await db.ref("trip/dealsCheckedAt").set(Date.now());
+  await db.ref(`${BASE}/dealsCheckedAt`).set(Date.now());
 
   console.log(
     `done — checked ${targets.length}, state updates ${Object.keys(dealUpdates).length}, feed posts ${newEntries.length}`

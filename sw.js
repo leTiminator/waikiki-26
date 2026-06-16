@@ -1,5 +1,5 @@
 // Offline cache for Waikiki '26. Bump VERSION to force an update after edits.
-const VERSION = "waikiki-v4";
+const VERSION = "waikiki-v5";
 const ASSETS = [
   "./",
   "./index.html",
