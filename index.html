@@ -181,6 +181,8 @@
   <input id="nameInput" placeholder="e.g. Tim" maxlength="20" />
   <label>Trip passcode</label>
   <input id="passInput" placeholder="a secret you both type" maxlength="40" />
+  <label>Retype passcode</label>
+  <input id="passInput2" placeholder="type it again to confirm" maxlength="40" />
   <p class="hint">You and your travel partner must type the same passcode to share one trip. It unlocks your private data, so keep it between you. Case-sensitive.</p>
   <button class="save" id="nameSave">Save</button>
 </div>
@@ -448,7 +450,7 @@ function renderTips(){
     <a href="https://www.google.com/search?q=Waikiki+weather" target="_blank" rel="noopener"><span class="ic">\u26c5</span>Weather</a>
     <a href="https://maps.google.com/?q=Twin+Fins+Waikiki" target="_blank" rel="noopener"><span class="ic">\ud83c\udfe8</span>Hotel</a>
     <a href="tel:911"><span class="ic">\ud83c\udd98</span>911</a></div>`+
-    TIPS.map(t=>`<div class="tip">${t}</div>`).join("")+`<div class="foot">Add to home screen for an app-like view</div>`;
+    TIPS.map(t=>`<div class="tip">${t}</div>`).join("")+`<button class="reset" id="changePass">Change trip passcode</button><div class="foot">Add to home screen for an app-like view</div>`;
 }
 function renderMeter(){
   let sp=BUDGET.flatMap(g=>g.items).filter(i=>state.done[i.id]).reduce((s,i)=>s+i.amt,0);
@@ -477,6 +479,7 @@ document.addEventListener("click",e=>{
   if(e.target.id==="reset"){ if(confirm("Reset ALL checks, bookings, expenses and history for BOTH phones? Can't be undone.")){
     state={done:{},booked:{},conf:{},expenses:[],feed:[]};
     if(online&&db){ db.ref("trip/"+ROOM).set(state);} else saveLocal(); renderAll(); } }
+  if(e.target.id==="changePass"){ openName(); }
 });
 document.addEventListener("change",e=>{
   if(e.target.classList.contains("slot-ck")){ const id=e.target.dataset.id;
@@ -516,11 +519,12 @@ document.getElementById("eSave").onclick=()=>{
 };
 function openName(){ scrim.classList.add("show"); nameSheet.classList.add("show");
   const inp=document.getElementById("nameInput"); inp.value=myName;
-  document.getElementById("passInput").value=myPass; inp.focus(); }
+  document.getElementById("passInput").value=myPass; document.getElementById("passInput2").value=myPass; inp.focus(); }
 document.getElementById("namePill").onclick=openName;
 document.getElementById("nameSave").onclick=async ()=>{
   const v=document.getElementById("nameInput").value.trim(); if(!v){ alert("Enter a name."); return; }
   const pc=document.getElementById("passInput").value.trim(); if(!pc){ alert("Enter the trip passcode."); return; }
+  const pc2=document.getElementById("passInput2").value.trim(); if(pc!==pc2){ alert("The two passcodes don't match — retype them the same."); return; }
   const first=!myName && !ROOM;
   const room=await deriveRoom(pc);
   myName=v; myPass=pc;
