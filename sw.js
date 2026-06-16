@@ -1,5 +1,5 @@
 // Offline cache for Waikiki '26. Bump VERSION to force an update after edits.
-const VERSION = "waikiki-v13";
+const VERSION = "waikiki-v14";
 const ASSETS = [
   "./",
   "./index.html",
@@ -25,6 +25,18 @@ self.addEventListener("activate", e => {
 self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
   if (e.request.url.includes("open-meteo.com")) return; // live weather: always network, never cache
+  // Network-first for the page itself so edits show on reload; fall back to cache offline.
+  if (e.request.mode === "navigate" || e.request.destination === "document") {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        const copy = res.clone();
+        caches.open(VERSION).then(c => c.put(e.request, copy)).catch(() => {});
+        return res;
+      }).catch(() => caches.match(e.request).then(h => h || caches.match("./index.html")))
+    );
+    return;
+  }
+  // Cache-first for static assets (icons, banner) — fast and offline-friendly.
   e.respondWith(
     caches.match(e.request).then(hit => hit || fetch(e.request).then(res => {
       const copy = res.clone();
