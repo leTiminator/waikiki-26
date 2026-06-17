@@ -72,6 +72,12 @@
   .ck:checked{background:var(--good); border-color:var(--good)}
   .ck:checked::after{content:"\2713"; position:absolute; inset:0; color:#fff; font-size:14px; font-weight:900; display:flex; align-items:center; justify-content:center}
   .slot.done .act{text-decoration:line-through; color:var(--muted)}
+  .mv{margin-left:auto; align-self:center; background:none; border:0; color:var(--muted); font-size:17px; line-height:1; padding:4px 4px; cursor:pointer; opacity:.55}
+  .mv.active{opacity:1; color:var(--coral)}
+  .mvto{background:var(--coral); color:#fff; border:0; border-radius:14px; font-size:11px; font-weight:800; padding:5px 11px; cursor:pointer; white-space:nowrap; font-family:inherit}
+  .move-banner{background:#fff4e6; border:1px solid #ffd9b0; color:#9a5b1e; font-size:12.5px; padding:10px 12px; border-radius:10px; margin-bottom:12px; line-height:1.5}
+  .mv-cancel{background:#fff; border:1px solid #d8a; color:#9a5b1e; border-radius:12px; font-size:11px; font-weight:700; padding:2px 9px; cursor:pointer; font-family:inherit}
+  .moved-tag{display:inline-block; font-size:9px; font-weight:800; color:#fff; background:var(--surf); padding:1px 6px; border-radius:10px; margin-left:6px; vertical-align:middle; letter-spacing:.3px}
   .group-label{font-size:11px; font-weight:800; color:var(--surf); text-transform:uppercase; letter-spacing:.6px; margin:18px 4px 8px}
   .li{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:8px; box-shadow:var(--shadow)}
   .li-top{display:flex; align-items:center; gap:12px}
@@ -495,7 +501,8 @@ async function deriveRoom(pass){
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode((pass||"").trim()));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,24);
 }
-let state = {done:{}, booked:{}, conf:{}, expenses:[], feed:[]};
+let state = {done:{}, booked:{}, conf:{}, expenses:[], feed:[], moved:{}};
+let movingId=null; // activity currently being moved (transient UI state)
 let db=null, online=false;
 
 const money = n => "$"+Math.round(n).toLocaleString();
@@ -538,7 +545,7 @@ function initFirebase(){
     db.ref(".info/connected").on("value", s=>{ setSync(!!s.val(), s.val()?"Synced":"Offline"); });
     db.ref("trip/"+ROOM).on("value", snap=>{
       const v = snap.val() || {};
-      state.done = v.done||{}; state.booked = v.booked||{}; state.conf = v.conf||{};
+      state.done = v.done||{}; state.booked = v.booked||{}; state.conf = v.conf||{}; state.moved = v.moved||{};
       state.expenses = v.expenses||[]; state.feed = v.feed||[];
       saveLocal(); renderAll();
       if(localStorage.getItem(JOINKEY)){ localStorage.removeItem(JOINKEY); logFeed("joined the trip 👋"); }
@@ -587,18 +594,28 @@ async function loadWeather(){
   }catch(e){}
 }
 function renderItin(){
-  document.getElementById("itin").innerHTML = ITIN.map((day,di)=>{
-    const slots=day.slots.map((s,si)=>{ const id=`d${di}_${si}`; const noteCls=s.flag?"note flag":"note";
+  const moved=state.moved||{};
+  const all=[]; ITIN.forEach((day,di)=>{ const k=day.d+day.m; day.slots.forEach((s,si)=>all.push({id:`d${di}_${si}`,s,origKey:k})); });
+  const mv = movingId ? all.find(x=>x.id===movingId) : null;
+  const banner = mv ? `<div class="move-banner">Moving <b>${esc(mv.s.a)}</b> — tap <b>Move here</b> on the day you want, or <button class="mv-cancel" id="mvCancel">Cancel</button></div>` : "";
+  const body = ITIN.map((day,di)=>{
+    const dk=day.d+day.m;
+    const here=all.filter(x=>(moved[x.id]||x.origKey)===dk);
+    const slots=here.map(x=>{ const s=x.s,id=x.id; const noteCls=s.flag?"note flag":"note";
       const note=s.n?`<div class="${noteCls}">${s.n}</div>`:"";
+      const mt=(moved[id]&&moved[id]!==x.origKey)?`<span class="moved-tag">moved</span>`:"";
       return `<div class="slot ${state.done[id]?'done':''}"><input type="checkbox" class="ck slot-ck" data-id="${id}" ${state.done[id]?"checked":""}>
-        <div class="time">${s.t}</div><div class="body"><div class="act">${s.a}</div>${note}</div></div>`; }).join("");
+        <div class="time">${s.t}</div><div class="body"><div class="act">${s.a}${mt}</div>${note}</div>
+        <button class="mv ${movingId===id?'active':''}" data-id="${id}" title="Move to another day">↪</button></div>`; }).join("");
     let tag=""; if(day.tag==="book") tag=`<span class="day-tag tag-book">BOOK AHEAD</span>`; if(day.tag==="anchor") tag=`<span class="day-tag tag-anchor">PAIR THESE</span>`;
     const _w=WX[isoOf(day)]; const wx=_w?`<a class="wx" href="https://forecast.weather.gov/MapClick.php?lat=21.2793&lon=-157.8293" target="_blank" rel="noopener" title="Open the National Weather Service forecast for Waikiki"><span class="wx-ic">${wxIcon(_w.c,_w.p)}</span><b>${_w.hi}°/${_w.lo}°</b></a>`:"";
-    return `<div class="day ${di===0?'open':''}"><div class="day-head">
+    const moveHere = (mv && dk!==(moved[movingId]||mv.origKey)) ? `<button class="mvto" data-key="${dk}">Move here</button>` : "";
+    return `<div class="day ${(di===0||!!movingId)?'open':''}"><div class="day-head">
       <div class="day-date"><span class="d">${day.d}</span><span class="m">${day.m}</span></div>
-      <div class="day-meta"><div class="day-dow">${day.dow}</div><div class="day-theme">${day.theme}</div>${tag}</div>${wx}
-      <span class="chev">\u203a</span></div><div class="day-body">${slots}</div></div>`;
+      <div class="day-meta"><div class="day-dow">${day.dow}</div><div class="day-theme">${day.theme}</div>${tag}</div>${moveHere}${wx}
+      <span class="chev">›</span></div><div class="day-body">${slots}</div></div>`;
   }).join("");
+  document.getElementById("itin").innerHTML = banner + body;
 }
 function renderBook(){
   const rows=BOOKINGS.map(b=>{ const isB=state.booked[b.id]; const links=[];
@@ -673,11 +690,17 @@ document.querySelectorAll("nav.tabs button").forEach(b=>{ b.onclick=()=>{
 
 document.addEventListener("click",e=>{
   const head=e.target.closest(".day-head");
-  if(head&&!e.target.classList.contains("ck")&&!e.target.closest(".wx")) head.closest(".day").classList.toggle("open");
+  if(head&&!e.target.classList.contains("ck")&&!e.target.closest(".wx")&&!e.target.closest(".mvto")) head.closest(".day").classList.toggle("open");
+  if(e.target.classList.contains("mv")){ const id=e.target.dataset.id; movingId=(movingId===id?null:id); renderItin(); if(movingId) window.scrollTo({top:0,behavior:"smooth"}); return; }
+  if(e.target.classList.contains("mvto")&&movingId){ const key=e.target.dataset.key;
+    let origKey=null,actName=""; ITIN.forEach((day,di)=>day.slots.forEach((s,si)=>{ if(`d${di}_${si}`===movingId){origKey=day.d+day.m; actName=s.a;} }));
+    state.moved=state.moved||{}; if(key===origKey) delete state.moved[movingId]; else state.moved[movingId]=key;
+    push("moved",state.moved); logFeed(`moved "${esc(actName)}" to ${key.replace(/^(\d+)([A-Za-z]+)$/,"$2 $1")}`); movingId=null; renderItin(); return; }
+  if(e.target.id==="mvCancel"){ movingId=null; renderItin(); return; }
   if(e.target.classList.contains("del")){ const idx=+e.target.dataset.idx; const rm=state.expenses[idx];
     state.expenses.splice(idx,1); push("expenses",state.expenses); logFeed(`deleted expense ${rm?'"'+esc(rm.name)+'"':''}`); }
   if(e.target.id==="reset"){ if(confirm("Reset ALL checks, bookings, expenses and history for BOTH phones? Can't be undone.")){
-    state={done:{},booked:{},conf:{},expenses:[],feed:[]};
+    state={done:{},booked:{},conf:{},expenses:[],feed:[],moved:{}};
     if(online&&db){ db.ref("trip/"+ROOM).set(state);} else saveLocal(); renderAll(); } }
   if(e.target.id==="changePass"){ openName(); }
 });
