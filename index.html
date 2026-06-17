@@ -753,9 +753,10 @@ document.addEventListener("click",e=>{
   if(e.target.classList.contains("del")){ const idx=+e.target.dataset.idx; const rm=state.expenses[idx];
     if(!confirm("Delete this expense"+(rm&&rm.name?" ("+rm.name+")":"")+"?")) return;
     state.expenses.splice(idx,1); push("expenses",state.expenses); logFeed(`deleted expense ${rm?'"'+esc(rm.name)+'"':''}`); }
-  if(e.target.id==="reset"){ if(confirm("Reset ALL checks, bookings, expenses and history for BOTH phones? Can't be undone.")){
+  if(e.target.id==="reset"){ if(!confirm("Reset ALL checks, bookings, expenses and history for BOTH phones? Can't be undone.")) return;
+    if(myPass){ const pw=prompt("Enter the trip passcode to confirm this reset:"); if(pw===null) return; if(pw.trim()!==myPass){ alert("Passcode doesn't match — reset cancelled."); return; } }
     state={done:{},booked:{},conf:{},expenses:[],feed:[],moved:{},amounts:{},purchases:{},customItems:[]};
-    if(online&&db){ db.ref("trip/"+ROOM).set(state);} else saveLocal(); renderAll(); } }
+    if(online&&db){ db.ref("trip/"+ROOM).set(state);} else saveLocal(); logFeed("reset the whole trip"); renderAll(); return; }
   if(e.target.id==="changePass"){ openName(); }
 });
 document.addEventListener("change",e=>{
@@ -813,6 +814,15 @@ document.getElementById("nameSave").onclick=async ()=>{
 loadLocal(); renderAll(); initFirebase(); loadWeather(); setInterval(loadWeather, 3600000);
 if(!myName || !ROOM) setTimeout(openName, 600);
 if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
+
+/* Phone back button: close an open sheet (or cancel a move); otherwise jump to the Plan home tab. */
+history.pushState({wk:1}, "");
+window.addEventListener("popstate", ()=>{
+  if(scrim.classList.contains("show")){ closeSheets(); }
+  else if(movingId){ movingId=null; renderItin(); }
+  else { const home=document.querySelector('nav.tabs button[data-tab="itin"]'); if(home && !home.classList.contains("active")) home.click(); }
+  history.pushState({wk:1}, ""); // re-arm so the next back is caught too
+});
 </script>
 </body>
 </html>
