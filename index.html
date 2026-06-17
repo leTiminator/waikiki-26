@@ -720,8 +720,10 @@ document.addEventListener("click",e=>{
   if(e.target.classList.contains("mv")){ const id=e.target.dataset.id; movingId=(movingId===id?null:id); renderItin(); if(movingId) window.scrollTo({top:0,behavior:"smooth"}); return; }
   if(e.target.classList.contains("mvto")&&movingId){ const key=e.target.dataset.key;
     let origKey=null,actName=""; ITIN.forEach((day,di)=>day.slots.forEach((s,si)=>{ if(`d${di}_${si}`===movingId){origKey=day.d+day.m; actName=s.a;} }));
+    const lbl=key.replace(/^(\d+)([A-Za-z]+)$/,"$2 $1");
+    if(!confirm(`Move "${actName}" to ${lbl}?`)) return;
     state.moved=state.moved||{}; if(key===origKey) delete state.moved[movingId]; else state.moved[movingId]=key;
-    push("moved",state.moved); logFeed(`moved "${esc(actName)}" to ${key.replace(/^(\d+)([A-Za-z]+)$/,"$2 $1")}`); movingId=null; renderItin(); return; }
+    push("moved",state.moved); logFeed(`moved "${esc(actName)}" to ${lbl}`); movingId=null; renderItin(); return; }
   if(e.target.id==="mvCancel"){ movingId=null; renderItin(); return; }
   if(e.target.classList.contains("amt-edit")){ const id=e.target.dataset.id; const it=BUDGET.flatMap(g=>g.items).find(x=>x.id===id); if(!it) return;
     const v=prompt("New cost for "+it.name+" ($):", amtOf(it));
@@ -735,8 +737,11 @@ document.addEventListener("click",e=>{
       push("purchases",state.purchases); logFeed(`+ ${money(a)} on ${esc(it.name)}${note?" ("+esc(note)+")":""}`); renderAll(); }
       else alert("Couldn't find an amount in that."); } return; }
   if(e.target.classList.contains("buy-del")){ const id=e.target.dataset.id, idx=+e.target.dataset.idx;
-    if(state.purchases&&state.purchases[id]){ state.purchases[id].splice(idx,1); if(!state.purchases[id].length) delete state.purchases[id]; push("purchases",state.purchases); renderAll(); } return; }
+    const arr=state.purchases&&state.purchases[id]; if(!arr||!arr[idx]) return; const pp=arr[idx];
+    if(!confirm("Remove the "+money(pp.a)+" purchase"+(pp.n?" ("+pp.n+")":"")+"?")) return;
+    arr.splice(idx,1); if(!arr.length) delete state.purchases[id]; push("purchases",state.purchases); logFeed(`removed a ${money(pp.a)} purchase`); renderAll(); return; }
   if(e.target.classList.contains("del")){ const idx=+e.target.dataset.idx; const rm=state.expenses[idx];
+    if(!confirm("Delete this expense"+(rm&&rm.name?" ("+rm.name+")":"")+"?")) return;
     state.expenses.splice(idx,1); push("expenses",state.expenses); logFeed(`deleted expense ${rm?'"'+esc(rm.name)+'"':''}`); }
   if(e.target.id==="reset"){ if(confirm("Reset ALL checks, bookings, expenses and history for BOTH phones? Can't be undone.")){
     state={done:{},booked:{},conf:{},expenses:[],feed:[],moved:{},amounts:{},purchases:{}};
