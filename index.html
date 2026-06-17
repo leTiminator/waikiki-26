@@ -85,6 +85,7 @@
   .li .name{font-size:14px; font-weight:600}
   .li .sub{font-size:11.5px; color:var(--muted); margin-top:1px}
   .li .amt{font-size:15px; font-weight:800; color:var(--ocean)}
+  .amt-edit{font-family:inherit; font-size:15px; font-weight:800; color:var(--ocean); background:none; border:0; border-bottom:1px dashed var(--surf); padding:0 0 1px; cursor:pointer; line-height:1.1}
   .li.done .name{text-decoration:line-through; color:var(--muted)}
   .li.done{background:#fbfaf6}
   .book{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; align-items:center}
@@ -501,13 +502,14 @@ async function deriveRoom(pass){
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode((pass||"").trim()));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,24);
 }
-let state = {done:{}, booked:{}, conf:{}, expenses:[], feed:[], moved:{}};
+let state = {done:{}, booked:{}, conf:{}, expenses:[], feed:[], moved:{}, amounts:{}};
 let movingId=null; // activity currently being moved (transient UI state)
 let db=null, online=false;
 
 const money = n => "$"+Math.round(n).toLocaleString();
 const esc = s => (s||"").replace(/"/g,"&quot;").replace(/</g,"&lt;");
-const PLANNED = BUDGET.flatMap(g=>g.items).reduce((s,i)=>s+i.amt,0);
+const amtOf = i => (state.amounts && state.amounts[i.id]!=null) ? state.amounts[i.id] : i.amt;
+const planned = () => BUDGET.flatMap(g=>g.items).reduce((s,i)=>s+amtOf(i),0);
 const initials = n => (n||"?").trim().slice(0,2).toUpperCase();
 function timeAgo(ts){ if(!ts) return ""; const s=Math.floor((Date.now()-ts)/1000);
   if(s<60) return "just now"; if(s<3600) return Math.floor(s/60)+"m ago";
@@ -545,7 +547,7 @@ function initFirebase(){
     db.ref(".info/connected").on("value", s=>{ setSync(!!s.val(), s.val()?"Synced":"Offline"); });
     db.ref("trip/"+ROOM).on("value", snap=>{
       const v = snap.val() || {};
-      state.done = v.done||{}; state.booked = v.booked||{}; state.conf = v.conf||{}; state.moved = v.moved||{};
+      state.done = v.done||{}; state.booked = v.booked||{}; state.conf = v.conf||{}; state.moved = v.moved||{}; state.amounts = v.amounts||{};
       state.expenses = v.expenses||[]; state.feed = v.feed||[];
       saveLocal(); renderAll();
       if(localStorage.getItem(JOINKEY)){ localStorage.removeItem(JOINKEY); logFeed("joined the trip 👋"); }
@@ -640,18 +642,18 @@ function renderBook(){
   document.getElementById("book").innerHTML=`<div class="group-label">Tap to book \u2014 then mark it & save your confirmation #</div>${rows}<div class="foot">Direct = operator's site \u00b7 green = Groupon \u00b7 edits sync to both phones</div><div class="group-label">More ideas \u2014 curated Oahu activities & deals (browse only)</div>${cur}<div class="foot">Curated picks \u2014 prices & deals rotate; confirm on the operator's site before booking</div>`;
 }
 function renderBudget(){
-  let sp=BUDGET.flatMap(g=>g.items).filter(i=>state.done[i.id]).reduce((s,i)=>s+i.amt,0);
+  let sp=BUDGET.flatMap(g=>g.items).filter(i=>state.done[i.id]).reduce((s,i)=>s+amtOf(i),0);
   let ex=(state.expenses||[]).reduce((s,e)=>s+e.amt,0);
   const groups=BUDGET.map(g=>{ const rows=g.items.map(i=>{ const sub=i.sub?`<div class="sub">${i.sub}</div>`:"";
     return `<div class="li ${state.done[i.id]?'done':''}"><div class="li-top"><input type="checkbox" class="ck bud-ck" data-id="${i.id}" ${state.done[i.id]?"checked":""}>
-      <div class="body"><div class="name">${i.name}</div>${sub}</div><div class="amt">${money(i.amt)}</div></div></div>`; }).join("");
+      <div class="body"><div class="name">${i.name}</div>${sub}</div><button class="amt amt-edit" data-id="${i.id}" title="Tap to edit cost">${money(amtOf(i))}</button></div></div>`; }).join("");
     return `<div class="group-label">${g.g}</div>${rows}`; }).join("");
   const expRows=(state.expenses&&state.expenses.length)? state.expenses.map((e,idx)=>`<div class="exp"><div class="body"><div class="name">${esc(e.name)||"Expense"}</div><div class="sub">${e.cat}${e.by?" \u00b7 "+esc(e.by):""}</div></div><div class="amt">${money(e.amt)}</div><button class="del" data-idx="${idx}">\u00d7</button></div>`).join("") : `<div class="empty">No extra expenses logged yet.<br>Tap <b>+</b> to add real spending \u2014 it shows on both phones.</div>`;
   document.getElementById("budget").innerHTML=`<div class="summary">
     <div class="row"><span>Planned items checked off</span><span class="v">${money(sp)}</span></div>
     <div class="row"><span>Extra expenses logged</span><span class="v">${money(ex)}</span></div>
     <div class="row tot"><span>Total spent</span><span class="v">${money(sp+ex)}</span></div>
-    <div class="row"><span class="muted">Full planned budget</span><span class="muted">${money(PLANNED)}</span></div></div>
+    <div class="row"><span class="muted">Full planned budget</span><span class="muted">${money(planned())}</span></div></div>
     <div class="group-label">Planned \u2014 check off as you book / pay</div>${groups}
     <div class="group-label">Actual expenses on the trip</div>${expRows}
     <button class="reset" id="reset">Reset everything (both phones)</button><div class="foot">Shared trip \u00b7 synced live</div>`;
@@ -670,12 +672,13 @@ function renderTips(){
     TIPS.map(t=>`<div class="tip">${t}</div>`).join("")+`<button class="reset" id="changePass">Change trip passcode</button><div class="foot">Add to home screen for an app-like view</div>`;
 }
 function renderMeter(){
-  let sp=BUDGET.flatMap(g=>g.items).filter(i=>state.done[i.id]).reduce((s,i)=>s+i.amt,0);
+  const P=planned();
+  let sp=BUDGET.flatMap(g=>g.items).filter(i=>state.done[i.id]).reduce((s,i)=>s+amtOf(i),0);
   let ex=(state.expenses||[]).reduce((s,e)=>s+e.amt,0); let spent=sp+ex;
   document.getElementById("mSpent").textContent=money(spent);
-  document.getElementById("mPlan").textContent="Planned budget "+money(PLANNED);
-  document.getElementById("mFill").style.width=Math.min(100,PLANNED?spent/PLANNED*100:0)+"%";
-  const left=PLANNED-spent;
+  document.getElementById("mPlan").textContent="Planned budget "+money(P);
+  document.getElementById("mFill").style.width=Math.min(100,P?spent/P*100:0)+"%";
+  const left=P-spent;
   document.getElementById("mLeft").textContent=(left>=0?money(left)+" left":money(-left)+" over");
   document.getElementById("meter").classList.toggle("over",left<0);
 }
@@ -697,10 +700,15 @@ document.addEventListener("click",e=>{
     state.moved=state.moved||{}; if(key===origKey) delete state.moved[movingId]; else state.moved[movingId]=key;
     push("moved",state.moved); logFeed(`moved "${esc(actName)}" to ${key.replace(/^(\d+)([A-Za-z]+)$/,"$2 $1")}`); movingId=null; renderItin(); return; }
   if(e.target.id==="mvCancel"){ movingId=null; renderItin(); return; }
+  if(e.target.classList.contains("amt-edit")){ const id=e.target.dataset.id; const it=BUDGET.flatMap(g=>g.items).find(x=>x.id===id); if(!it) return;
+    const v=prompt("New cost for "+it.name+" ($):", amtOf(it));
+    if(v!==null){ const n=Math.round(parseFloat(String(v).replace(/[^0-9.]/g,"")));
+      if(!isNaN(n)&&n>=0){ state.amounts=state.amounts||{}; if(n===it.amt) delete state.amounts[id]; else state.amounts[id]=n; push("amounts",state.amounts); logFeed(`set "${esc(it.name)}" cost to ${money(n)}`); renderAll(); }
+      else alert("Enter a number."); } return; }
   if(e.target.classList.contains("del")){ const idx=+e.target.dataset.idx; const rm=state.expenses[idx];
     state.expenses.splice(idx,1); push("expenses",state.expenses); logFeed(`deleted expense ${rm?'"'+esc(rm.name)+'"':''}`); }
   if(e.target.id==="reset"){ if(confirm("Reset ALL checks, bookings, expenses and history for BOTH phones? Can't be undone.")){
-    state={done:{},booked:{},conf:{},expenses:[],feed:[],moved:{}};
+    state={done:{},booked:{},conf:{},expenses:[],feed:[],moved:{},amounts:{}};
     if(online&&db){ db.ref("trip/"+ROOM).set(state);} else saveLocal(); renderAll(); } }
   if(e.target.id==="changePass"){ openName(); }
 });
