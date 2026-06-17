@@ -54,7 +54,7 @@
   .day-tag{display:inline-block; font-size:9.5px; font-weight:800; padding:2px 7px; border-radius:20px; margin-top:5px; letter-spacing:.3px}
   .tag-book{background:#ffe3d6; color:var(--coral-dk)}
   .tag-anchor{background:#d8efe6; color:var(--good)}
-  .wx{display:flex; align-items:center; gap:5px; color:var(--muted); font-size:12px; white-space:nowrap}
+  .wx{display:flex; align-items:center; gap:5px; color:var(--muted); font-size:12px; white-space:nowrap; text-decoration:none; cursor:pointer}
   .wx-ic{font-size:16px; line-height:1}
   .wx b{color:var(--ink); font-weight:700}
   .chev{color:var(--muted); transition:transform .25s; font-size:18px}
@@ -291,6 +291,60 @@ const BOOKINGS = [
     note:"Compare aggregators. You mainly need it for Kualoa + maybe North Shore.",
     official:"https://www.costcotravel.com/Rental-Cars", groupon:null, phone:null, map:null},
 ];
+/* Curated browse-only ideas for the Book tab (not synced, not editable in-app). */
+const CURATED = [
+  {id:"c_pcc", name:"Polynesian Cultural Center", when:"Eve · closed Sun", price:"~$140–230/pp",
+    note:"Luau, island villages & the 'Hā: Breath of Life' night show. La'ie (~1 hr) — make it a North Shore day.",
+    official:"https://www.polynesia.com/", groupon:"https://www.groupon.com/local/honolulu/things-to-do?query=polynesian+cultural+center", phone:null, map:"https://maps.google.com/?q=Polynesian+Cultural+Center"},
+  {id:"c_paradise", name:"Paradise Cove Luau", when:"Eve", price:"~$130–190/pp",
+    note:"Beachfront luau at Ko Olina — sunset, crafts & buffet. West side, ~45 min from Waikiki.",
+    official:"https://www.paradisecove.com/", groupon:"https://www.groupon.com/local/honolulu/things-to-do?query=paradise+cove+luau", phone:null, map:"https://maps.google.com/?q=Paradise+Cove+Luau+Ko+Olina"},
+  {id:"c_star", name:"Star of Honolulu dinner cruise", when:"Eve", price:"~$120–190/pp",
+    note:"Sunset dinner & show cruise off Waikiki. Multiple dining tiers; whale watching in winter.",
+    official:"https://www.starofhonolulu.com/", groupon:"https://www.groupon.com/local/honolulu/things-to-do?query=star+of+honolulu", phone:null, map:"https://maps.google.com/?q=Aloha+Tower+Marketplace"},
+  {id:"c_atlantis", name:"Atlantis Submarine Waikiki", when:"AM/Aft", price:"~$120/pp",
+    note:"Real submarine dive to reefs & wrecks off Waikiki. Great for a no-swim ocean day.",
+    official:"https://www.atlantisadventures.com/", groupon:"https://www.groupon.com/local/honolulu/things-to-do?query=atlantis+submarine", phone:null, map:"https://maps.google.com/?q=Hilton+Hawaiian+Village"},
+  {id:"c_maitai", name:"Maita'i Catamaran sunset sail", when:"Eve", price:"~$40–75/pp",
+    note:"Sail right off Waikiki Beach. Tradewind or sunset sails; optional drinks aboard.",
+    official:"https://www.maitaicatamaran.net/", groupon:"https://www.groupon.com/local/honolulu/things-to-do?query=catamaran+waikiki", phone:null, map:"https://maps.google.com/?q=Waikiki+Beach+catamaran"},
+  {id:"c_shark", name:"North Shore shark cage dive", when:"AM", price:"~$100–160/pp",
+    note:"Cage snorkel with Galapagos & sandbar sharks off Hale'iwa. Early AM = calmest water.",
+    official:"https://www.hawaiisharkencounters.com/", groupon:"https://www.groupon.com/local/honolulu/things-to-do?query=shark+cage+dive", phone:null, map:"https://maps.google.com/?q=Haleiwa+Small+Boat+Harbor"},
+  {id:"c_hanauma", name:"Hanauma Bay snorkeling", when:"AM · closed Mon–Tue", price:"$25/pp entry",
+    note:"Protected reef bay, the island's best snorkeling. RESERVE online a couple days ahead — slots vanish.",
+    official:"https://pros.hnl.info/", groupon:null, phone:null, map:"https://maps.google.com/?q=Hanauma+Bay+Nature+Preserve"},
+  {id:"c_pearl", name:"Pearl Harbor – USS Arizona", when:"AM", price:"Free (+$1 res fee)",
+    note:"Memorial program & boat to the USS Arizona. Reserve timed tickets on Recreation.gov ahead.",
+    official:"https://www.nps.gov/perl/", groupon:null, phone:null, map:"https://maps.google.com/?q=Pearl+Harbor+National+Memorial"},
+  {id:"c_dole", name:"Dole Plantation", when:"Day", price:"Free entry · maze/train ~$10–15",
+    note:"Pineapple Garden Maze, train & the famous DoleWhip. Pairs with a North Shore loop.",
+    official:"https://www.doleplantation.com/", groupon:null, phone:null, map:"https://maps.google.com/?q=Dole+Plantation+Wahiawa"},
+  {id:"c_sealife", name:"Sea Life Park Hawaii", when:"Day", price:"~$45/pp",
+    note:"Marine park at Makapu'u with dolphin/ray encounters (extra). Pairs with east-side beaches.",
+    official:"https://www.sealifeparkhawaii.com/", groupon:"https://www.groupon.com/local/honolulu/things-to-do?query=sea+life+park", phone:null, map:"https://maps.google.com/?q=Sea+Life+Park+Hawaii"},
+  {id:"c_aquarium", name:"Waikiki Aquarium", when:"Day", price:"~$12/pp",
+    note:"Small, walkable reef aquarium right on Kalākaua — an easy half-hour from the hotel.",
+    official:"https://www.waikikiaquarium.org/", groupon:null, phone:null, map:"https://maps.google.com/?q=Waikiki+Aquarium"},
+  {id:"c_zoo", name:"Honolulu Zoo", when:"AM", price:"~$21/pp",
+    note:"42-acre zoo at the Diamond Head end of Waikiki. Go early before the heat.",
+    official:"https://www.honoluluzoo.org/", groupon:null, phone:null, map:"https://maps.google.com/?q=Honolulu+Zoo"},
+  {id:"c_surf", name:"Waikiki surf lesson", when:"AM", price:"~$75–120/pp",
+    note:"Gentle Waikiki rollers, beginner-friendly. Group or private; boards included.",
+    official:null, groupon:"https://www.groupon.com/local/honolulu/things-to-do?query=surf+lesson+waikiki", phone:null, map:"https://maps.google.com/?q=Waikiki+Beach+surf+lessons"},
+  {id:"c_byodo", name:"Byodo-In Temple", when:"Day", price:"~$5/pp",
+    note:"Serene replica Japanese temple under the Ko'olau cliffs in Kane'ohe. Quick, photogenic stop.",
+    official:"https://byodo-in.com/", groupon:null, phone:null, map:"https://maps.google.com/?q=Byodo-In+Temple"},
+  {id:"c_lanikai", name:"Lanikai Pillbox hike (Ka'iwa Ridge)", when:"AM (sunrise)", price:"Free",
+    note:"Short, steep ridge with epic Mokulua-island views. Park considerately in the neighborhood.",
+    official:"https://www.google.com/search?q=Lanikai+Pillbox+hike+Kaiwa+Ridge", groupon:null, phone:null, map:"https://maps.google.com/?q=Kaiwa+Ridge+Trailhead"},
+  {id:"c_manoa", name:"Mānoa Falls Trail", when:"Day", price:"Free · ~$7 parking",
+    note:"Easy ~1.6 mi rainforest hike to a 150-ft waterfall. Muddy — wear grippy shoes.",
+    official:"https://www.google.com/search?q=Manoa+Falls+Trail", groupon:null, phone:null, map:"https://maps.google.com/?q=Manoa+Falls+Trailhead"},
+  {id:"c_makapuu", name:"Makapu'u Lighthouse Trail", when:"AM", price:"Free",
+    note:"Paved 2 mi out-and-back to lighthouse lookouts; winter whale spotting. Hot & shadeless.",
+    official:"https://www.google.com/search?q=Makapuu+Lighthouse+Trail", groupon:null, phone:null, map:"https://maps.google.com/?q=Makapuu+Lighthouse+Trail"},
+];
 const BUDGET = [
   {g:"Activities",items:[
     {id:"b_para",name:"Parasailing \u2014 2 pax",sub:"Maunalua Bay, $80/pp",amt:160},
@@ -435,7 +489,7 @@ function renderItin(){
       return `<div class="slot ${state.done[id]?'done':''}"><input type="checkbox" class="ck slot-ck" data-id="${id}" ${state.done[id]?"checked":""}>
         <div class="time">${s.t}</div><div class="body"><div class="act">${s.a}</div>${note}</div></div>`; }).join("");
     let tag=""; if(day.tag==="book") tag=`<span class="day-tag tag-book">BOOK AHEAD</span>`; if(day.tag==="anchor") tag=`<span class="day-tag tag-anchor">PAIR THESE</span>`;
-    const _w=WX[isoOf(day)]; const wx=_w?`<div class="wx"><span class="wx-ic">${wxIcon(_w.c)}</span><b>${_w.hi}°/${_w.lo}°</b></div>`:"";
+    const _w=WX[isoOf(day)]; const wx=_w?`<a class="wx" href="https://www.google.com/search?q=Waikiki+weather+${day.m}+${day.d}" target="_blank" rel="noopener" title="Open the ${day.m} ${day.d} forecast"><span class="wx-ic">${wxIcon(_w.c)}</span><b>${_w.hi}°/${_w.lo}°</b></a>`:"";
     return `<div class="day ${di===0?'open':''}"><div class="day-head">
       <div class="day-date"><span class="d">${day.d}</span><span class="m">${day.m}</span></div>
       <div class="day-meta"><div class="day-dow">${day.dow}</div><div class="day-theme">${day.theme}</div>${tag}</div>${wx}
@@ -454,7 +508,15 @@ function renderBook(){
       <div class="booked-row ${isB?'is-booked':''}"><input type="checkbox" class="ck bk-ck" data-id="${b.id}" ${isB?"checked":""} style="width:18px;height:18px;min-width:18px">
         <span>${isB?"Booked":"Mark booked"}</span><input class="conf" data-id="${b.id}" placeholder="Confirmation #" value="${esc(state.conf[b.id])}"></div></div>`;
   }).join("");
-  document.getElementById("book").innerHTML=`<div class="group-label">Tap to book \u2014 then mark it & save your confirmation #</div>${rows}<div class="foot">Direct = operator's site \u00b7 green = Groupon \u00b7 edits sync to both phones</div>`;
+  const cur=CURATED.map(b=>{ const links=[];
+    if(b.official) links.push(`<a class="official" href="${b.official}" target="_blank" rel="noopener">Details \u2197</a>`);
+    if(b.groupon) links.push(`<a class="groupon" href="${b.groupon}" target="_blank" rel="noopener">Groupon \u2197</a>`);
+    if(b.map) links.push(`<a href="${b.map}" target="_blank" rel="noopener">\ud83d\udccd Map</a>`);
+    return `<div class="li"><div class="li-top"><div class="body"><div class="name">${b.name}</div><div class="sub">${b.when} \u00b7 ${b.price}</div></div></div>
+      <div class="note" style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45">${b.note}</div>
+      <div class="book">${links.join("")}</div></div>`;
+  }).join("");
+  document.getElementById("book").innerHTML=`<div class="group-label">Tap to book \u2014 then mark it & save your confirmation #</div>${rows}<div class="foot">Direct = operator's site \u00b7 green = Groupon \u00b7 edits sync to both phones</div><div class="group-label">More ideas \u2014 curated Oahu activities & deals (browse only)</div>${cur}<div class="foot">Curated picks \u2014 prices & deals rotate; confirm on the operator's site before booking</div>`;
 }
 function renderBudget(){
   let sp=BUDGET.flatMap(g=>g.items).filter(i=>state.done[i.id]).reduce((s,i)=>s+i.amt,0);
@@ -507,7 +569,7 @@ document.querySelectorAll("nav.tabs button").forEach(b=>{ b.onclick=()=>{
 
 document.addEventListener("click",e=>{
   const head=e.target.closest(".day-head");
-  if(head&&!e.target.classList.contains("ck")) head.closest(".day").classList.toggle("open");
+  if(head&&!e.target.classList.contains("ck")&&!e.target.closest(".wx")) head.closest(".day").classList.toggle("open");
   if(e.target.classList.contains("del")){ const idx=+e.target.dataset.idx; const rm=state.expenses[idx];
     state.expenses.splice(idx,1); push("expenses",state.expenses); logFeed(`deleted expense ${rm?'"'+esc(rm.name)+'"':''}`); }
   if(e.target.id==="reset"){ if(confirm("Reset ALL checks, bookings, expenses and history for BOTH phones? Can't be undone.")){
@@ -568,7 +630,7 @@ document.getElementById("nameSave").onclick=async ()=>{
 };
 
 /* boot */
-loadLocal(); renderAll(); initFirebase(); loadWeather();
+loadLocal(); renderAll(); initFirebase(); loadWeather(); setInterval(loadWeather, 3600000);
 if(!myName || !ROOM) setTimeout(openName, 600);
 if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
 </script>
