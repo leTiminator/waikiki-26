@@ -135,7 +135,7 @@
 <body>
 <header>
   <h1>Waikiki '26 🌺</h1>
-  <p class="sub">Jun 25 – Jul 6 · Twin Fins · 2 people</p>
+  <p class="sub">Jun 23 – Jul 6 · Twin Fins · 2 people</p>
   <div class="hrow">
     <span class="pill" id="countdown"></span>
     <button class="pill" id="namePill">\ud83d\udc64 Set name</button>
@@ -218,10 +218,18 @@ const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE_");
 <script>
 /* ============ TRIP DATA (static) ============ */
 const ITIN = [
-  {d:"25",m:"Jun",dow:"Thursday",theme:"Arrive & settle in",slots:[
-    {t:"Day",a:"Check in, grab beach gear",n:"Twin Fins: 3 beach rentals/day \u2014 boards & chairs. Hit the beach out front."},
-    {t:"Aft",a:"Walk Kalakaua Ave, find a food truck",n:"Ease in, scope dinner spots. Don't over-schedule day one."},
-    {t:"Eve",a:"Sunset on the beach",n:"Free. Do PADI eLearning tonight if you bought it \u2014 saves class time."}]},
+  {d:"23",m:"Jun",dow:"Tuesday",theme:"Arrive in O\u02bbahu \u2708\ufe0f",slots:[
+    {t:"6:47a",a:"Land at HNL \u2014 flight AS 1017 (Hawaiian)",n:"Red-eye in! Grab a rideshare or pick up the rental and head to Waikiki.",flag:true},
+    {t:"Day",a:"Check in + grab beach gear",n:"Twin Fins check-in ~3pm \u2014 drop bags early if the room isn't ready. 3 beach rentals/day: boards & chairs."},
+    {t:"Eve",a:"Sunset on the beach",n:"Ease into island time. Do PADI eLearning tonight if you bought it \u2014 saves class time."}]},
+  {d:"24",m:"Jun",dow:"Wednesday",theme:"Beach & explore",slots:[
+    {t:"Day",a:"Beach day out front",n:"No agenda \u2014 swim, boards, chairs. Reef-safe sunscreen only (it's the law)."},
+    {t:"Aft",a:"Walk Kal\u0101kaua Ave + food trucks",n:"Scope dinner spots; ABC stores for water & snacks."},
+    {t:"Eve",a:"Casual dinner + sunset",n:""}]},
+  {d:"25",m:"Jun",dow:"Thursday",theme:"Beach & explore",slots:[
+    {t:"AM",a:"Pool / beach morning",n:"Last easy day before the scuba block starts tomorrow."},
+    {t:"Aft",a:"Wander Waikiki \u2014 optional Diamond Head",n:"Save Diamond Head for the 28th, or do it now if you're keen (reserve entry online)."},
+    {t:"Eve",a:"Sunset stroll",n:""}]},
   {d:"26",m:"Jun",dow:"Friday",theme:"Scuba \u2014 Cert Day 1",tag:"book",slots:[
     {t:"AM",a:"Confined-water session + skills",n:"Manny's Diving, Kewalo Basin (~10 min). Day 1 is the heavy learning day."},
     {t:"Aft",a:"First open-water dive(s)",n:"Most of the day is committed. Plan a low-key evening."},
@@ -261,7 +269,7 @@ const ITIN = [
     {t:"Aft",a:"Pack, souvenirs, return rental car",n:"Return the car today to avoid an airport-morning scramble."},
     {t:"Eve",a:"Final dinner",n:"Third dinner buffer \u2014 send the trip off right."}]},
   {d:"6",m:"Jul",dow:"Monday",theme:"Depart",slots:[
-    {t:"AM",a:"Check out, head to HNL",n:"Allow buffer for security + rental return. A hui hou \ud83e\udd19"}]},
+    {t:"AM",a:"Check out, head to HNL \u2014 flight AS 900 (Hawaiian)",n:"Allow buffer for security + rental return. A hui hou \ud83e\udd19"}]},
 ];
 const BOOKINGS = [
   {id:"bk_scuba", name:"Scuba \u2014 Open Water Cert", when:"Jun 26\u201327", price:"~$142\u2013158/pp",
@@ -548,7 +556,7 @@ function setSync(ok,text){ online = ok || online && !CONFIGURED?false:ok;
 
 /* ============ RENDER ============ */
 function renderCountdown(){
-  const start=new Date("2026-06-25T00:00:00"), now=new Date();
+  const start=new Date("2026-06-23T00:00:00"), now=new Date();
   const days=Math.ceil((start-now)/86400000); const el=document.getElementById("countdown");
   if(days>1) el.textContent=days+" days \u2708\ufe0f"; else if(days===1) el.textContent="Tomorrow! \u2708\ufe0f";
   else if(days<=0&&days>-13) el.textContent="In Waikiki \ud83c\udf1e"; else el.textContent="Aloha \ud83e\udd19";
@@ -558,23 +566,23 @@ function renderName(){ document.getElementById("namePill").textContent = myName?
 const MONTHS={Jan:"01",Feb:"02",Mar:"03",Apr:"04",May:"05",Jun:"06",Jul:"07",Aug:"08",Sep:"09",Oct:"10",Nov:"11",Dec:"12"};
 const isoOf = day => `2026-${MONTHS[day.m]}-${String(day.d).padStart(2,"0")}`;
 let WX={};
-function wxIcon(c){
-  if(c===0) return "☀️";
-  if(c<=2) return "\u{1F324}️";
-  if(c===3) return "☁️";
-  if(c===45||c===48) return "\u{1F32B}️";
-  if(c>=51&&c<=67) return "\u{1F327}️";
-  if(c>=71&&c<=77) return "❄️";
-  if(c>=80&&c<=82) return "\u{1F326}️";
-  if(c>=95) return "⛈️";
-  return "\u{1F321}️";
+function wxIcon(c,p){
+  p = (p==null?0:p);
+  if(c>=95) return "⛈️";                          // thunderstorm
+  if(c>=71&&c<=77) return "❄️";                    // snow (n/a here)
+  if(p>=60 || (c>=61&&c<=65)) return "\u{1F327}️";  // 🌧️ likely rain
+  if(p>=35 || (c>=80&&c<=82)) return "\u{1F326}️";  // 🌦️ scattered showers
+  if(c===45||c===48) return "\u{1F32B}️";           // 🌫️ fog
+  if(c===3) return "☁️";                           // overcast
+  if(c===0 && p<10) return "☀️";                    // clear & dry
+  return "\u{1F324}️";                              // 🌤️ mostly sunny / partly cloudy
 }
 async function loadWeather(){
   try{
-    const u="https://api.open-meteo.com/v1/forecast?latitude=21.2793&longitude=-157.8293&daily=weathercode,temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=Pacific%2FHonolulu&forecast_days=16";
+    const u="https://api.open-meteo.com/v1/forecast?latitude=21.2793&longitude=-157.8293&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&temperature_unit=fahrenheit&timezone=Pacific%2FHonolulu&forecast_days=16";
     const r=await fetch(u); if(!r.ok) return; const j=await r.json(); const d=j.daily;
     if(!d||!d.time) return;
-    const map={}; d.time.forEach((t,i)=>{ map[t]={c:d.weathercode[i], hi:Math.round(d.temperature_2m_max[i]), lo:Math.round(d.temperature_2m_min[i])}; });
+    const map={}; d.time.forEach((t,i)=>{ map[t]={c:d.weathercode[i], hi:Math.round(d.temperature_2m_max[i]), lo:Math.round(d.temperature_2m_min[i]), p:(d.precipitation_probability_max?d.precipitation_probability_max[i]:0)}; });
     WX=map; renderItin();
   }catch(e){}
 }
@@ -585,7 +593,7 @@ function renderItin(){
       return `<div class="slot ${state.done[id]?'done':''}"><input type="checkbox" class="ck slot-ck" data-id="${id}" ${state.done[id]?"checked":""}>
         <div class="time">${s.t}</div><div class="body"><div class="act">${s.a}</div>${note}</div></div>`; }).join("");
     let tag=""; if(day.tag==="book") tag=`<span class="day-tag tag-book">BOOK AHEAD</span>`; if(day.tag==="anchor") tag=`<span class="day-tag tag-anchor">PAIR THESE</span>`;
-    const _w=WX[isoOf(day)]; const wx=_w?`<a class="wx" href="https://www.google.com/search?q=Waikiki+weather+${day.m}+${day.d}" target="_blank" rel="noopener" title="Open the ${day.m} ${day.d} forecast"><span class="wx-ic">${wxIcon(_w.c)}</span><b>${_w.hi}°/${_w.lo}°</b></a>`:"";
+    const _w=WX[isoOf(day)]; const wx=_w?`<a class="wx" href="https://forecast.weather.gov/MapClick.php?lat=21.2793&lon=-157.8293" target="_blank" rel="noopener" title="Open the National Weather Service forecast for Waikiki"><span class="wx-ic">${wxIcon(_w.c,_w.p)}</span><b>${_w.hi}°/${_w.lo}°</b></a>`:"";
     return `<div class="day ${di===0?'open':''}"><div class="day-head">
       <div class="day-date"><span class="d">${day.d}</span><span class="m">${day.m}</span></div>
       <div class="day-meta"><div class="day-dow">${day.dow}</div><div class="day-theme">${day.theme}</div>${tag}</div>${wx}
