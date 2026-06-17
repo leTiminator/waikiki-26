@@ -94,6 +94,8 @@
   .used{font-size:11.5px; font-weight:800; color:var(--surf); padding:5px 0 2px}
   .used.over{color:var(--warn)}
   .addbuy{background:none; border:1px dashed var(--line); color:var(--surf); font-size:11px; font-weight:700; padding:3px 10px; border-radius:12px; cursor:pointer; margin-top:5px; font-family:inherit}
+  .cat-del{background:none; border:0; color:var(--muted); font-size:16px; line-height:1; cursor:pointer; padding:0 2px 0 8px; align-self:center}
+  .addcat{display:block; width:100%; margin:14px 0 4px; background:none; border:1.5px dashed var(--surf); color:var(--surf); font-size:13px; font-weight:800; padding:12px; border-radius:12px; cursor:pointer; font-family:inherit}
   .li.done .name{text-decoration:line-through; color:var(--muted)}
   .li.done{background:#fbfaf6}
   .book{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; align-items:center}
@@ -185,14 +187,12 @@
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet">
   <div class="grip"></div>
-  <h3>Add an expense</h3>
-  <label>What was it?</label>
-  <input id="eName" placeholder="e.g. Shave ice, parking, ABC Store" />
-  <label>Amount ($)</label>
-  <input id="eAmt" type="number" inputmode="decimal" placeholder="0.00" />
-  <label>Category</label>
-  <select id="eCat"><option>Food &amp; drink</option><option>Activities</option><option>Transport</option><option>Shopping</option><option>Other</option></select>
-  <button class="save" id="eSave">Add expense</button>
+  <h3>Add a category</h3>
+  <label>Category name</label>
+  <input id="eName" placeholder="e.g. Souvenirs, Coffee, Tips" />
+  <label>Budget for it ($) — optional</label>
+  <input id="eAmt" type="number" inputmode="decimal" placeholder="0" />
+  <button class="save" id="eSave">Add category</button>
   <button class="cancel" id="eCancel">Cancel</button>
 </div>
 
@@ -510,14 +510,15 @@ async function deriveRoom(pass){
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode((pass||"").trim()));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,24);
 }
-let state = {done:{}, booked:{}, conf:{}, expenses:[], feed:[], moved:{}, amounts:{}, purchases:{}};
+let state = {done:{}, booked:{}, conf:{}, expenses:[], feed:[], moved:{}, amounts:{}, purchases:{}, customItems:[]};
 let movingId=null; // activity currently being moved (transient UI state)
 let db=null, online=false;
 
 const money = n => "$"+Math.round(n).toLocaleString();
 const esc = s => (s||"").replace(/"/g,"&quot;").replace(/</g,"&lt;");
 const amtOf = i => (state.amounts && state.amounts[i.id]!=null) ? state.amounts[i.id] : i.amt;
-const planned = () => BUDGET.flatMap(g=>g.items).reduce((s,i)=>s+amtOf(i),0);
+function allItems(){ return BUDGET.flatMap(g=>g.items).concat(state.customItems||[]); }
+const planned = () => allItems().reduce((s,i)=>s+amtOf(i),0);
 function itemSpent(i){ const p=(state.purchases&&state.purchases[i.id])||[]; if(p.length) return p.reduce((s,x)=>s+(+x.a||0),0); return state.done[i.id]?amtOf(i):0; }
 const initials = n => (n||"?").trim().slice(0,2).toUpperCase();
 function timeAgo(ts){ if(!ts) return ""; const s=Math.floor((Date.now()-ts)/1000);
@@ -556,7 +557,7 @@ function initFirebase(){
     db.ref(".info/connected").on("value", s=>{ setSync(!!s.val(), s.val()?"Synced":"Offline"); });
     db.ref("trip/"+ROOM).on("value", snap=>{
       const v = snap.val() || {};
-      state.done = v.done||{}; state.booked = v.booked||{}; state.conf = v.conf||{}; state.moved = v.moved||{}; state.amounts = v.amounts||{}; state.purchases = v.purchases||{};
+      state.done = v.done||{}; state.booked = v.booked||{}; state.conf = v.conf||{}; state.moved = v.moved||{}; state.amounts = v.amounts||{}; state.purchases = v.purchases||{}; state.customItems = v.customItems||[];
       state.expenses = v.expenses||[]; state.feed = v.feed||[];
       saveLocal(); renderAll();
       if(localStorage.getItem(JOINKEY)){ localStorage.removeItem(JOINKEY); logFeed("joined the trip 👋"); }
@@ -660,26 +661,28 @@ function renderBook(){
   document.getElementById("book").innerHTML=`<div class="group-label">Tap to book \u2014 then mark it & save your confirmation #</div>${rows}<div class="foot">Direct = operator's site \u00b7 green = Groupon \u00b7 edits sync to both phones</div><div class="group-label">More ideas \u2014 curated Oahu activities & deals (browse only)</div>${cur}<div class="foot">Curated picks \u2014 prices & deals rotate; confirm on the operator's site before booking</div>`;
 }
 function renderBudget(){
-  let sp=BUDGET.flatMap(g=>g.items).reduce((s,i)=>s+itemSpent(i),0);
-  let ex=(state.expenses||[]).reduce((s,e)=>s+e.amt,0);
-  const groups=BUDGET.map(g=>{ const rows=g.items.map(i=>{ const sub=i.sub?`<div class="sub">${i.sub}</div>`:"";
+  const items=allItems();
+  const sp=items.reduce((s,i)=>s+itemSpent(i),0);
+  const P=planned();
+  function row(i, custom){
+    const sub=i.sub?`<div class="sub">${i.sub}</div>`:"";
     const purch=(state.purchases&&state.purchases[i.id])||[]; const used=purch.reduce((s,x)=>s+(+x.a||0),0);
     const pRows=purch.map((x,idx)=>`<div class="buy"><span class="ba">${money(x.a)}</span><span class="bn">${esc(x.n)||"(no note)"}${x.by?" · "+esc(x.by):""}</span><button class="buy-del" data-id="${i.id}" data-idx="${idx}" title="Remove">×</button></div>`).join("");
     const usedLine=purch.length?`<div class="used ${used>amtOf(i)?'over':''}">${money(used)} of ${money(amtOf(i))} used</div>`:"";
     const buys=`<div class="buys">${pRows}${usedLine}<button class="addbuy" data-id="${i.id}">＋ purchase</button></div>`;
+    const cb=purch.length?"":`<input type="checkbox" class="ck bud-ck" data-id="${i.id}" ${state.done[i.id]?"checked":""}>`;
     const doneCls=(!purch.length&&state.done[i.id])?'done':'';
-    return `<div class="li ${doneCls}"><div class="li-top"><input type="checkbox" class="ck bud-ck" data-id="${i.id}" ${state.done[i.id]?"checked":""}>
-      <div class="body"><div class="name">${i.name}</div>${sub}</div><button class="amt amt-edit" data-id="${i.id}" title="Tap to edit cost">${money(amtOf(i))}</button></div>${buys}</div>`; }).join("");
-    return `<div class="group-label">${g.g}</div>${rows}`; }).join("");
-  const expRows=(state.expenses&&state.expenses.length)? state.expenses.map((e,idx)=>`<div class="exp"><div class="body"><div class="name">${esc(e.name)||"Expense"}</div><div class="sub">${e.cat}${e.by?" \u00b7 "+esc(e.by):""}</div></div><div class="amt">${money(e.amt)}</div><button class="del" data-idx="${idx}">\u00d7</button></div>`).join("") : `<div class="empty">No extra expenses logged yet.<br>Tap <b>+</b> to add real spending \u2014 it shows on both phones.</div>`;
+    const rm=custom?`<button class="cat-del" data-id="${i.id}" title="Remove category">×</button>`:"";
+    return `<div class="li ${doneCls}"><div class="li-top">${cb}<div class="body"><div class="name">${i.name}</div>${sub}</div><button class="amt amt-edit" data-id="${i.id}" title="Tap to edit cost">${money(amtOf(i))}</button>${rm}</div>${buys}</div>`;
+  }
+  const groups=BUDGET.map(g=>`<div class="group-label">${g.g}</div>${g.items.map(i=>row(i,false)).join("")}`).join("");
+  const customList=(state.customItems&&state.customItems.length)?`<div class="group-label">Your added categories</div>${state.customItems.map(i=>row(i,true)).join("")}`:"";
   document.getElementById("budget").innerHTML=`<div class="summary">
-    <div class="row"><span>Spent on budget items</span><span class="v">${money(sp)}</span></div>
-    <div class="row"><span>Extra expenses logged</span><span class="v">${money(ex)}</span></div>
-    <div class="row tot"><span>Total spent</span><span class="v">${money(sp+ex)}</span></div>
-    <div class="row"><span class="muted">Full planned budget</span><span class="muted">${money(planned())}</span></div></div>
-    <div class="group-label">Planned \u2014 check off as you book / pay</div>${groups}
-    <div class="group-label">Actual expenses on the trip</div>${expRows}
-    <button class="reset" id="reset">Reset everything (both phones)</button><div class="foot">Shared trip \u00b7 synced live</div>`;
+    <div class="row tot"><span>Total spent</span><span class="v">${money(sp)}</span></div>
+    <div class="row"><span class="muted">Full planned budget</span><span class="muted">${money(P)}</span></div></div>
+    <div class="group-label">Tap a $ to edit · ＋ purchase to log spending</div>${groups}${customList}
+    <button class="addcat" id="addCatBtn">＋ add a category</button>
+    <button class="reset" id="reset">Reset everything (both phones)</button><div class="foot">Shared trip · synced live</div>`;
 }
 function renderFeed(){
   const f=state.feed||[];
@@ -696,7 +699,7 @@ function renderTips(){
 }
 function renderMeter(){
   const P=planned();
-  let sp=BUDGET.flatMap(g=>g.items).reduce((s,i)=>s+itemSpent(i),0);
+  let sp=allItems().reduce((s,i)=>s+itemSpent(i),0);
   let ex=(state.expenses||[]).reduce((s,e)=>s+e.amt,0); let spent=sp+ex;
   document.getElementById("mSpent").textContent=money(spent);
   document.getElementById("mPlan").textContent="Planned budget "+money(P);
@@ -725,12 +728,12 @@ document.addEventListener("click",e=>{
     state.moved=state.moved||{}; if(key===origKey) delete state.moved[movingId]; else state.moved[movingId]=key;
     push("moved",state.moved); logFeed(`moved "${esc(actName)}" to ${lbl}`); movingId=null; renderItin(); return; }
   if(e.target.id==="mvCancel"){ movingId=null; renderItin(); return; }
-  if(e.target.classList.contains("amt-edit")){ const id=e.target.dataset.id; const it=BUDGET.flatMap(g=>g.items).find(x=>x.id===id); if(!it) return;
+  if(e.target.classList.contains("amt-edit")){ const id=e.target.dataset.id; const it=allItems().find(x=>x.id===id); if(!it) return;
     const v=prompt("New cost for "+it.name+" ($):", amtOf(it));
     if(v!==null){ const n=Math.round(parseFloat(String(v).replace(/[^0-9.]/g,"")));
       if(!isNaN(n)&&n>=0){ state.amounts=state.amounts||{}; if(n===it.amt) delete state.amounts[id]; else state.amounts[id]=n; push("amounts",state.amounts); logFeed(`set "${esc(it.name)}" cost to ${money(n)}`); renderAll(); }
       else alert("Enter a number."); } return; }
-  if(e.target.classList.contains("addbuy")){ const id=e.target.dataset.id; const it=BUDGET.flatMap(g=>g.items).find(x=>x.id===id); if(!it) return;
+  if(e.target.classList.contains("addbuy")){ const id=e.target.dataset.id; const it=allItems().find(x=>x.id===id); if(!it) return;
     const v=prompt("Add purchase to "+it.name+" — amount then note (e.g. 24 shave ice):","");
     if(v){ const m=v.match(/[0-9]+(?:\.[0-9]+)?/); if(m){ const a=Math.round(parseFloat(m[0])); const note=v.replace(m[0],"").replace(/^[\s$.,-]+/,"").trim();
       state.purchases=state.purchases||{}; (state.purchases[id]=state.purchases[id]||[]).push({a:a, n:note, by:(myName||"Someone"), ts:Date.now()});
@@ -740,11 +743,18 @@ document.addEventListener("click",e=>{
     const arr=state.purchases&&state.purchases[id]; if(!arr||!arr[idx]) return; const pp=arr[idx];
     if(!confirm("Remove the "+money(pp.a)+" purchase"+(pp.n?" ("+pp.n+")":"")+"?")) return;
     arr.splice(idx,1); if(!arr.length) delete state.purchases[id]; push("purchases",state.purchases); logFeed(`removed a ${money(pp.a)} purchase`); renderAll(); return; }
+  if(e.target.classList.contains("cat-del")){ const id=e.target.dataset.id; const it=(state.customItems||[]).find(x=>x.id===id);
+    if(!confirm("Remove the category "+(it?it.name:"")+" and its purchases?")) return;
+    state.customItems=(state.customItems||[]).filter(x=>x.id!==id);
+    if(state.purchases) delete state.purchases[id]; if(state.amounts) delete state.amounts[id]; if(state.done) delete state.done[id];
+    push("customItems",state.customItems); push("purchases",state.purchases||{}); push("amounts",state.amounts||{}); push("done",state.done||{});
+    logFeed(`removed category "${esc(it?it.name:"")}"`); renderAll(); return; }
+  if(e.target.id==="addCatBtn"){ if(!myName) openName(); else openExp(); return; }
   if(e.target.classList.contains("del")){ const idx=+e.target.dataset.idx; const rm=state.expenses[idx];
     if(!confirm("Delete this expense"+(rm&&rm.name?" ("+rm.name+")":"")+"?")) return;
     state.expenses.splice(idx,1); push("expenses",state.expenses); logFeed(`deleted expense ${rm?'"'+esc(rm.name)+'"':''}`); }
   if(e.target.id==="reset"){ if(confirm("Reset ALL checks, bookings, expenses and history for BOTH phones? Can't be undone.")){
-    state={done:{},booked:{},conf:{},expenses:[],feed:[],moved:{},amounts:{},purchases:{}};
+    state={done:{},booked:{},conf:{},expenses:[],feed:[],moved:{},amounts:{},purchases:{},customItems:[]};
     if(online&&db){ db.ref("trip/"+ROOM).set(state);} else saveLocal(); renderAll(); } }
   if(e.target.id==="changePass"){ openName(); }
 });
@@ -776,13 +786,12 @@ document.getElementById("fab").onclick=()=>{ if(!myName){ openName(); } else ope
 document.getElementById("eCancel").onclick=closeSheets;
 scrim.onclick=closeSheets;
 document.getElementById("eSave").onclick=()=>{
-  const name=document.getElementById("eName").value.trim();
-  const amt=parseFloat(document.getElementById("eAmt").value);
-  const cat=document.getElementById("eCat").value;
-  if(!amt||amt<=0){ alert("Enter an amount."); return; }
-  state.expenses = state.expenses||[]; state.expenses.unshift({name,amt,cat,by:myName||"Someone",ts:Date.now()});
-  push("expenses",state.expenses); logFeed(`added expense ${money(amt)} \u2014 ${esc(name)||cat}`);
-  closeSheets();
+  const name=document.getElementById("eName").value.trim(); if(!name){ alert("Name the category."); return; }
+  const amt=Math.round(parseFloat(document.getElementById("eAmt").value)||0);
+  const id="cust_"+Date.now().toString(36)+Math.floor(Math.random()*1000);
+  state.customItems=state.customItems||[]; state.customItems.push({id, name, amt});
+  push("customItems",state.customItems); logFeed(`added category "${esc(name)}"${amt?" ("+money(amt)+")":""}`);
+  closeSheets(); renderAll();
 };
 function openName(){ scrim.classList.add("show"); nameSheet.classList.add("show");
   const inp=document.getElementById("nameInput"); inp.value=myName;
