@@ -1,5 +1,12 @@
 # Waikiki '26 — Shared Vacation Budget & Itinerary App
 
+> **STATUS / HANDOFF (read this):** This app is **built and live** at
+> https://letiminator.github.io/waikiki-26/ — Firebase + GitHub Pages are already set up.
+> The app now uses a **shared passcode** (the "no logins" wording below is outdated) and the
+> dates are **Jun 23 – Jul 6, 2026**. The setup steps further down are mostly done, kept for
+> reference. **For the current architecture, data model, features, and dev conventions, read
+> [`CLAUDE.md`](CLAUDE.md)** — a fresh Claude Code session loads it automatically.
+
 A single-page, mobile-first web app for our June 25 – July 6, 2026 Waikiki trip,
 built for **two people to share one live trip** — both can add/check/edit and see
 each other's changes in seconds, from one simple link, no logins.
