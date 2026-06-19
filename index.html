@@ -68,6 +68,8 @@
   .slot .act{font-size:14px; font-weight:600}
   .slot .note{font-size:12px; color:var(--muted); margin-top:2px; line-height:1.4}
   .slot .note.flag{color:var(--warn); font-weight:600}
+  .slot .usernote{font-size:12px; color:var(--ink); margin-top:5px; line-height:1.4; background:var(--sand); border-left:3px solid var(--surf); border-radius:6px; padding:5px 8px; cursor:pointer; white-space:pre-wrap; word-break:break-word}
+  .note-add{background:none; border:1px dashed var(--line); color:var(--surf); font-size:11px; font-weight:700; padding:2px 9px; border-radius:12px; cursor:pointer; margin-top:5px; font-family:inherit}
   .ck{appearance:none; width:22px; height:22px; min-width:22px; border:2px solid var(--line); border-radius:6px; margin-top:1px; cursor:pointer; position:relative; transition:.15s; background:#fff}
   .ck:checked{background:var(--good); border-color:var(--good)}
   .ck:checked::after{content:"\2713"; position:absolute; inset:0; color:#fff; font-size:14px; font-weight:900; display:flex; align-items:center; justify-content:center}
@@ -510,7 +512,7 @@ async function deriveRoom(pass){
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode((pass||"").trim()));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,24);
 }
-let state = {done:{}, booked:{}, conf:{}, expenses:[], feed:[], moved:{}, amounts:{}, purchases:{}, customItems:[], dealsCheckedAt:0};
+let state = {done:{}, booked:{}, conf:{}, expenses:[], feed:[], moved:{}, amounts:{}, purchases:{}, customItems:[], notes:{}, dealsCheckedAt:0};
 let movingId=null; // activity currently being moved (transient UI state)
 let db=null, online=false;
 
@@ -557,7 +559,7 @@ function initFirebase(){
     db.ref(".info/connected").on("value", s=>{ setSync(!!s.val(), s.val()?"Synced":"Offline"); });
     db.ref("trip/"+ROOM).on("value", snap=>{
       const v = snap.val() || {};
-      state.done = v.done||{}; state.booked = v.booked||{}; state.conf = v.conf||{}; state.moved = v.moved||{}; state.amounts = v.amounts||{}; state.purchases = v.purchases||{}; state.customItems = v.customItems||[];
+      state.done = v.done||{}; state.booked = v.booked||{}; state.conf = v.conf||{}; state.moved = v.moved||{}; state.amounts = v.amounts||{}; state.purchases = v.purchases||{}; state.customItems = v.customItems||[]; state.notes = v.notes||{};
       state.expenses = v.expenses||[]; state.feed = v.feed||[]; state.dealsCheckedAt = v.dealsCheckedAt||0;
       saveLocal(); renderAll();
       if(localStorage.getItem(JOINKEY)){ localStorage.removeItem(JOINKEY); logFeed("joined the trip 👋"); }
@@ -642,8 +644,11 @@ function renderItin(){
     const slots=here.map(x=>{ const s=x.s,id=x.id; const noteCls=s.flag?"note flag":"note";
       const note=s.n?`<div class="${noteCls}">${s.n}</div>`:"";
       const mt=(moved[id]&&moved[id]!==x.origKey)?`<span class="moved-tag">moved</span>`:"";
+      const un=(state.notes&&state.notes[id])||"";
+      const unHtml=un?`<div class="usernote note-edit" data-id="${id}" title="Tap to edit your note">📝 ${esc(un)}</div>`:"";
+      const noteBtn=`<button class="note-add" data-id="${id}">${un?"edit note":"＋ note"}</button>`;
       return `<div class="slot ${state.done[id]?'done':''}"><input type="checkbox" class="ck slot-ck" data-id="${id}" ${state.done[id]?"checked":""}>
-        <div class="time">${s.t}</div><div class="body"><div class="act">${s.a}${mt}</div>${note}</div>
+        <div class="time">${s.t}</div><div class="body"><div class="act">${s.a}${mt}</div>${note}${unHtml}${noteBtn}</div>
         <button class="mv ${movingId===id?'active':''}" data-id="${id}" title="Move to another day">↪</button></div>`; }).join("");
     let tag=""; if(day.tag==="book") tag=`<span class="day-tag tag-book">BOOK AHEAD</span>`; if(day.tag==="anchor") tag=`<span class="day-tag tag-anchor">PAIR THESE</span>`;
     const _w=WX[isoOf(day)]; const wx=_w?`<a class="wx" href="https://forecast.weather.gov/MapClick.php?lat=21.2793&lon=-157.8293" target="_blank" rel="noopener" title="Open the National Weather Service forecast for Waikiki"><span class="wx-ic">${wxIcon(_w.c,_w.p)}</span><b>${_w.hi}°/${_w.lo}°</b></a>`:"";
@@ -740,6 +745,12 @@ document.addEventListener("click",e=>{
   const head=e.target.closest(".day-head");
   if(head&&!e.target.classList.contains("ck")&&!e.target.closest(".wx")&&!e.target.closest(".mvto")) head.closest(".day").classList.toggle("open");
   if(e.target.classList.contains("mv")){ const id=e.target.dataset.id; movingId=(movingId===id?null:id); renderItin(); if(movingId) window.scrollTo({top:0,behavior:"smooth"}); return; }
+  if(e.target.classList.contains("note-add")||e.target.classList.contains("note-edit")){ const id=e.target.dataset.id;
+    const cur=(state.notes&&state.notes[id])||""; let actName=""; ITIN.forEach((day,di)=>day.slots.forEach((s,si)=>{ if(`d${di}_${si}`===id) actName=s.a; }));
+    const v=prompt("Note for "+(actName||"this activity")+" (leave blank to remove):", cur); if(v===null) return;
+    state.notes=state.notes||{}; const t=v.trim();
+    if(t) state.notes[id]=t; else delete state.notes[id];
+    push("notes",state.notes); logFeed(`${t?(cur?"edited":"added"):"removed"} a note on "${esc(actName)}"`); renderItin(); return; }
   if(e.target.classList.contains("mvto")&&movingId){ const key=e.target.dataset.key;
     let origKey=null,actName=""; ITIN.forEach((day,di)=>day.slots.forEach((s,si)=>{ if(`d${di}_${si}`===movingId){origKey=day.d+day.m; actName=s.a;} }));
     const lbl=key.replace(/^(\d+)([A-Za-z]+)$/,"$2 $1");
@@ -774,7 +785,7 @@ document.addEventListener("click",e=>{
     state.expenses.splice(idx,1); push("expenses",state.expenses); logFeed(`deleted expense ${rm?'"'+esc(rm.name)+'"':''}`); }
   if(e.target.id==="reset"){ if(!confirm("Reset ALL checks, bookings, expenses and history for BOTH phones? Can't be undone.")) return;
     if(myPass){ const pw=prompt("Enter the trip passcode to confirm this reset:"); if(pw===null) return; if(pw.trim()!==myPass){ alert("Passcode doesn't match — reset cancelled."); return; } }
-    state={done:{},booked:{},conf:{},expenses:[],feed:[],moved:{},amounts:{},purchases:{},customItems:[]};
+    state={done:{},booked:{},conf:{},expenses:[],feed:[],moved:{},amounts:{},purchases:{},customItems:[],notes:{}};
     if(online&&db){ db.ref("trip/"+ROOM).set(state);} else saveLocal(); logFeed("reset the whole trip"); renderAll(); return; }
   if(e.target.id==="changePass"){ openName(); }
 });

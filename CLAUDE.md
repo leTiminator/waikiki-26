@@ -11,7 +11,7 @@ free on GitHub Pages.
 
 - **Live:** https://letiminator.github.io/waikiki-26/
 - **Repo:** github.com/leTiminator/waikiki-26 — Pages deploys from **`main` / root**.
-- **Service worker version:** currently `waikiki-v26` (in `sw.js`).
+- **Service worker version:** currently `waikiki-v27` (in `sw.js`).
 
 ## Files
 - `index.html` — the **entire app** (HTML + CSS + JS in one file). ~All work happens here.
@@ -31,11 +31,12 @@ free on GitHub Pages.
 - **Shared/synced state** = Firebase Realtime DB, under a per-passcode room:
   - room id = `SHA-256(passcode)` → first 24 hex chars (derived identically in the app and
     in `check-deals.mjs`; the raw passcode is never stored in the page or DB).
-  - path: `trip/<room>/{ done, booked, conf, expenses, feed, moved, amounts, purchases, customItems, deals, dealsCheckedAt }`
+  - path: `trip/<room>/{ done, booked, conf, expenses, feed, moved, amounts, purchases, customItems, notes, deals, dealsCheckedAt }`
   - `done` checked plan/budget items · `booked`/`conf` booking marks + confirmation #s ·
     `feed` activity log `[{who,text,ts}]` · `moved` `{slotId:"26Jun"}` activity day overrides ·
     `amounts` `{itemId:number}` budget-cost overrides · `purchases` `{itemId:[{a,n,by,ts}]}`
-    per-item purchases · `customItems` `[{id,name,amt}]` user-added budget categories.
+    per-item purchases · `customItems` `[{id,name,amt}]` user-added budget categories ·
+    `notes` `{slotId:"text"}` per-activity user notes on the Plan page.
 - **Firebase** project `waikiki-2026`; config is in `index.html` (client-side keys are fine).
   DB security rule (set by owner): `{ "rules": { "trip": { "$room": { ".read": true, ".write": true } } } }`
   — open per-room, rooms not enumerable.
@@ -51,7 +52,8 @@ trade-wind "drizzle" codes don't show as rain; taps to the NWS forecast; refresh
 banner header with fluid title/date/pills · collapsible day cards · **move activities between
 days** (tap ↪ then "Move here", synced, confirms; a day's title auto-summarizes from its
 current activities once items are moved in/out, else keeps its hand-written `theme` —
-see `dayTitle()`) · Book tab = bookings + long curated Groupon
+see `dayTitle()`) · **add a personal note to any activity** (tap "＋ note", synced, in
+`state.notes`) · Book tab = bookings + long curated Groupon
 list · Budget = **editable costs** (tap the $), **per-item purchase logging** (amount+note,
 "used of total"), **+ button adds a custom category** (with purchases + delete) · confirmations
 on destructive actions · **passcode-gated "reset everything"** · phone **back button** closes
