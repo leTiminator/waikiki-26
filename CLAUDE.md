@@ -11,7 +11,7 @@ free on GitHub Pages.
 
 - **Live:** https://letiminator.github.io/waikiki-26/
 - **Repo:** github.com/leTiminator/waikiki-26 — Pages deploys from **`main` / root**.
-- **Service worker version:** currently `waikiki-v25` (in `sw.js`).
+- **Service worker version:** currently `waikiki-v26` (in `sw.js`).
 
 ## Files
 - `index.html` — the **entire app** (HTML + CSS + JS in one file). ~All work happens here.

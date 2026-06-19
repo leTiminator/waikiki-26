@@ -510,7 +510,7 @@ async function deriveRoom(pass){
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode((pass||"").trim()));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,24);
 }
-let state = {done:{}, booked:{}, conf:{}, expenses:[], feed:[], moved:{}, amounts:{}, purchases:{}, customItems:[]};
+let state = {done:{}, booked:{}, conf:{}, expenses:[], feed:[], moved:{}, amounts:{}, purchases:{}, customItems:[], dealsCheckedAt:0};
 let movingId=null; // activity currently being moved (transient UI state)
 let db=null, online=false;
 
@@ -558,7 +558,7 @@ function initFirebase(){
     db.ref("trip/"+ROOM).on("value", snap=>{
       const v = snap.val() || {};
       state.done = v.done||{}; state.booked = v.booked||{}; state.conf = v.conf||{}; state.moved = v.moved||{}; state.amounts = v.amounts||{}; state.purchases = v.purchases||{}; state.customItems = v.customItems||[];
-      state.expenses = v.expenses||[]; state.feed = v.feed||[];
+      state.expenses = v.expenses||[]; state.feed = v.feed||[]; state.dealsCheckedAt = v.dealsCheckedAt||0;
       saveLocal(); renderAll();
       if(localStorage.getItem(JOINKEY)){ localStorage.removeItem(JOINKEY); logFeed("joined the trip 👋"); }
     });
@@ -705,7 +705,9 @@ function renderFeed(){
   const f=state.feed||[];
   const banner = CONFIGURED? "" : `<div class="banner">Sync isn't set up yet \u2014 the app is running in local-only mode on this device. Add Firebase keys (see README) to share live with your travel partner.</div>`;
   const items = f.length? f.map(e=>`<div class="feed-item"><div class="who">${initials(e.who)}</div><div class="body"><div class="txt"><b>${esc(e.who)}</b> ${e.text}</div><div class="ts">${timeAgo(e.ts)}</div></div></div>`).join("") : `<div class="empty">No activity yet. Changes either of you make \u2014 booking something, logging an expense, checking off a plan \u2014 show up here.</div>`;
-  document.getElementById("feed").innerHTML = banner + `<div class="group-label">Who changed what</div>` + items;
+  const dca=state.dealsCheckedAt||0;
+  const deals = dca? `<div class="foot">\ud83d\udd0d Deals checked ${timeAgo(dca)}</div>` : "";
+  document.getElementById("feed").innerHTML = banner + `<div class="group-label">Who changed what</div>` + items + deals;
 }
 function renderTips(){
   document.getElementById("tips").innerHTML=`<div class="quick">
