@@ -614,6 +614,23 @@ async function loadWeather(){
     WX=map; renderItin();
   }catch(e){}
 }
+/* Day title helpers: keep each day's hand-written theme until its activities
+   change (moved in/out), then summarize from whatever is actually scheduled. */
+function shortAct(a){
+  let s=String(a||"").split("—")[0].split(" (")[0].trim();
+  if(s.length>26) s=s.slice(0,25).trim()+"…";
+  return s;
+}
+function dayTitle(day,di,here){
+  const origIds=day.slots.map((_,si)=>`d${di}_${si}`);
+  const hereIds=here.map(x=>x.id);
+  const unchanged = origIds.length===hereIds.length && origIds.every(id=>hereIds.includes(id));
+  if(unchanged) return esc(day.theme);
+  if(!hereIds.length) return "Open — nothing scheduled";
+  const parts=here.map(x=>esc(shortAct(x.s.a)));
+  const shown=parts.slice(0,3).join(" · ");
+  return parts.length>3 ? `${shown} +${parts.length-3} more` : shown;
+}
 function renderItin(){
   const moved=state.moved||{};
   const all=[]; ITIN.forEach((day,di)=>{ const k=day.d+day.m; day.slots.forEach((s,si)=>all.push({id:`d${di}_${si}`,s,origKey:k})); });
@@ -633,7 +650,7 @@ function renderItin(){
     const moveHere = (mv && dk!==(moved[movingId]||mv.origKey)) ? `<button class="mvto" data-key="${dk}">Move here</button>` : "";
     return `<div class="day ${(di===0||!!movingId)?'open':''}"><div class="day-head">
       <div class="day-date"><span class="d">${day.d}</span><span class="m">${day.m}</span></div>
-      <div class="day-meta"><div class="day-dow">${day.dow}</div><div class="day-theme">${day.theme}</div>${tag}</div>${moveHere}${wx}
+      <div class="day-meta"><div class="day-dow">${day.dow}</div><div class="day-theme">${dayTitle(day,di,here)}</div>${tag}</div>${moveHere}${wx}
       <span class="chev">›</span></div><div class="day-body">${slots}</div></div>`;
   }).join("");
   document.getElementById("itin").innerHTML = banner + body;

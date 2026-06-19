@@ -11,7 +11,7 @@ free on GitHub Pages.
 
 - **Live:** https://letiminator.github.io/waikiki-26/
 - **Repo:** github.com/leTiminator/waikiki-26 — Pages deploys from **`main` / root**.
-- **Service worker version:** currently `waikiki-v24` (in `sw.js`).
+- **Service worker version:** currently `waikiki-v25` (in `sw.js`).
 
 ## Files
 - `index.html` — the **entire app** (HTML + CSS + JS in one file). ~All work happens here.
@@ -49,7 +49,9 @@ is safe to show off (tell people to type any throwaway code → their own sandbo
 Passcode rooms · live per-day weather (Open-Meteo; icon driven by **rain probability** so
 trade-wind "drizzle" codes don't show as rain; taps to the NWS forecast; refreshes hourly) ·
 banner header with fluid title/date/pills · collapsible day cards · **move activities between
-days** (tap ↪ then "Move here", synced, confirms) · Book tab = bookings + long curated Groupon
+days** (tap ↪ then "Move here", synced, confirms; a day's title auto-summarizes from its
+current activities once items are moved in/out, else keeps its hand-written `theme` —
+see `dayTitle()`) · Book tab = bookings + long curated Groupon
 list · Budget = **editable costs** (tap the $), **per-item purchase logging** (amount+note,
 "used of total"), **+ button adds a custom category** (with purchases + delete) · confirmations
 on destructive actions · **passcode-gated "reset everything"** · phone **back button** closes
@@ -71,6 +73,11 @@ popups / cancels a move / else jumps to the Plan tab.
 `.github/workflows/check-deals.yml` runs `scripts/check-deals.mjs` every 3h to post new
 Groupon/operator deal changes into the shared feed. Needs repo **secrets**
 `FIREBASE_SERVICE_ACCOUNT`, `FIREBASE_DB_URL`, `TRIP_PASSCODE`. See `AUTOMATION.md`.
+All three secrets are now passed into the job env (an earlier bug omitted `TRIP_PASSCODE`,
+so the watcher could never run). The watcher filters out junk prices (< `$10`), retries
+once on bot-walls, posts the feed line **before** persisting the changed fingerprint (so a
+failed post isn't lost), and flags **price drops** (📉, old → now). Playwright browsers are
+cached in CI.
 
 ## Trip specifics
 Jun 23 – Jul 6, 2026. Arrive 6/23 ~6:47am, Hawaiian flight **AS 1017**. Depart 7/6,
