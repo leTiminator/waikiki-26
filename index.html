@@ -149,9 +149,35 @@
   .foot{text-align:center; font-size:11px; color:var(--muted); padding:8px 0 20px}
   .banner{background:#fff4e6; border:1px solid #ffd9b0; color:#9a5b1e; font-size:12px; padding:10px 12px; border-radius:10px; margin-bottom:12px; line-height:1.45}
   @media (max-width:559px){ header{padding-bottom:10px} .hrow{margin-top:auto} }
+
+  /* ---- startup splash ---- */
+  #splash{position:fixed; inset:0; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:13px;
+    background:radial-gradient(120% 90% at 50% 20%, var(--ocean2) 0%, var(--ocean) 58%, #061c2a 100%); color:#fff; text-align:center;
+    transition:opacity .55s ease, visibility .55s ease;}
+  #splash.hide{opacity:0; visibility:hidden}
+  #splash .glow{position:absolute; top:calc(50% - 132px); width:240px; height:240px; border-radius:50%; pointer-events:none;
+    background:radial-gradient(circle, rgba(255,107,74,.42), rgba(255,107,74,0) 70%); animation:splashGlow 2.6s ease-in-out infinite}
+  #splash .flower{font-size:62px; line-height:1; animation:splashPop .9s cubic-bezier(.2,.9,.3,1.4) both, splashFloat 3s ease-in-out 1s infinite}
+  #splash .stitle{font-size:30px; font-weight:800; letter-spacing:.5px; text-shadow:0 2px 14px rgba(0,0,0,.4); animation:splashUp .7s ease .15s both}
+  #splash .ssub{font-size:13px; font-weight:600; opacity:.85; letter-spacing:.4px; animation:splashUp .7s ease .3s both}
+  #splash .bar{width:140px; height:4px; border-radius:4px; margin-top:6px; overflow:hidden; background:rgba(255,255,255,.18); animation:splashUp .7s ease .45s both}
+  #splash .bar i{display:block; width:42%; height:100%; border-radius:4px; background:linear-gradient(90deg,var(--surf),var(--coral)); animation:splashSlide 1.15s ease-in-out infinite}
+  @keyframes splashPop{from{opacity:0; transform:scale(.4) rotate(-18deg)} to{opacity:1; transform:scale(1) rotate(0)}}
+  @keyframes splashFloat{0%,100%{transform:translateY(0) rotate(0)} 50%{transform:translateY(-7px) rotate(4deg)}}
+  @keyframes splashUp{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none}}
+  @keyframes splashGlow{0%,100%{transform:scale(.9); opacity:.65} 50%{transform:scale(1.1); opacity:1}}
+  @keyframes splashSlide{0%{transform:translateX(-120%)} 100%{transform:translateX(340%)}}
+  @media (prefers-reduced-motion: reduce){ #splash .glow,#splash .flower,#splash .stitle,#splash .ssub,#splash .bar,#splash .bar i{animation:none} }
 </style>
 </head>
 <body>
+<div id="splash" aria-hidden="true">
+  <div class="glow"></div>
+  <div class="flower">🌺</div>
+  <div class="stitle">Waikiki '26</div>
+  <div class="ssub">Jun 23 – Jul 6, 2026 · Twin Fins</div>
+  <div class="bar"><i></i></div>
+</div>
 <header>
   <h1>Waikiki '26 🌺</h1>
   <p class="sub">Jun 23 – Jul 6 · Twin Fins · 2 people</p>
@@ -842,7 +868,9 @@ document.getElementById("nameSave").onclick=async ()=>{
 
 /* boot */
 loadLocal(); renderAll(); initFirebase(); loadWeather(); setInterval(loadWeather, 3600000);
-if(!myName || !ROOM) setTimeout(openName, 600);
+function dismissSplash(){ const s=document.getElementById("splash"); if(!s||s.classList.contains("hide")) return; s.classList.add("hide"); setTimeout(()=>s.remove(), 600); }
+setTimeout(dismissSplash, 1150); window.addEventListener("load", ()=>setTimeout(dismissSplash, 1150));
+if(!myName || !ROOM) setTimeout(openName, 1300);
 if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
 
 /* Phone back button: close an open sheet (or cancel a move); otherwise jump to the Plan home tab. */

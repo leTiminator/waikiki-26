@@ -11,7 +11,7 @@ free on GitHub Pages.
 
 - **Live:** https://letiminator.github.io/waikiki-26/
 - **Repo:** github.com/leTiminator/waikiki-26 — Pages deploys from **`main` / root**.
-- **Service worker version:** currently `waikiki-v27` (in `sw.js`).
+- **Service worker version:** currently `waikiki-v28` (in `sw.js`).
 
 ## Files
 - `index.html` — the **entire app** (HTML + CSS + JS in one file). ~All work happens here.
@@ -47,7 +47,8 @@ empty room → fully isolated.** Only sharing the exact passcode shares the trip
 is safe to show off (tell people to type any throwaway code → their own sandbox).
 
 ## Features (all built & live)
-Passcode rooms · live per-day weather (Open-Meteo; icon driven by **rain probability** so
+Animated ocean **startup splash** (`#splash`, ~1.15s, fades out via `dismissSplash()`;
+respects `prefers-reduced-motion`) · passcode rooms · live per-day weather (Open-Meteo; icon driven by **rain probability** so
 trade-wind "drizzle" codes don't show as rain; taps to the NWS forecast; refreshes hourly) ·
 banner header with fluid title/date/pills · collapsible day cards · **move activities between
 days** (tap ↪ then "Move here", synced, confirms; a day's title auto-summarizes from its
