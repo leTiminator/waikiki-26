@@ -174,6 +174,10 @@
     .reset:hover{border-color:var(--surf); color:var(--surf)}
     .mv:hover{opacity:1}
     .del-act:hover{opacity:1; color:var(--warn)}
+    .act-edit-btn:hover{opacity:1; color:var(--surf)}
+    .add-act:hover{background:rgba(31,111,139,.06)}
+    .li-acts button:hover{border-color:var(--surf); color:var(--surf)}
+    .li-acts .li-del:hover{border-color:var(--warn); color:var(--warn)}
   }
   .quick a:active{transform:scale(.96)}
   .pill:active{transform:scale(.94)}
@@ -226,6 +230,24 @@
   /* checkbox depth */
   .ck{box-shadow:inset 0 1px 2px rgba(11,42,61,.06)}
   .ck:checked{box-shadow:0 2px 6px rgba(46,139,111,.35)}
+
+  /* undo toast */
+  .toast{position:fixed; left:50%; bottom:calc(86px + env(safe-area-inset-bottom)); transform:translate(-50%,24px); z-index:60; display:flex; align-items:center; gap:14px; max-width:calc(100% - 28px); background:var(--ink); color:#fff; font-size:13px; font-weight:600; padding:11px 14px; border-radius:12px; box-shadow:var(--shadow-md); opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease}
+  .toast.show{opacity:1; transform:translate(-50%,0); pointer-events:auto}
+  .toast span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .toast button{background:none; border:0; color:#ffd36b; font-weight:800; font-size:13px; cursor:pointer; font-family:inherit; padding:2px 4px; white-space:nowrap}
+
+  /* CRUD affordances */
+  .custom-tag{display:inline-block; font-size:9px; font-weight:800; color:#fff; background:var(--good); padding:1px 6px; border-radius:10px; margin-left:6px; vertical-align:middle; letter-spacing:.3px}
+  .act-edit-btn{background:none; border:0; color:var(--muted); font-size:12px; line-height:1; padding:3px 4px; cursor:pointer; opacity:.45}
+  .act-edit-btn:active{transform:scale(.88)}
+  .add-act{display:block; width:calc(100% - 32px); margin:8px 16px 14px; background:none; border:1.5px dashed var(--line); color:var(--surf); font-size:12px; font-weight:800; padding:9px; border-radius:10px; cursor:pointer; font-family:inherit}
+  .li-acts{display:flex; gap:6px; margin-top:10px}
+  .li-acts button{background:none; border:1px solid var(--line); color:var(--muted); font-size:11.5px; font-weight:700; padding:5px 10px; border-radius:8px; cursor:pointer; font-family:inherit}
+  .li-acts .li-del{color:var(--warn); border-color:#e7b7b0}
+  .li-acts button:active{transform:scale(.96)}
+  .buy-edit{background:none; border:0; color:var(--muted); font-size:13px; line-height:1; cursor:pointer; padding:0 2px}
+  .cat-edit{background:none; border:0; color:var(--muted); font-size:13px; line-height:1; cursor:pointer; padding:0 2px 0 8px; align-self:center}
 
   /* today focus mode */
   .today-strip{display:flex; align-items:center; gap:11px; width:100%; text-align:left; font-family:inherit; cursor:pointer;
@@ -308,7 +330,7 @@
   <section class="tab-panel" id="tips"></section>
 </main>
 
-<button class="fab" id="fab" title="Add expense">+</button>
+<button class="fab" id="fab" title="Add a budget category">+</button>
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet">
   <div class="grip"></div>
@@ -335,6 +357,27 @@
   <p class="hint">You and your travel partner must type the same passcode to share one trip. It unlocks your private data, so keep it between you. Case-sensitive.</p>
   <button class="save" id="nameSave">Save</button>
 </div>
+
+<!-- custom booking sheet (add / edit) -->
+<div class="sheet" id="bookSheet">
+  <div class="grip"></div>
+  <h3 id="bkSheetTitle">Add a booking</h3>
+  <label>Name</label>
+  <input id="bkName" placeholder="e.g. Sunset catamaran cruise" maxlength="80" />
+  <label>When — optional</label>
+  <input id="bkWhen" placeholder="e.g. Jul 2, 5pm" maxlength="40" />
+  <label>Price — optional</label>
+  <input id="bkPrice" placeholder="e.g. $59/pp" maxlength="40" />
+  <label>Link — optional</label>
+  <input id="bkLink" placeholder="https://… (operator or Groupon)" maxlength="300" inputmode="url" />
+  <label>Note — optional</label>
+  <input id="bkNote" placeholder="anything to remember" maxlength="200" />
+  <button class="save" id="bkSave">Add booking</button>
+  <button class="cancel" id="bkCancel">Cancel</button>
+</div>
+
+<!-- undo toast (safe deletes) -->
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <!-- Firebase (compat SDK = no build step). Loads from CDN; needs internet the first time. -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -621,8 +664,10 @@ const TIPS = [
 ];
 const labelOf = id => {
   const b = BOOKINGS.find(x=>x.id===id); if(b) return b.name;
+  const cb = (state.customBookings||[]).find(x=>x.id===id); if(cb) return cb.name;
   const it = BUDGET.flatMap(g=>g.items).find(x=>x.id===id); if(it) return it.name;
-  const m = id.match(/^d(\d+)_(\d+)$/); if(m){ const dd=ITIN[+m[1]]; return dd? dd.slots[+m[2]].a : id; }
+  const ci = (state.customItems||[]).find(x=>x.id===id); if(ci) return ci.name;
+  const ea = effAct(id); if(ea) return ea.a;
   return id;
 };
 
@@ -635,8 +680,9 @@ async function deriveRoom(pass){
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode((pass||"").trim()));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,24);
 }
-let state = {done:{}, booked:{}, conf:{}, expenses:[], feed:[], moved:{}, amounts:{}, purchases:{}, customItems:[], notes:{}, deleted:{}, dealsCheckedAt:0};
+let state = {done:{}, booked:{}, conf:{}, expenses:[], feed:[], moved:{}, amounts:{}, purchases:{}, customItems:[], notes:{}, deleted:{}, customActs:[], actEdits:{}, customBookings:[], dealsCheckedAt:0};
 let movingId=null; // activity currently being moved (transient UI state)
+const openDays=new Set(); let openInit=false; // which day cards are expanded (per-device, persists across re-renders)
 let db=null, online=false;
 
 const money = n => "$"+Math.round(n).toLocaleString();
@@ -645,6 +691,17 @@ const amtOf = i => (state.amounts && state.amounts[i.id]!=null) ? state.amounts[
 function allItems(){ return BUDGET.flatMap(g=>g.items).concat(state.customItems||[]); }
 const planned = () => allItems().reduce((s,i)=>s+amtOf(i),0);
 function itemSpent(i){ const p=(state.purchases&&state.purchases[i.id])||[]; if(p.length) return p.reduce((s,x)=>s+(+x.a||0),0); return state.done[i.id]?amtOf(i):0; }
+/* Resolve an activity slot id (built-in ITIN slot OR user-added custom act),
+   then apply any user edits. Single source of truth for render + feed labels. */
+function baseAct(id){
+  const c=(state.customActs||[]).find(x=>x.id===id);
+  if(c) return {t:c.t||"Add", a:c.a||"", n:c.n||"", flag:false, custom:true};
+  const m=id&&id.match&&id.match(/^d(\d+)_(\d+)$/);
+  if(m){ const dd=ITIN[+m[1]]; const s=dd&&dd.slots&&dd.slots[+m[2]]; if(s) return {t:s.t, a:s.a, n:s.n||"", flag:!!s.flag, custom:false}; }
+  return null;
+}
+function effAct(id){ const b=baseAct(id); if(!b) return null; const e=(state.actEdits&&state.actEdits[id])||{};
+  return {t:e.t!=null?e.t:b.t, a:e.a!=null?e.a:b.a, n:e.n!=null?e.n:b.n, flag:b.flag, custom:b.custom}; }
 const initials = n => (n||"?").trim().slice(0,2).toUpperCase();
 function timeAgo(ts){ if(!ts) return ""; const s=Math.floor((Date.now()-ts)/1000);
   if(s<60) return "just now"; if(s<3600) return Math.floor(s/60)+"m ago";
@@ -669,6 +726,20 @@ function push(path, value){
   else { saveLocal(); }
 }
 
+/* Undo toast: safe deletes everywhere. Delete happens immediately; the toast
+   offers ~5s to restore. One pending undo at a time. */
+let _undoFn=null, _undoTimer=null;
+function showUndo(msg, fn){
+  _undoFn = fn || null;
+  const t=document.getElementById("toast"); if(!t) return;
+  t.innerHTML = `<span>${esc(msg)}</span>` + (_undoFn?`<button id="undoBtn">Undo</button>`:``);
+  t.classList.add("show");
+  clearTimeout(_undoTimer);
+  _undoTimer=setTimeout(()=>{ t.classList.remove("show"); _undoFn=null; }, 5200);
+}
+function doUndo(){ if(!_undoFn) return; const f=_undoFn; _undoFn=null; clearTimeout(_undoTimer);
+  const t=document.getElementById("toast"); if(t) t.classList.remove("show"); f(); }
+
 function initFirebase(){
   if(!CONFIGURED){ // no keys yet -> local-only mode
     loadLocal(); setSync(false,"Local only"); renderAll(); return;
@@ -682,7 +753,7 @@ function initFirebase(){
     db.ref(".info/connected").on("value", s=>{ setSync(!!s.val(), s.val()?"Synced":"Offline"); });
     db.ref("trip/"+ROOM).on("value", snap=>{
       const v = snap.val() || {};
-      state.done = v.done||{}; state.booked = v.booked||{}; state.conf = v.conf||{}; state.moved = v.moved||{}; state.amounts = v.amounts||{}; state.purchases = v.purchases||{}; state.customItems = v.customItems||[]; state.notes = v.notes||{}; state.deleted = v.deleted||{};
+      state.done = v.done||{}; state.booked = v.booked||{}; state.conf = v.conf||{}; state.moved = v.moved||{}; state.amounts = v.amounts||{}; state.purchases = v.purchases||{}; state.customItems = v.customItems||[]; state.notes = v.notes||{}; state.deleted = v.deleted||{}; state.customActs = v.customActs||[]; state.actEdits = v.actEdits||{}; state.customBookings = v.customBookings||[];
       state.expenses = v.expenses||[]; state.feed = v.feed||[]; state.dealsCheckedAt = v.dealsCheckedAt||0;
       saveLocal(); renderAll();
       if(localStorage.getItem(JOINKEY)){ localStorage.removeItem(JOINKEY); logFeed("joined the trip 👋"); }
@@ -760,40 +831,45 @@ function dayTitle(day,di,here){
   const unchanged = origIds.length===hereIds.length && origIds.every(id=>hereIds.includes(id));
   if(unchanged) return esc(day.theme);
   if(!hereIds.length) return "Open — nothing scheduled";
-  const parts=here.map(x=>esc(shortAct(x.s.a)));
+  const parts=here.map(x=>esc(shortAct(x.act.a)));
   const shown=parts.slice(0,3).join(" · ");
   return parts.length>3 ? `${shown} +${parts.length-3} more` : shown;
 }
 function renderItin(){
   const moved=state.moved||{};
-  const all=[]; ITIN.forEach((day,di)=>{ const k=day.d+day.m; day.slots.forEach((s,si)=>{ const id=`d${di}_${si}`; if(state.deleted&&state.deleted[id]) return; all.push({id,s,origKey:k}); }); });
+  const all=[]; ITIN.forEach((day,di)=>{ const k=day.d+day.m; day.slots.forEach((s,si)=>{ const id=`d${di}_${si}`; if(state.deleted&&state.deleted[id]) return; all.push({id,act:effAct(id),origKey:k}); }); });
+  (state.customActs||[]).forEach(c=>{ if(state.deleted&&state.deleted[c.id]) return; all.push({id:c.id,act:effAct(c.id),origKey:c.day}); });
   const mv = movingId ? all.find(x=>x.id===movingId) : null;
-  const banner = mv ? `<div class="move-banner">Moving <b>${esc(mv.s.a)}</b> — tap <b>Move here</b> on the day you want, or <button class="mv-cancel" id="mvCancel">Cancel</button></div>` : "";
+  const banner = mv ? `<div class="move-banner">Moving <b>${esc(mv.act.a)}</b> — tap <b>Move here</b> on the day you want, or <button class="mv-cancel" id="mvCancel">Cancel</button></div>` : "";
   const ti = todayIndex();            // -1 before/after the trip
   const openIdx = ti>=0 ? ti : 0;     // expand today by default (else day 1)
+  if(!openInit){ openInit=true; const od=ITIN[openIdx]; if(od) openDays.add(od.d+od.m); }
   const body = ITIN.map((day,di)=>{
     const dk=day.d+day.m;
     const here=all.filter(x=>(moved[x.id]||x.origKey)===dk);
-    const slots=here.map(x=>{ const s=x.s,id=x.id; const noteCls=s.flag?"note flag":"note";
-      const note=s.n?`<div class="${noteCls}">${s.n}</div>`:"";
+    const slots=here.map(x=>{ const s=x.act,id=x.id; const noteCls=s.flag?"note flag":"note";
+      const note=s.n?`<div class="${noteCls}">${esc(s.n)}</div>`:"";
       const mt=(moved[id]&&moved[id]!==x.origKey)?`<span class="moved-tag">moved</span>`:"";
+      const ct=s.custom?`<span class="custom-tag">added</span>`:"";
       const un=(state.notes&&state.notes[id])||"";
       const unHtml=un?`<div class="usernote note-edit" data-id="${id}" title="Tap to edit your note">📝 ${esc(un)}</div>`:"";
       const noteBtn=`<button class="note-add" data-id="${id}">${un?"edit note":"＋ note"}</button>`;
       return `<div class="slot ${state.done[id]?'done':''}"><input type="checkbox" class="ck slot-ck" data-id="${id}" ${state.done[id]?"checked":""}>
-        <div class="time">${s.t}</div><div class="body"><div class="act">${s.a}${mt}</div>${note}${unHtml}${noteBtn}</div>
-        <div class="slot-acts"><button class="mv ${movingId===id?'active':''}" data-id="${id}" title="Move to another day">↪</button>
+        <div class="time">${esc(s.t)}</div><div class="body"><div class="act">${esc(s.a)}${mt}${ct}</div>${note}${unHtml}${noteBtn}</div>
+        <div class="slot-acts"><button class="act-edit-btn" data-id="${id}" title="Edit activity">✏️</button>
+        <button class="mv ${movingId===id?'active':''}" data-id="${id}" title="Move to another day">↪</button>
         <button class="del-act" data-id="${id}" title="Remove from plan">🗑</button></div></div>`; }).join("");
     let tag=""; if(day.tag==="book") tag=`<span class="day-tag tag-book">BOOK AHEAD</span>`; if(day.tag==="anchor") tag=`<span class="day-tag tag-anchor">PAIR THESE</span>`;
     const _w=WX[isoOf(day)]; const wx=_w?`<a class="wx" href="https://forecast.weather.gov/MapClick.php?lat=21.2793&lon=-157.8293" target="_blank" rel="noopener" title="Open the National Weather Service forecast for Waikiki"><span class="wx-ic">${wxIcon(_w.c,_w.p)}</span><b>${_w.hi}°/${_w.lo}°</b></a>`:"";
     const moveHere = (mv && dk!==(moved[movingId]||mv.origKey)) ? `<button class="mvto" data-key="${dk}">Move here</button>` : "";
     const isToday = di===ti, isPast = ti>=0 && di<ti;
-    const dayCls = `day ${(di===openIdx||!!movingId)?'open':''}${isToday?' today':''}${isPast?' past':''}`;
+    const isOpen = !!movingId || openDays.has(dk);
+    const dayCls = `day ${isOpen?'open':''}${isToday?' today':''}${isPast?' past':''}`;
     const badge = isToday ? `<span class="today-badge">TODAY</span>` : "";
-    return `<div class="${dayCls}"${isToday?' id="day-today"':''}><div class="day-head">
+    return `<div class="${dayCls}" data-dk="${dk}"${isToday?' id="day-today"':''}><div class="day-head">
       <div class="day-date"><span class="d">${day.d}</span><span class="m">${day.m}</span></div>
       <div class="day-meta"><div class="day-dow">${day.dow}${badge}</div><div class="day-theme">${dayTitle(day,di,here)}</div>${tag}</div>${moveHere}${wx}
-      <span class="chev">›</span></div><div class="day-body">${slots}</div></div>`;
+      <span class="chev">›</span></div><div class="day-body">${slots}<button class="add-act" data-day="${dk}">＋ add activity</button></div></div>`;
   }).join("");
   let strip = "";
   if(ti>=0){ const td=ITIN[ti], dkT=td.d+td.m; const hereT=all.filter(x=>(moved[x.id]||x.origKey)===dkT);
@@ -802,18 +878,24 @@ function renderItin(){
   }
   document.getElementById("itin").innerHTML = banner + strip + body;
 }
+function bookingRow(b, custom){
+  const isB=state.booked[b.id]; const links=[];
+  if(b.official) links.push(`<a class="official" href="${esc(b.official)}" target="_blank" rel="noopener">${custom?"Open":"Book direct"} \u2197</a>`);
+  if(b.groupon) links.push(`<a class="groupon" href="${esc(b.groupon)}" target="_blank" rel="noopener">Groupon \u2197</a>`);
+  if(b.phone) links.push(`<a class="call" href="tel:${esc(b.phone)}">\ud83d\udcde Call</a>`);
+  if(b.map) links.push(`<a href="${esc(b.map)}" target="_blank" rel="noopener">\ud83d\udccd Map</a>`);
+  const sub=[b.when,b.price].filter(Boolean).map(esc).join(" \u00b7 ");
+  const acts=custom?`<div class="li-acts"><button class="bk-edit" data-id="${b.id}">Edit</button><button class="bk-del li-del" data-id="${b.id}">Delete</button></div>`:"";
+  return `<div class="li ${isB?'done':''}"><div class="li-top"><div class="body"><div class="name">${esc(b.name)}</div>${sub?`<div class="sub">${sub}</div>`:""}</div></div>
+    ${b.note?`<div class="note" style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45">${esc(b.note)}</div>`:""}
+    ${links.length?`<div class="book">${links.join("")}</div>`:""}
+    <div class="booked-row ${isB?'is-booked':''}"><input type="checkbox" class="ck bk-ck" data-id="${b.id}" ${isB?"checked":""} style="width:18px;height:18px;min-width:18px">
+      <span>${isB?"Booked":"Mark booked"}</span><input class="conf" data-id="${b.id}" placeholder="Confirmation #" value="${esc(state.conf[b.id])}"></div>${acts}</div>`;
+}
 function renderBook(){
-  const rows=BOOKINGS.map(b=>{ const isB=state.booked[b.id]; const links=[];
-    if(b.official) links.push(`<a class="official" href="${b.official}" target="_blank" rel="noopener">Book direct \u2197</a>`);
-    if(b.groupon) links.push(`<a class="groupon" href="${b.groupon}" target="_blank" rel="noopener">Groupon \u2197</a>`);
-    if(b.phone) links.push(`<a class="call" href="tel:${b.phone}">\ud83d\udcde Call</a>`);
-    if(b.map) links.push(`<a href="${b.map}" target="_blank" rel="noopener">\ud83d\udccd Map</a>`);
-    return `<div class="li ${isB?'done':''}"><div class="li-top"><div class="body"><div class="name">${b.name}</div><div class="sub">${b.when} \u00b7 ${b.price}</div></div></div>
-      <div class="note" style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45">${b.note}</div>
-      <div class="book">${links.join("")}</div>
-      <div class="booked-row ${isB?'is-booked':''}"><input type="checkbox" class="ck bk-ck" data-id="${b.id}" ${isB?"checked":""} style="width:18px;height:18px;min-width:18px">
-        <span>${isB?"Booked":"Mark booked"}</span><input class="conf" data-id="${b.id}" placeholder="Confirmation #" value="${esc(state.conf[b.id])}"></div></div>`;
-  }).join("");
+  const rows=BOOKINGS.map(b=>bookingRow(b,false)).join("");
+  const custom=(state.customBookings||[]);
+  const customRows=custom.length?custom.map(b=>bookingRow(b,true)).join(""):`<div class="empty">No bookings of your own yet. Add a luau, a dinner reservation, anything \u2014 it syncs to both phones.</div>`;
   const cur=CURATED.map(b=>{ const links=[];
     if(b.official) links.push(`<a class="official" href="${b.official}" target="_blank" rel="noopener">Details \u2197</a>`);
     if(b.groupon) links.push(`<a class="groupon" href="${b.groupon}" target="_blank" rel="noopener">Groupon \u2197</a>`);
@@ -822,7 +904,7 @@ function renderBook(){
       ${b.note?`<div class="note" style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45">${b.note}</div>`:""}
       <div class="book">${links.join("")}</div></div>`;
   }).join("");
-  document.getElementById("book").innerHTML=`<div class="group-label">Tap to book \u2014 then mark it & save your confirmation #</div>${rows}<div class="foot">Direct = operator's site \u00b7 green = Groupon \u00b7 edits sync to both phones</div><div class="group-label">More ideas \u2014 curated Oahu activities & deals (browse only)</div>${cur}<div class="foot">Curated picks \u2014 prices & deals rotate; confirm on the operator's site before booking</div>`;
+  document.getElementById("book").innerHTML=`<div class="group-label">Tap to book \u2014 then mark it & save your confirmation #</div>${rows}<div class="foot">Direct = operator's site \u00b7 green = Groupon \u00b7 edits sync to both phones</div><div class="group-label">Your bookings</div>${customRows}<button class="addcat bk-add">\uff0b add a booking</button><div class="group-label">More ideas \u2014 curated Oahu activities & deals (browse only)</div>${cur}<div class="foot">Curated picks \u2014 prices & deals rotate; confirm on the operator's site before booking</div>`;
 }
 function renderBudget(){
   const items=allItems();
@@ -831,13 +913,13 @@ function renderBudget(){
   function row(i, custom){
     const sub=i.sub?`<div class="sub">${i.sub}</div>`:"";
     const purch=(state.purchases&&state.purchases[i.id])||[]; const used=purch.reduce((s,x)=>s+(+x.a||0),0);
-    const pRows=purch.map((x,idx)=>`<div class="buy"><span class="ba">${money(x.a)}</span><span class="bn">${esc(x.n)||"(no note)"}${x.by?" · "+esc(x.by):""}</span><button class="buy-del" data-id="${i.id}" data-idx="${idx}" title="Remove">×</button></div>`).join("");
+    const pRows=purch.map((x,idx)=>`<div class="buy"><span class="ba">${money(x.a)}</span><span class="bn">${esc(x.n)||"(no note)"}${x.by?" · "+esc(x.by):""}</span><button class="buy-edit" data-id="${i.id}" data-idx="${idx}" title="Edit">✎</button><button class="buy-del" data-id="${i.id}" data-idx="${idx}" title="Remove">×</button></div>`).join("");
     const usedLine=purch.length?`<div class="used ${used>amtOf(i)?'over':''}">${money(used)} of ${money(amtOf(i))} used</div>`:"";
     const buys=`<div class="buys">${pRows}${usedLine}<button class="addbuy" data-id="${i.id}">＋ purchase</button></div>`;
     const cb=purch.length?"":`<input type="checkbox" class="ck bud-ck" data-id="${i.id}" ${state.done[i.id]?"checked":""}>`;
     const doneCls=(!purch.length&&state.done[i.id])?'done':'';
-    const rm=custom?`<button class="cat-del" data-id="${i.id}" title="Remove category">×</button>`:"";
-    return `<div class="li ${doneCls}"><div class="li-top">${cb}<div class="body"><div class="name">${i.name}</div>${sub}</div><button class="amt amt-edit" data-id="${i.id}" title="Tap to edit cost">${money(amtOf(i))}</button>${rm}</div>${buys}</div>`;
+    const rm=custom?`<button class="cat-edit" data-id="${i.id}" title="Rename">✎</button><button class="cat-del" data-id="${i.id}" title="Remove category">×</button>`:"";
+    return `<div class="li ${doneCls}"><div class="li-top">${cb}<div class="body"><div class="name">${esc(i.name)}</div>${sub}</div><button class="amt amt-edit" data-id="${i.id}" title="Tap to edit cost">${money(amtOf(i))}</button>${rm}</div>${buys}</div>`;
   }
   const groups=BUDGET.map(g=>`<div class="group-label">${g.g}</div>${g.items.map(i=>row(i,false)).join("")}`).join("");
   const customList=(state.customItems&&state.customItems.length)?`<div class="group-label">Your added categories</div>${state.customItems.map(i=>row(i,true)).join("")}`:"";
@@ -884,23 +966,42 @@ document.querySelectorAll("nav.tabs button").forEach(b=>{ b.onclick=()=>{
   window.scrollTo({top:0,behavior:"smooth"}); }; });
 
 document.addEventListener("click",e=>{
-  if(e.target.closest("#todayJump")){ const el=document.getElementById("day-today"); if(el) el.classList.add("open"); scrollToToday(); return; }
+  if(e.target.closest("#todayJump")){ const el=document.getElementById("day-today"); if(el){ el.classList.add("open"); if(el.dataset.dk) openDays.add(el.dataset.dk); } scrollToToday(); return; }
   const head=e.target.closest(".day-head");
-  if(head&&!e.target.classList.contains("ck")&&!e.target.closest(".wx")&&!e.target.closest(".mvto")) head.closest(".day").classList.toggle("open");
+  if(head&&!e.target.classList.contains("ck")&&!e.target.closest(".wx")&&!e.target.closest(".mvto")){
+    const dayEl=head.closest(".day"), dk=dayEl.dataset.dk; const willOpen=!dayEl.classList.contains("open");
+    dayEl.classList.toggle("open"); if(dk){ if(willOpen) openDays.add(dk); else openDays.delete(dk); } }
   if(e.target.classList.contains("mv")){ const id=e.target.dataset.id; movingId=(movingId===id?null:id); renderItin(); if(movingId) window.scrollTo({top:0,behavior:"smooth"}); return; }
-  if(e.target.classList.contains("del-act")){ const id=e.target.dataset.id;
-    let actName=""; ITIN.forEach((day,di)=>day.slots.forEach((s,si)=>{ if(`d${di}_${si}`===id) actName=s.a; }));
-    if(!confirm(`Remove "${actName}" from the plan?\n\n(You can restore it with "Reset everything".)`)) return;
+  if(e.target.classList.contains("del-act")){ const id=e.target.dataset.id; const ea=effAct(id); const nm=ea?ea.a:"activity";
     state.deleted=state.deleted||{}; state.deleted[id]=true; if(movingId===id) movingId=null;
-    push("deleted",state.deleted); logFeed(`removed "${esc(actName)}" from the plan`); renderItin(); return; }
+    push("deleted",state.deleted); logFeed(`removed "${esc(nm)}" from the plan`); renderItin();
+    showUndo(`Removed "${nm}"`, ()=>{ if(state.deleted) delete state.deleted[id]; push("deleted",state.deleted||{}); logFeed(`restored "${esc(nm)}"`); renderItin(); });
+    return; }
+  if(e.target.classList.contains("act-edit-btn")){ const id=e.target.dataset.id; const ea=effAct(id); if(!ea) return;
+    const v=prompt("Edit activity — time, then what (e.g. “Eve, Sunset walk”):", `${ea.t}, ${ea.a}`); if(v===null) return;
+    const ci=v.indexOf(","); let t,a; if(ci>=0){ t=v.slice(0,ci).trim(); a=v.slice(ci+1).trim(); } else { t=ea.t; a=v.trim(); }
+    if(!a){ alert("Give the activity a description."); return; } t=t||ea.t||"Add";
+    const c=(state.customActs||[]).find(x=>x.id===id);
+    if(c){ c.t=t; c.a=a; push("customActs",state.customActs); }
+    else { state.actEdits=state.actEdits||{}; state.actEdits[id]={...(state.actEdits[id]||{}), t, a}; push("actEdits",state.actEdits); }
+    logFeed(`edited an activity → "${esc(a)}"`); renderItin(); return; }
+  if(e.target.classList.contains("add-act")){ const day=e.target.dataset.day;
+    const v=prompt("New activity — time, then what (e.g. “Eve, Sunset walk”):",""); if(v===null||!v.trim()) return;
+    const ci=v.indexOf(","); let t,a; if(ci>=0){ t=v.slice(0,ci).trim()||"Add"; a=v.slice(ci+1).trim(); } else { t="Add"; a=v.trim(); }
+    if(!a){ alert("Give the activity a description."); return; }
+    const id="ca_"+Date.now().toString(36)+Math.floor(Math.random()*1000);
+    state.customActs=state.customActs||[]; state.customActs.push({id, day, t, a, n:""}); if(day) openDays.add(day);
+    push("customActs",state.customActs); logFeed(`added "${esc(a)}" to the plan`); renderItin(); return; }
   if(e.target.classList.contains("note-add")||e.target.classList.contains("note-edit")){ const id=e.target.dataset.id;
-    const cur=(state.notes&&state.notes[id])||""; let actName=""; ITIN.forEach((day,di)=>day.slots.forEach((s,si)=>{ if(`d${di}_${si}`===id) actName=s.a; }));
-    const v=prompt("Note for "+(actName||"this activity")+" (leave blank to remove):", cur); if(v===null) return;
+    const cur=(state.notes&&state.notes[id])||""; const ea=effAct(id); const actName=ea?ea.a:"this activity";
+    const v=prompt("Note for "+actName+" (leave blank to remove):", cur); if(v===null) return;
     state.notes=state.notes||{}; const t=v.trim();
     if(t) state.notes[id]=t; else delete state.notes[id];
     push("notes",state.notes); logFeed(`${t?(cur?"edited":"added"):"removed"} a note on "${esc(actName)}"`); renderItin(); return; }
   if(e.target.classList.contains("mvto")&&movingId){ const key=e.target.dataset.key;
-    let origKey=null,actName=""; ITIN.forEach((day,di)=>day.slots.forEach((s,si)=>{ if(`d${di}_${si}`===movingId){origKey=day.d+day.m; actName=s.a;} }));
+    let origKey=null; const cm=(state.customActs||[]).find(x=>x.id===movingId);
+    if(cm) origKey=cm.day; else { const m=movingId.match(/^d(\d+)_(\d+)$/); if(m){ const dd=ITIN[+m[1]]; if(dd) origKey=dd.d+dd.m; } }
+    const actName=(effAct(movingId)||{}).a||"";
     const lbl=key.replace(/^(\d+)([A-Za-z]+)$/,"$2 $1");
     if(!confirm(`Move "${actName}" to ${lbl}?`)) return;
     state.moved=state.moved||{}; if(key===origKey) delete state.moved[movingId]; else state.moved[movingId]=key;
@@ -917,23 +1018,48 @@ document.addEventListener("click",e=>{
       state.purchases=state.purchases||{}; (state.purchases[id]=state.purchases[id]||[]).push({a:a, n:note, by:(myName||"Someone"), ts:Date.now()});
       push("purchases",state.purchases); logFeed(`+ ${money(a)} on ${esc(it.name)}${note?" ("+esc(note)+")":""}`); renderAll(); }
       else alert("Couldn't find an amount in that."); } return; }
+  if(e.target.classList.contains("buy-edit")){ const id=e.target.dataset.id, idx=+e.target.dataset.idx;
+    const arr=state.purchases&&state.purchases[id]; if(!arr||!arr[idx]) return; const pp=arr[idx];
+    const v=prompt("Edit purchase — amount then note (e.g. “24 shave ice”):", `${pp.a}${pp.n?" "+pp.n:""}`); if(v===null) return;
+    const m=v.match(/[0-9]+(?:\.[0-9]+)?/); if(!m){ alert("Couldn't find an amount in that."); return; }
+    pp.a=Math.round(parseFloat(m[0])); pp.n=v.replace(m[0],"").replace(/^[\s$.,-]+/,"").trim();
+    push("purchases",state.purchases); logFeed(`edited a purchase → ${money(pp.a)}`); renderAll(); return; }
   if(e.target.classList.contains("buy-del")){ const id=e.target.dataset.id, idx=+e.target.dataset.idx;
     const arr=state.purchases&&state.purchases[id]; if(!arr||!arr[idx]) return; const pp=arr[idx];
-    if(!confirm("Remove the "+money(pp.a)+" purchase"+(pp.n?" ("+pp.n+")":"")+"?")) return;
-    arr.splice(idx,1); if(!arr.length) delete state.purchases[id]; push("purchases",state.purchases); logFeed(`removed a ${money(pp.a)} purchase`); renderAll(); return; }
-  if(e.target.classList.contains("cat-del")){ const id=e.target.dataset.id; const it=(state.customItems||[]).find(x=>x.id===id);
-    if(!confirm("Remove the category "+(it?it.name:"")+" and its purchases?")) return;
-    state.customItems=(state.customItems||[]).filter(x=>x.id!==id);
+    arr.splice(idx,1); if(!arr.length) delete state.purchases[id]; push("purchases",state.purchases); logFeed(`removed a ${money(pp.a)} purchase`); renderAll();
+    showUndo(`Removed ${money(pp.a)} purchase`, ()=>{ state.purchases=state.purchases||{}; const a2=(state.purchases[id]=state.purchases[id]||[]); a2.splice(Math.min(idx,a2.length),0,pp); push("purchases",state.purchases); renderAll(); });
+    return; }
+  if(e.target.classList.contains("cat-edit")){ const id=e.target.dataset.id; const it=(state.customItems||[]).find(x=>x.id===id); if(!it) return;
+    const v=prompt("Rename category:", it.name); if(v===null) return; const nm=v.trim(); if(!nm){ alert("Give it a name."); return; }
+    const old=it.name; it.name=nm; push("customItems",state.customItems); logFeed(`renamed category "${esc(old)}" → "${esc(nm)}"`); renderAll(); return; }
+  if(e.target.classList.contains("cat-del")){ const id=e.target.dataset.id; const it=(state.customItems||[]).find(x=>x.id===id); if(!it) return;
+    const idx=state.customItems.findIndex(x=>x.id===id);
+    const snapP=state.purchases?state.purchases[id]:undefined, snapA=state.amounts?state.amounts[id]:undefined, snapD=state.done?state.done[id]:undefined;
+    state.customItems=state.customItems.filter(x=>x.id!==id);
     if(state.purchases) delete state.purchases[id]; if(state.amounts) delete state.amounts[id]; if(state.done) delete state.done[id];
     push("customItems",state.customItems); push("purchases",state.purchases||{}); push("amounts",state.amounts||{}); push("done",state.done||{});
-    logFeed(`removed category "${esc(it?it.name:"")}"`); renderAll(); return; }
+    logFeed(`removed category "${esc(it.name)}"`); renderAll();
+    showUndo(`Removed "${it.name}"`, ()=>{ state.customItems=state.customItems||[]; state.customItems.splice(Math.min(idx,state.customItems.length),0,it);
+      if(snapP!==undefined){ state.purchases=state.purchases||{}; state.purchases[id]=snapP; }
+      if(snapA!==undefined){ state.amounts=state.amounts||{}; state.amounts[id]=snapA; }
+      if(snapD!==undefined){ state.done=state.done||{}; state.done[id]=snapD; }
+      push("customItems",state.customItems); push("purchases",state.purchases||{}); push("amounts",state.amounts||{}); push("done",state.done||{}); renderAll(); });
+    return; }
   if(e.target.id==="addCatBtn"){ if(!myName) openName(); else openExp(); return; }
-  if(e.target.classList.contains("del")){ const idx=+e.target.dataset.idx; const rm=state.expenses[idx];
-    if(!confirm("Delete this expense"+(rm&&rm.name?" ("+rm.name+")":"")+"?")) return;
-    state.expenses.splice(idx,1); push("expenses",state.expenses); logFeed(`deleted expense ${rm?'"'+esc(rm.name)+'"':''}`); }
+  if(e.target.classList.contains("undo-x")||e.target.id==="undoBtn"){ doUndo(); return; }
+  if(e.target.classList.contains("bk-add")){ if(!myName){ openName(); return; } openBook(); return; }
+  if(e.target.classList.contains("bk-edit")){ const id=e.target.dataset.id; openBook(id); return; }
+  if(e.target.classList.contains("bk-del")){ const id=e.target.dataset.id; const arr=state.customBookings||[]; const idx=arr.findIndex(x=>x.id===id); if(idx<0) return; const bk=arr[idx];
+    state.customBookings=arr.filter(x=>x.id!==id); const sb=state.booked?state.booked[id]:undefined, sc=state.conf?state.conf[id]:undefined;
+    if(state.booked) delete state.booked[id]; if(state.conf) delete state.conf[id];
+    push("customBookings",state.customBookings); push("booked",state.booked||{}); push("conf",state.conf||{}); logFeed(`removed booking "${esc(bk.name)}"`); renderAll();
+    showUndo(`Removed "${bk.name}"`, ()=>{ state.customBookings=state.customBookings||[]; state.customBookings.splice(Math.min(idx,state.customBookings.length),0,bk);
+      if(sb!==undefined){ state.booked=state.booked||{}; state.booked[id]=sb; } if(sc!==undefined){ state.conf=state.conf||{}; state.conf[id]=sc; }
+      push("customBookings",state.customBookings); push("booked",state.booked||{}); push("conf",state.conf||{}); renderAll(); });
+    return; }
   if(e.target.id==="reset"){ if(!confirm("Reset ALL checks, bookings, expenses and history for BOTH phones? Can't be undone.")) return;
     if(myPass){ const pw=prompt("Enter the trip passcode to confirm this reset:"); if(pw===null) return; if(pw.trim()!==myPass){ alert("Passcode doesn't match — reset cancelled."); return; } }
-    state={done:{},booked:{},conf:{},expenses:[],feed:[],moved:{},amounts:{},purchases:{},customItems:[],notes:{},deleted:{}};
+    state={done:{},booked:{},conf:{},expenses:[],feed:[],moved:{},amounts:{},purchases:{},customItems:[],notes:{},deleted:{},customActs:[],actEdits:{},customBookings:[]};
     if(online&&db){ db.ref("trip/"+ROOM).set(state);} else saveLocal(); logFeed("reset the whole trip"); renderAll(); return; }
   if(e.target.id==="changePass"){ openName(); }
 });
@@ -957,12 +1083,31 @@ document.addEventListener("input",e=>{
 
 /* sheets */
 const scrim=document.getElementById("scrim");
-const expSheet=document.getElementById("sheet"), nameSheet=document.getElementById("nameSheet");
+const expSheet=document.getElementById("sheet"), nameSheet=document.getElementById("nameSheet"), bookSheet=document.getElementById("bookSheet");
 function openExp(){ scrim.classList.add("show"); expSheet.classList.add("show"); document.getElementById("eName").focus(); }
-function closeSheets(){ scrim.classList.remove("show"); expSheet.classList.remove("show"); nameSheet.classList.remove("show");
+function closeSheets(){ scrim.classList.remove("show"); expSheet.classList.remove("show"); nameSheet.classList.remove("show"); bookSheet.classList.remove("show");
   document.getElementById("eName").value=""; document.getElementById("eAmt").value=""; }
+let editingBookId=null;
+function openBook(id){ editingBookId=id||null; const b=id?(state.customBookings||[]).find(x=>x.id===id):null;
+  document.getElementById("bkSheetTitle").textContent=b?"Edit booking":"Add a booking";
+  document.getElementById("bkSave").textContent=b?"Save changes":"Add booking";
+  document.getElementById("bkName").value=b?b.name:""; document.getElementById("bkWhen").value=b?(b.when||""):"";
+  document.getElementById("bkPrice").value=b?(b.price||""):""; document.getElementById("bkLink").value=b?(b.official||""):"";
+  document.getElementById("bkNote").value=b?(b.note||""):"";
+  scrim.classList.add("show"); bookSheet.classList.add("show"); document.getElementById("bkName").focus(); }
 document.getElementById("fab").onclick=()=>{ if(!myName){ openName(); } else openExp(); };
 document.getElementById("eCancel").onclick=closeSheets;
+document.getElementById("bkCancel").onclick=closeSheets;
+document.getElementById("bkSave").onclick=()=>{
+  const name=document.getElementById("bkName").value.trim(); if(!name){ alert("Name the booking."); return; }
+  const when=document.getElementById("bkWhen").value.trim(), price=document.getElementById("bkPrice").value.trim();
+  let link=document.getElementById("bkLink").value.trim(); if(link && !/^https?:\/\//i.test(link)) link="https://"+link;
+  const note=document.getElementById("bkNote").value.trim();
+  state.customBookings=state.customBookings||[];
+  if(editingBookId){ const b=state.customBookings.find(x=>x.id===editingBookId); if(b){ b.name=name; b.when=when; b.price=price; b.official=link; b.note=note; } logFeed(`edited booking "${esc(name)}"`); }
+  else { const id="cb_"+Date.now().toString(36)+Math.floor(Math.random()*1000); state.customBookings.push({id, name, when, price, official:link, note}); logFeed(`added booking "${esc(name)}"`); }
+  push("customBookings",state.customBookings); editingBookId=null; closeSheets(); renderAll();
+};
 scrim.onclick=closeSheets;
 document.getElementById("eSave").onclick=()=>{
   const name=document.getElementById("eName").value.trim(); if(!name){ alert("Name the category."); return; }

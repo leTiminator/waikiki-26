@@ -11,7 +11,7 @@ free on GitHub Pages.
 
 - **Live:** https://letiminator.github.io/waikiki-26/
 - **Repo:** github.com/leTiminator/waikiki-26 — Pages deploys from **`main` / root**.
-- **Service worker version:** currently `waikiki-v31` (in `sw.js`).
+- **Service worker version:** currently `waikiki-v32` (in `sw.js`).
 
 ## Files
 - `index.html` — the **entire app** (HTML + CSS + JS in one file). ~All work happens here.
@@ -31,13 +31,16 @@ free on GitHub Pages.
 - **Shared/synced state** = Firebase Realtime DB, under a per-passcode room:
   - room id = `SHA-256(passcode)` → first 24 hex chars (derived identically in the app and
     in `check-deals.mjs`; the raw passcode is never stored in the page or DB).
-  - path: `trip/<room>/{ done, booked, conf, expenses, feed, moved, amounts, purchases, customItems, notes, deleted, deals, dealsCheckedAt }`
+  - path: `trip/<room>/{ done, booked, conf, expenses, feed, moved, amounts, purchases, customItems, notes, deleted, customActs, actEdits, customBookings, deals, dealsCheckedAt }`
   - `done` checked plan/budget items · `booked`/`conf` booking marks + confirmation #s ·
     `feed` activity log `[{who,text,ts}]` · `moved` `{slotId:"26Jun"}` activity day overrides ·
     `amounts` `{itemId:number}` budget-cost overrides · `purchases` `{itemId:[{a,n,by,ts}]}`
     per-item purchases · `customItems` `[{id,name,amt}]` user-added budget categories ·
     `notes` `{slotId:"text"}` per-activity user notes on the Plan page ·
-    `deleted` `{slotId:true}` activities hidden from the Plan (confirmed delete; reset restores).
+    `deleted` `{slotId:true}` activities hidden from the Plan (undo-able; reset restores) ·
+    `customActs` `[{id,day,t,a,n}]` user-added Plan activities (id `ca_*`; flow through done/moved/notes/deleted by id) ·
+    `actEdits` `{slotId:{t,a}}` user edits to a built-in or custom activity's time/text (applied by `effAct()`) ·
+    `customBookings` `[{id,name,when,price,official,note}]` user-added bookings (id `cb_*`; booked/conf keyed by id).
 - **Firebase** project `waikiki-2026`; config is in `index.html` (client-side keys are fine).
   DB security rule (set by owner): `{ "rules": { "trip": { "$room": { ".read": true, ".write": true } } } }`
   — open per-room, rooms not enumerable.
@@ -54,16 +57,20 @@ trade-wind "drizzle" codes don't show as rain; taps to the NWS forecast; refresh
 banner header with fluid title/date/pills · collapsible day cards · **move activities between
 days** (tap ↪ then "Move here", synced, confirms; a day's title auto-summarizes from its
 current activities once items are moved in/out, else keeps its hand-written `theme` —
-see `dayTitle()`) · **delete an activity** (🗑, confirmed, synced in `state.deleted`; reset
-restores) · **Today focus mode** on the Plan tab (`todayIndex()`/`todayISO()` resolve the
+see `dayTitle()`) · **full activity CRUD** — **add** your own activity to any day (`＋ add
+activity`), **edit** any activity's time/text (✏️, built-in via `actEdits`, custom in place),
+**delete** (🗑) with an **Undo toast** (`showUndo()`) instead of a confirm · open day cards
+**stay open across re-renders** (`openDays`) · **Today focus mode** on the Plan tab (`todayIndex()`/`todayISO()` resolve the
 current Hawaii date to an ITIN day: a "📍 Today · Day N of M" jump strip on top, today's
 card auto-expands + scrolls into view once on boot via `scrollToToday()`, a TODAY badge,
 and past days dimmed) · **add a personal note to any activity** (tap "＋ note", synced, in
-`state.notes`) · Book tab = bookings + long curated Groupon
+`state.notes`) · Book tab = built-in bookings + **your own bookings** (add/edit/delete via the
+`#bookSheet`, same booked/conf treatment, `state.customBookings`) + long curated Groupon
 list · Budget = **editable costs** (tap the $), **per-item purchase logging** (amount+note,
-"used of total"), **+ button adds a custom category** (with purchases + delete) · confirmations
-on destructive actions · **passcode-gated "reset everything"** · phone **back button** closes
-popups / cancels a move / else jumps to the Plan tab.
+edit ✎ + delete), **rename** custom categories (✎), **+ button adds a custom category** ·
+**Undo toast** (`showUndo()`/`doUndo()`, `#toast`) on every single-item delete (activity,
+purchase, category, custom booking) — reset still confirms + asks the passcode · phone
+**back button** closes popups / cancels a move / else jumps to the Plan tab.
 
 ## DEV CONVENTIONS — read before editing
 1. **Bump `VERSION` in `sw.js`** (`waikiki-vN` → N+1) after ANY app change.
