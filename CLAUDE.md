@@ -11,7 +11,7 @@ free on GitHub Pages.
 
 - **Live:** https://letiminator.github.io/waikiki-26/
 - **Repo:** github.com/leTiminator/waikiki-26 — Pages deploys from **`main` / root**.
-- **Service worker version:** currently `waikiki-v33` (in `sw.js`).
+- **Service worker version:** currently `waikiki-v34` (in `sw.js`).
 
 ## Files
 - `index.html` — the **entire app** (HTML + CSS + JS in one file). ~All work happens here.
@@ -44,6 +44,18 @@ free on GitHub Pages.
 - **Firebase** project `waikiki-2026`; config is in `index.html` (client-side keys are fine).
   DB security rule (set by owner): `{ "rules": { "trip": { "$room": { ".read": true, ".write": true } } } }`
   — open per-room, rooms not enumerable.
+
+## Offline & sync model (important — don't regress)
+`push(path,value)` **always** does `saveLocal()` **and** `db.ref(...).set()` when a `db`
+exists — it is NOT gated on the `online` flag. The Firebase SDK queues writes made while
+offline and flushes them on reconnect, so edits made with no signal are never lost (the old
+code skipped the Firebase write when offline, then the `.on("value")` listener clobbered the
+local edits on reconnect — that was a real data-loss bug). `logFeed()` and `reset` follow the
+same always-write pattern. The sync pill shows `Synced` / `Offline · changes will sync`.
+Deleted activities are recoverable: a 5s **Undo** toast, *and* a persistent **🗑 Removed
+activities (N)** drawer at the bottom of the Plan tab (`rmOpen`, `rm-restore`) that restores
+any removed built-in or custom activity until a full reset. (The legacy `expenses` array was
+fully removed — spend lives only in per-category `purchases`.)
 
 ## Privacy model (important)
 The link is public; the data is gated by the passcode. A **different passcode → a different,
