@@ -76,8 +76,11 @@
   .ck:checked{background:var(--good); border-color:var(--good)}
   .ck:checked::after{content:"\2713"; position:absolute; inset:0; color:#fff; font-size:14px; font-weight:900; display:flex; align-items:center; justify-content:center}
   .slot.done .act{text-decoration:line-through; color:var(--muted)}
-  .mv{margin-left:auto; align-self:center; background:none; border:0; color:var(--muted); font-size:17px; line-height:1; padding:4px 4px; cursor:pointer; opacity:.55}
+  .slot-acts{margin-left:auto; align-self:center; display:flex; flex-direction:column; align-items:center; gap:1px}
+  .mv{background:none; border:0; color:var(--muted); font-size:17px; line-height:1; padding:3px 4px; cursor:pointer; opacity:.55}
   .mv.active{opacity:1; color:var(--coral)}
+  .del-act{background:none; border:0; color:var(--muted); font-size:13px; line-height:1; padding:3px 4px; cursor:pointer; opacity:.45}
+  .del-act:active{transform:scale(.88)}
   .mvto{background:var(--coral); color:#fff; border:0; border-radius:14px; font-size:11px; font-weight:800; padding:5px 11px; cursor:pointer; white-space:nowrap; font-family:inherit}
   .move-banner{background:#fff4e6; border:1px solid #ffd9b0; color:#9a5b1e; font-size:12.5px; padding:10px 12px; border-radius:10px; margin-bottom:12px; line-height:1.5}
   .mv-cancel{background:#fff; border:1px solid #d8a; color:#9a5b1e; border-radius:12px; font-size:11px; font-weight:700; padding:2px 9px; cursor:pointer; font-family:inherit}
@@ -169,6 +172,8 @@
     .book a:hover{filter:brightness(1.06); box-shadow:var(--shadow)}
     .addcat:hover{background:rgba(31,111,139,.06)}
     .reset:hover{border-color:var(--surf); color:var(--surf)}
+    .mv:hover{opacity:1}
+    .del-act:hover{opacity:1; color:var(--warn)}
   }
   .quick a:active{transform:scale(.96)}
   .pill:active{transform:scale(.94)}
@@ -615,7 +620,7 @@ async function deriveRoom(pass){
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode((pass||"").trim()));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,24);
 }
-let state = {done:{}, booked:{}, conf:{}, expenses:[], feed:[], moved:{}, amounts:{}, purchases:{}, customItems:[], notes:{}, dealsCheckedAt:0};
+let state = {done:{}, booked:{}, conf:{}, expenses:[], feed:[], moved:{}, amounts:{}, purchases:{}, customItems:[], notes:{}, deleted:{}, dealsCheckedAt:0};
 let movingId=null; // activity currently being moved (transient UI state)
 let db=null, online=false;
 
@@ -662,7 +667,7 @@ function initFirebase(){
     db.ref(".info/connected").on("value", s=>{ setSync(!!s.val(), s.val()?"Synced":"Offline"); });
     db.ref("trip/"+ROOM).on("value", snap=>{
       const v = snap.val() || {};
-      state.done = v.done||{}; state.booked = v.booked||{}; state.conf = v.conf||{}; state.moved = v.moved||{}; state.amounts = v.amounts||{}; state.purchases = v.purchases||{}; state.customItems = v.customItems||[]; state.notes = v.notes||{};
+      state.done = v.done||{}; state.booked = v.booked||{}; state.conf = v.conf||{}; state.moved = v.moved||{}; state.amounts = v.amounts||{}; state.purchases = v.purchases||{}; state.customItems = v.customItems||[]; state.notes = v.notes||{}; state.deleted = v.deleted||{};
       state.expenses = v.expenses||[]; state.feed = v.feed||[]; state.dealsCheckedAt = v.dealsCheckedAt||0;
       saveLocal(); renderAll();
       if(localStorage.getItem(JOINKEY)){ localStorage.removeItem(JOINKEY); logFeed("joined the trip 👋"); }
@@ -738,7 +743,7 @@ function dayTitle(day,di,here){
 }
 function renderItin(){
   const moved=state.moved||{};
-  const all=[]; ITIN.forEach((day,di)=>{ const k=day.d+day.m; day.slots.forEach((s,si)=>all.push({id:`d${di}_${si}`,s,origKey:k})); });
+  const all=[]; ITIN.forEach((day,di)=>{ const k=day.d+day.m; day.slots.forEach((s,si)=>{ const id=`d${di}_${si}`; if(state.deleted&&state.deleted[id]) return; all.push({id,s,origKey:k}); }); });
   const mv = movingId ? all.find(x=>x.id===movingId) : null;
   const banner = mv ? `<div class="move-banner">Moving <b>${esc(mv.s.a)}</b> — tap <b>Move here</b> on the day you want, or <button class="mv-cancel" id="mvCancel">Cancel</button></div>` : "";
   const body = ITIN.map((day,di)=>{
@@ -752,7 +757,8 @@ function renderItin(){
       const noteBtn=`<button class="note-add" data-id="${id}">${un?"edit note":"＋ note"}</button>`;
       return `<div class="slot ${state.done[id]?'done':''}"><input type="checkbox" class="ck slot-ck" data-id="${id}" ${state.done[id]?"checked":""}>
         <div class="time">${s.t}</div><div class="body"><div class="act">${s.a}${mt}</div>${note}${unHtml}${noteBtn}</div>
-        <button class="mv ${movingId===id?'active':''}" data-id="${id}" title="Move to another day">↪</button></div>`; }).join("");
+        <div class="slot-acts"><button class="mv ${movingId===id?'active':''}" data-id="${id}" title="Move to another day">↪</button>
+        <button class="del-act" data-id="${id}" title="Remove from plan">🗑</button></div></div>`; }).join("");
     let tag=""; if(day.tag==="book") tag=`<span class="day-tag tag-book">BOOK AHEAD</span>`; if(day.tag==="anchor") tag=`<span class="day-tag tag-anchor">PAIR THESE</span>`;
     const _w=WX[isoOf(day)]; const wx=_w?`<a class="wx" href="https://forecast.weather.gov/MapClick.php?lat=21.2793&lon=-157.8293" target="_blank" rel="noopener" title="Open the National Weather Service forecast for Waikiki"><span class="wx-ic">${wxIcon(_w.c,_w.p)}</span><b>${_w.hi}°/${_w.lo}°</b></a>`:"";
     const moveHere = (mv && dk!==(moved[movingId]||mv.origKey)) ? `<button class="mvto" data-key="${dk}">Move here</button>` : "";
@@ -848,6 +854,11 @@ document.addEventListener("click",e=>{
   const head=e.target.closest(".day-head");
   if(head&&!e.target.classList.contains("ck")&&!e.target.closest(".wx")&&!e.target.closest(".mvto")) head.closest(".day").classList.toggle("open");
   if(e.target.classList.contains("mv")){ const id=e.target.dataset.id; movingId=(movingId===id?null:id); renderItin(); if(movingId) window.scrollTo({top:0,behavior:"smooth"}); return; }
+  if(e.target.classList.contains("del-act")){ const id=e.target.dataset.id;
+    let actName=""; ITIN.forEach((day,di)=>day.slots.forEach((s,si)=>{ if(`d${di}_${si}`===id) actName=s.a; }));
+    if(!confirm(`Remove "${actName}" from the plan?\n\n(You can restore it with "Reset everything".)`)) return;
+    state.deleted=state.deleted||{}; state.deleted[id]=true; if(movingId===id) movingId=null;
+    push("deleted",state.deleted); logFeed(`removed "${esc(actName)}" from the plan`); renderItin(); return; }
   if(e.target.classList.contains("note-add")||e.target.classList.contains("note-edit")){ const id=e.target.dataset.id;
     const cur=(state.notes&&state.notes[id])||""; let actName=""; ITIN.forEach((day,di)=>day.slots.forEach((s,si)=>{ if(`d${di}_${si}`===id) actName=s.a; }));
     const v=prompt("Note for "+(actName||"this activity")+" (leave blank to remove):", cur); if(v===null) return;
@@ -888,7 +899,7 @@ document.addEventListener("click",e=>{
     state.expenses.splice(idx,1); push("expenses",state.expenses); logFeed(`deleted expense ${rm?'"'+esc(rm.name)+'"':''}`); }
   if(e.target.id==="reset"){ if(!confirm("Reset ALL checks, bookings, expenses and history for BOTH phones? Can't be undone.")) return;
     if(myPass){ const pw=prompt("Enter the trip passcode to confirm this reset:"); if(pw===null) return; if(pw.trim()!==myPass){ alert("Passcode doesn't match — reset cancelled."); return; } }
-    state={done:{},booked:{},conf:{},expenses:[],feed:[],moved:{},amounts:{},purchases:{},customItems:[],notes:{}};
+    state={done:{},booked:{},conf:{},expenses:[],feed:[],moved:{},amounts:{},purchases:{},customItems:[],notes:{},deleted:{}};
     if(online&&db){ db.ref("trip/"+ROOM).set(state);} else saveLocal(); logFeed("reset the whole trip"); renderAll(); return; }
   if(e.target.id==="changePass"){ openName(); }
 });

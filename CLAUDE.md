@@ -11,7 +11,7 @@ free on GitHub Pages.
 
 - **Live:** https://letiminator.github.io/waikiki-26/
 - **Repo:** github.com/leTiminator/waikiki-26 — Pages deploys from **`main` / root**.
-- **Service worker version:** currently `waikiki-v29` (in `sw.js`).
+- **Service worker version:** currently `waikiki-v30` (in `sw.js`).
 
 ## Files
 - `index.html` — the **entire app** (HTML + CSS + JS in one file). ~All work happens here.
@@ -31,12 +31,13 @@ free on GitHub Pages.
 - **Shared/synced state** = Firebase Realtime DB, under a per-passcode room:
   - room id = `SHA-256(passcode)` → first 24 hex chars (derived identically in the app and
     in `check-deals.mjs`; the raw passcode is never stored in the page or DB).
-  - path: `trip/<room>/{ done, booked, conf, expenses, feed, moved, amounts, purchases, customItems, notes, deals, dealsCheckedAt }`
+  - path: `trip/<room>/{ done, booked, conf, expenses, feed, moved, amounts, purchases, customItems, notes, deleted, deals, dealsCheckedAt }`
   - `done` checked plan/budget items · `booked`/`conf` booking marks + confirmation #s ·
     `feed` activity log `[{who,text,ts}]` · `moved` `{slotId:"26Jun"}` activity day overrides ·
     `amounts` `{itemId:number}` budget-cost overrides · `purchases` `{itemId:[{a,n,by,ts}]}`
     per-item purchases · `customItems` `[{id,name,amt}]` user-added budget categories ·
-    `notes` `{slotId:"text"}` per-activity user notes on the Plan page.
+    `notes` `{slotId:"text"}` per-activity user notes on the Plan page ·
+    `deleted` `{slotId:true}` activities hidden from the Plan (confirmed delete; reset restores).
 - **Firebase** project `waikiki-2026`; config is in `index.html` (client-side keys are fine).
   DB security rule (set by owner): `{ "rules": { "trip": { "$room": { ".read": true, ".write": true } } } }`
   — open per-room, rooms not enumerable.
