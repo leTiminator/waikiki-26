@@ -227,6 +227,21 @@
   .ck{box-shadow:inset 0 1px 2px rgba(11,42,61,.06)}
   .ck:checked{box-shadow:0 2px 6px rgba(46,139,111,.35)}
 
+  /* today focus mode */
+  .today-strip{display:flex; align-items:center; gap:11px; width:100%; text-align:left; font-family:inherit; cursor:pointer;
+    background:linear-gradient(135deg, var(--ocean), var(--surf)); color:#fff; border:0; border-radius:14px; padding:11px 14px; margin-bottom:13px; box-shadow:var(--shadow-md); position:relative; overflow:hidden}
+  .today-strip::before{content:""; position:absolute; inset:0; background:radial-gradient(120% 100% at 90% -30%, rgba(255,255,255,.18), transparent 55%); pointer-events:none}
+  .today-strip .ts-emoji{font-size:18px; line-height:1}
+  .today-strip .ts-mid{flex:1; display:flex; flex-direction:column; line-height:1.2; min-width:0}
+  .today-strip .ts-day{font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; opacity:.85}
+  .today-strip .ts-theme{font-size:14px; font-weight:700; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .today-strip .ts-wx{font-size:14px; font-weight:800; white-space:nowrap}
+  .today-strip:active{transform:scale(.99)}
+  .today-badge{display:inline-block; font-size:9.5px; font-weight:800; color:#fff; background:var(--coral); padding:2px 7px; border-radius:20px; margin-left:7px; letter-spacing:.4px; vertical-align:middle}
+  .day.today{border-color:var(--coral); box-shadow:0 0 0 2px rgba(255,107,74,.28), var(--shadow-md)}
+  .day.past{opacity:.6; transition:opacity .25s ease}
+  @media (hover:hover){ .day.past:hover{opacity:1} }
+
   /* honor reduced motion everywhere */
   @media (prefers-reduced-motion: reduce){
     *{animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; scroll-behavior:auto !important}
@@ -703,6 +718,14 @@ function renderName(){ document.getElementById("namePill").textContent = myName?
 /* ============ LIVE WEATHER (Open-Meteo, Waikiki) ============ */
 const MONTHS={Jan:"01",Feb:"02",Mar:"03",Apr:"04",May:"05",Jun:"06",Jul:"07",Aug:"08",Sep:"09",Oct:"10",Nov:"11",Dec:"12"};
 const isoOf = day => `2026-${MONTHS[day.m]}-${String(day.d).padStart(2,"0")}`;
+// Today's date in Hawaii (so "today" tracks the trip's local day), as YYYY-MM-DD.
+function todayISO(){
+  try{ return new Date().toLocaleDateString("en-CA",{timeZone:"Pacific/Honolulu"}); }
+  catch(e){ const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}`; }
+}
+function todayIndex(){ const t=todayISO(); return ITIN.findIndex(d=>isoOf(d)===t); }
+function scrollToToday(){ const el=document.getElementById("day-today"); if(!el) return;
+  const y=el.getBoundingClientRect().top+window.scrollY-72; window.scrollTo({top:Math.max(0,y), behavior:"smooth"}); }
 let WX={};
 function wxIcon(c,p){
   p = (p==null?0:p);
@@ -746,6 +769,8 @@ function renderItin(){
   const all=[]; ITIN.forEach((day,di)=>{ const k=day.d+day.m; day.slots.forEach((s,si)=>{ const id=`d${di}_${si}`; if(state.deleted&&state.deleted[id]) return; all.push({id,s,origKey:k}); }); });
   const mv = movingId ? all.find(x=>x.id===movingId) : null;
   const banner = mv ? `<div class="move-banner">Moving <b>${esc(mv.s.a)}</b> — tap <b>Move here</b> on the day you want, or <button class="mv-cancel" id="mvCancel">Cancel</button></div>` : "";
+  const ti = todayIndex();            // -1 before/after the trip
+  const openIdx = ti>=0 ? ti : 0;     // expand today by default (else day 1)
   const body = ITIN.map((day,di)=>{
     const dk=day.d+day.m;
     const here=all.filter(x=>(moved[x.id]||x.origKey)===dk);
@@ -762,12 +787,20 @@ function renderItin(){
     let tag=""; if(day.tag==="book") tag=`<span class="day-tag tag-book">BOOK AHEAD</span>`; if(day.tag==="anchor") tag=`<span class="day-tag tag-anchor">PAIR THESE</span>`;
     const _w=WX[isoOf(day)]; const wx=_w?`<a class="wx" href="https://forecast.weather.gov/MapClick.php?lat=21.2793&lon=-157.8293" target="_blank" rel="noopener" title="Open the National Weather Service forecast for Waikiki"><span class="wx-ic">${wxIcon(_w.c,_w.p)}</span><b>${_w.hi}°/${_w.lo}°</b></a>`:"";
     const moveHere = (mv && dk!==(moved[movingId]||mv.origKey)) ? `<button class="mvto" data-key="${dk}">Move here</button>` : "";
-    return `<div class="day ${(di===0||!!movingId)?'open':''}"><div class="day-head">
+    const isToday = di===ti, isPast = ti>=0 && di<ti;
+    const dayCls = `day ${(di===openIdx||!!movingId)?'open':''}${isToday?' today':''}${isPast?' past':''}`;
+    const badge = isToday ? `<span class="today-badge">TODAY</span>` : "";
+    return `<div class="${dayCls}"${isToday?' id="day-today"':''}><div class="day-head">
       <div class="day-date"><span class="d">${day.d}</span><span class="m">${day.m}</span></div>
-      <div class="day-meta"><div class="day-dow">${day.dow}</div><div class="day-theme">${dayTitle(day,di,here)}</div>${tag}</div>${moveHere}${wx}
+      <div class="day-meta"><div class="day-dow">${day.dow}${badge}</div><div class="day-theme">${dayTitle(day,di,here)}</div>${tag}</div>${moveHere}${wx}
       <span class="chev">›</span></div><div class="day-body">${slots}</div></div>`;
   }).join("");
-  document.getElementById("itin").innerHTML = banner + body;
+  let strip = "";
+  if(ti>=0){ const td=ITIN[ti], dkT=td.d+td.m; const hereT=all.filter(x=>(moved[x.id]||x.origKey)===dkT);
+    const w=WX[isoOf(td)]; const wxbit=w?`<span class="ts-wx">${wxIcon(w.c,w.p)} ${w.hi}°</span>`:"";
+    strip = `<button class="today-strip" id="todayJump"><span class="ts-emoji">📍</span><span class="ts-mid"><span class="ts-day">Today · Day ${ti+1} of ${ITIN.length}</span><span class="ts-theme">${dayTitle(td,ti,hereT)}</span></span>${wxbit}</button>`;
+  }
+  document.getElementById("itin").innerHTML = banner + strip + body;
 }
 function renderBook(){
   const rows=BOOKINGS.map(b=>{ const isB=state.booked[b.id]; const links=[];
@@ -851,6 +884,7 @@ document.querySelectorAll("nav.tabs button").forEach(b=>{ b.onclick=()=>{
   window.scrollTo({top:0,behavior:"smooth"}); }; });
 
 document.addEventListener("click",e=>{
+  if(e.target.closest("#todayJump")){ const el=document.getElementById("day-today"); if(el) el.classList.add("open"); scrollToToday(); return; }
   const head=e.target.closest(".day-head");
   if(head&&!e.target.classList.contains("ck")&&!e.target.closest(".wx")&&!e.target.closest(".mvto")) head.closest(".day").classList.toggle("open");
   if(e.target.classList.contains("mv")){ const id=e.target.dataset.id; movingId=(movingId===id?null:id); renderItin(); if(movingId) window.scrollTo({top:0,behavior:"smooth"}); return; }
@@ -958,6 +992,7 @@ document.getElementById("nameSave").onclick=async ()=>{
 loadLocal(); renderAll(); initFirebase(); loadWeather(); setInterval(loadWeather, 3600000);
 function dismissSplash(){ const s=document.getElementById("splash"); if(!s||s.classList.contains("hide")) return; s.classList.add("hide"); setTimeout(()=>s.remove(), 600); }
 setTimeout(dismissSplash, 1150); window.addEventListener("load", ()=>setTimeout(dismissSplash, 1150));
+setTimeout(scrollToToday, 1350); // one-time focus on today's card once the splash clears
 if(!myName || !ROOM) setTimeout(openName, 1300);
 if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
 

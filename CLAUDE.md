@@ -11,7 +11,7 @@ free on GitHub Pages.
 
 - **Live:** https://letiminator.github.io/waikiki-26/
 - **Repo:** github.com/leTiminator/waikiki-26 — Pages deploys from **`main` / root**.
-- **Service worker version:** currently `waikiki-v30` (in `sw.js`).
+- **Service worker version:** currently `waikiki-v31` (in `sw.js`).
 
 ## Files
 - `index.html` — the **entire app** (HTML + CSS + JS in one file). ~All work happens here.
@@ -54,7 +54,11 @@ trade-wind "drizzle" codes don't show as rain; taps to the NWS forecast; refresh
 banner header with fluid title/date/pills · collapsible day cards · **move activities between
 days** (tap ↪ then "Move here", synced, confirms; a day's title auto-summarizes from its
 current activities once items are moved in/out, else keeps its hand-written `theme` —
-see `dayTitle()`) · **add a personal note to any activity** (tap "＋ note", synced, in
+see `dayTitle()`) · **delete an activity** (🗑, confirmed, synced in `state.deleted`; reset
+restores) · **Today focus mode** on the Plan tab (`todayIndex()`/`todayISO()` resolve the
+current Hawaii date to an ITIN day: a "📍 Today · Day N of M" jump strip on top, today's
+card auto-expands + scrolls into view once on boot via `scrollToToday()`, a TODAY badge,
+and past days dimmed) · **add a personal note to any activity** (tap "＋ note", synced, in
 `state.notes`) · Book tab = bookings + long curated Groupon
 list · Budget = **editable costs** (tap the $), **per-item purchase logging** (amount+note,
 "used of total"), **+ button adds a custom category** (with purchases + delete) · confirmations
