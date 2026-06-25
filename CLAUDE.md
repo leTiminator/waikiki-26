@@ -11,7 +11,7 @@ free on GitHub Pages.
 
 - **Live:** https://letiminator.github.io/waikiki-26/
 - **Repo:** github.com/leTiminator/waikiki-26 — Pages deploys from **`main` / root**.
-- **Service worker version:** currently `waikiki-v32` (in `sw.js`).
+- **Service worker version:** currently `waikiki-v33` (in `sw.js`).
 
 ## Files
 - `index.html` — the **entire app** (HTML + CSS + JS in one file). ~All work happens here.
@@ -57,9 +57,12 @@ trade-wind "drizzle" codes don't show as rain; taps to the NWS forecast; refresh
 banner header with fluid title/date/pills · collapsible day cards · **move activities between
 days** (tap ↪ then "Move here", synced, confirms; a day's title auto-summarizes from its
 current activities once items are moved in/out, else keeps its hand-written `theme` —
-see `dayTitle()`) · **full activity CRUD** — **add** your own activity to any day (`＋ add
-activity`), **edit** any activity's time/text (✏️, built-in via `actEdits`, custom in place),
-**delete** (🗑) with an **Undo toast** (`showUndo()`) instead of a confirm · open day cards
+see `dayTitle()`) · **full activity CRUD via a sheet** (`#actSheet` / `openAct()` — day picker
++ time + activity + note; used for add AND edit; the day picker doubles as a move): **add**
+(per-day `＋ add activity` or the FAB), **edit** any activity (✏️, built-in via `actEdits`,
+custom in place), **delete** (🗑) with an **Undo toast** (`showUndo()`) · the **FAB is
+context-aware** (`updateFab()`/`curTab`): adds an activity on Plan, a booking on Book, a
+category on Budget; hidden on Feed/Tips · open day cards
 **stay open across re-renders** (`openDays`) · **Today focus mode** on the Plan tab (`todayIndex()`/`todayISO()` resolve the
 current Hawaii date to an ITIN day: a "📍 Today · Day N of M" jump strip on top, today's
 card auto-expands + scrolls into view once on boot via `scrollToToday()`, a TODAY badge,

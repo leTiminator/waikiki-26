@@ -376,6 +376,22 @@
   <button class="cancel" id="bkCancel">Cancel</button>
 </div>
 
+<!-- activity sheet (add / edit a Plan activity) -->
+<div class="sheet" id="actSheet">
+  <div class="grip"></div>
+  <h3 id="actSheetTitle">Add an activity</h3>
+  <label>Day</label>
+  <select id="actDay"></select>
+  <label>Time / part of day</label>
+  <input id="actTime" placeholder="e.g. AM, Aft, Eve, 2:30p" maxlength="20" />
+  <label>Activity</label>
+  <input id="actName" placeholder="e.g. Snorkel at Hanauma Bay" maxlength="120" />
+  <label>Note — optional</label>
+  <input id="actNote" placeholder="anything to remember" maxlength="200" />
+  <button class="save" id="actSave">Add activity</button>
+  <button class="cancel" id="actCancel">Cancel</button>
+</div>
+
 <!-- undo toast (safe deletes) -->
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
@@ -959,10 +975,14 @@ function renderMeter(){
 function renderAll(){ renderCountdown(); renderName(); renderItin(); renderBook(); renderBudget(); renderFeed(); renderTips(); renderMeter(); }
 
 /* ============ EVENTS ============ */
+let curTab="itin";
+function updateFab(){ const fab=document.getElementById("fab"); if(!fab) return;
+  const t={itin:"Add activity", book:"Add a booking", budget:"Add a category"}[curTab];
+  fab.title = t || ""; fab.style.display = t ? "flex" : "none"; }
 document.querySelectorAll("nav.tabs button").forEach(b=>{ b.onclick=()=>{
   document.querySelectorAll("nav.tabs button").forEach(x=>x.classList.remove("active"));
   document.querySelectorAll(".tab-panel").forEach(x=>x.classList.remove("active"));
-  b.classList.add("active"); document.getElementById(b.dataset.tab).classList.add("active");
+  b.classList.add("active"); curTab=b.dataset.tab; document.getElementById(curTab).classList.add("active"); updateFab();
   window.scrollTo({top:0,behavior:"smooth"}); }; });
 
 document.addEventListener("click",e=>{
@@ -977,21 +997,8 @@ document.addEventListener("click",e=>{
     push("deleted",state.deleted); logFeed(`removed "${esc(nm)}" from the plan`); renderItin();
     showUndo(`Removed "${nm}"`, ()=>{ if(state.deleted) delete state.deleted[id]; push("deleted",state.deleted||{}); logFeed(`restored "${esc(nm)}"`); renderItin(); });
     return; }
-  if(e.target.classList.contains("act-edit-btn")){ const id=e.target.dataset.id; const ea=effAct(id); if(!ea) return;
-    const v=prompt("Edit activity — time, then what (e.g. “Eve, Sunset walk”):", `${ea.t}, ${ea.a}`); if(v===null) return;
-    const ci=v.indexOf(","); let t,a; if(ci>=0){ t=v.slice(0,ci).trim(); a=v.slice(ci+1).trim(); } else { t=ea.t; a=v.trim(); }
-    if(!a){ alert("Give the activity a description."); return; } t=t||ea.t||"Add";
-    const c=(state.customActs||[]).find(x=>x.id===id);
-    if(c){ c.t=t; c.a=a; push("customActs",state.customActs); }
-    else { state.actEdits=state.actEdits||{}; state.actEdits[id]={...(state.actEdits[id]||{}), t, a}; push("actEdits",state.actEdits); }
-    logFeed(`edited an activity → "${esc(a)}"`); renderItin(); return; }
-  if(e.target.classList.contains("add-act")){ const day=e.target.dataset.day;
-    const v=prompt("New activity — time, then what (e.g. “Eve, Sunset walk”):",""); if(v===null||!v.trim()) return;
-    const ci=v.indexOf(","); let t,a; if(ci>=0){ t=v.slice(0,ci).trim()||"Add"; a=v.slice(ci+1).trim(); } else { t="Add"; a=v.trim(); }
-    if(!a){ alert("Give the activity a description."); return; }
-    const id="ca_"+Date.now().toString(36)+Math.floor(Math.random()*1000);
-    state.customActs=state.customActs||[]; state.customActs.push({id, day, t, a, n:""}); if(day) openDays.add(day);
-    push("customActs",state.customActs); logFeed(`added "${esc(a)}" to the plan`); renderItin(); return; }
+  if(e.target.classList.contains("act-edit-btn")){ openAct(e.target.dataset.id); return; }
+  if(e.target.classList.contains("add-act")){ if(!myName){ openName(); return; } openAct(null, e.target.dataset.day); return; }
   if(e.target.classList.contains("note-add")||e.target.classList.contains("note-edit")){ const id=e.target.dataset.id;
     const cur=(state.notes&&state.notes[id])||""; const ea=effAct(id); const actName=ea?ea.a:"this activity";
     const v=prompt("Note for "+actName+" (leave blank to remove):", cur); if(v===null) return;
@@ -1083,10 +1090,43 @@ document.addEventListener("input",e=>{
 
 /* sheets */
 const scrim=document.getElementById("scrim");
-const expSheet=document.getElementById("sheet"), nameSheet=document.getElementById("nameSheet"), bookSheet=document.getElementById("bookSheet");
+const expSheet=document.getElementById("sheet"), nameSheet=document.getElementById("nameSheet"), bookSheet=document.getElementById("bookSheet"), actSheet=document.getElementById("actSheet");
 function openExp(){ scrim.classList.add("show"); expSheet.classList.add("show"); document.getElementById("eName").focus(); }
-function closeSheets(){ scrim.classList.remove("show"); expSheet.classList.remove("show"); nameSheet.classList.remove("show"); bookSheet.classList.remove("show");
+function closeSheets(){ scrim.classList.remove("show"); expSheet.classList.remove("show"); nameSheet.classList.remove("show"); bookSheet.classList.remove("show"); actSheet.classList.remove("show");
   document.getElementById("eName").value=""; document.getElementById("eAmt").value=""; }
+
+/* Activity sheet: add or edit a Plan activity (day picker doubles as a move). */
+let editingActId=null;
+const dkOfId = id => { const cm=(state.customActs||[]).find(x=>x.id===id); if(cm) return (state.moved&&state.moved[id])||cm.day;
+  const m=id&&id.match&&id.match(/^d(\d+)_(\d+)$/); if(m){ const dd=ITIN[+m[1]]; if(dd) return (state.moved&&state.moved[id])||(dd.d+dd.m); } return null; };
+function dayOptions(sel){ return ITIN.map(d=>{ const dk=d.d+d.m; return `<option value="${dk}"${dk===sel?" selected":""}>${d.dow.slice(0,3)} · ${d.m} ${d.d}</option>`; }).join(""); }
+function openAct(id, presetDay){
+  editingActId=id||null; let day,t,a,n;
+  if(id){ const ea=effAct(id)||{}; day=dkOfId(id); t=ea.t==="Add"?"":(ea.t||""); a=ea.a||""; n=ea.n||""; }
+  else { const ti=todayIndex(); const d=ITIN[ti>=0?ti:0]; day=presetDay||(d?d.d+d.m:(ITIN[0].d+ITIN[0].m)); t=""; a=""; n=""; }
+  document.getElementById("actSheetTitle").textContent=id?"Edit activity":"Add an activity";
+  document.getElementById("actSave").textContent=id?"Save changes":"Add activity";
+  document.getElementById("actDay").innerHTML=dayOptions(day);
+  document.getElementById("actTime").value=t; document.getElementById("actName").value=a; document.getElementById("actNote").value=n;
+  scrim.classList.add("show"); actSheet.classList.add("show"); document.getElementById("actName").focus();
+}
+document.getElementById("actCancel").onclick=closeSheets;
+document.getElementById("actSave").onclick=()=>{
+  const day=document.getElementById("actDay").value;
+  const t=document.getElementById("actTime").value.trim()||"Add";
+  const a=document.getElementById("actName").value.trim(); if(!a){ alert("Describe the activity."); return; }
+  const n=document.getElementById("actNote").value.trim();
+  if(editingActId){ const id=editingActId; const cm=(state.customActs||[]).find(x=>x.id===id);
+    if(cm){ cm.t=t; cm.a=a; cm.n=n; cm.day=day; if(state.moved) delete state.moved[id]; push("customActs",state.customActs); push("moved",state.moved||{}); }
+    else { state.actEdits=state.actEdits||{}; state.actEdits[id]={t,a,n}; push("actEdits",state.actEdits);
+      const m=id.match(/^d(\d+)_(\d+)$/); const orig=m?(ITIN[+m[1]].d+ITIN[+m[1]].m):null;
+      state.moved=state.moved||{}; if(day===orig) delete state.moved[id]; else state.moved[id]=day; push("moved",state.moved); }
+    openDays.add(day); logFeed(`edited "${esc(a)}"`);
+  } else { const id="ca_"+Date.now().toString(36)+Math.floor(Math.random()*1000);
+    state.customActs=state.customActs||[]; state.customActs.push({id, day, t, a, n}); openDays.add(day);
+    push("customActs",state.customActs); logFeed(`added "${esc(a)}" to the plan`); }
+  editingActId=null; closeSheets(); renderAll();
+};
 let editingBookId=null;
 function openBook(id){ editingBookId=id||null; const b=id?(state.customBookings||[]).find(x=>x.id===id):null;
   document.getElementById("bkSheetTitle").textContent=b?"Edit booking":"Add a booking";
@@ -1095,7 +1135,9 @@ function openBook(id){ editingBookId=id||null; const b=id?(state.customBookings|
   document.getElementById("bkPrice").value=b?(b.price||""):""; document.getElementById("bkLink").value=b?(b.official||""):"";
   document.getElementById("bkNote").value=b?(b.note||""):"";
   scrim.classList.add("show"); bookSheet.classList.add("show"); document.getElementById("bkName").focus(); }
-document.getElementById("fab").onclick=()=>{ if(!myName){ openName(); } else openExp(); };
+document.getElementById("fab").onclick=()=>{ if(!myName){ openName(); return; }
+  if(curTab==="book") openBook(); else if(curTab==="budget") openExp(); else openAct(); };
+updateFab();
 document.getElementById("eCancel").onclick=closeSheets;
 document.getElementById("bkCancel").onclick=closeSheets;
 document.getElementById("bkSave").onclick=()=>{
