@@ -262,6 +262,16 @@
   .rm-restore{background:none; border:1px solid var(--surf); color:var(--surf); font-size:11.5px; font-weight:800; padding:5px 12px; border-radius:8px; cursor:pointer; font-family:inherit; white-space:nowrap}
   .rm-restore:active{transform:scale(.96)}
 
+  /* cross-tab links: Plan day ↔ its booking */
+  .day-bookings{display:flex; flex-direction:column; gap:6px; margin:2px 0 10px}
+  .to-book{width:100%; text-align:left; background:rgba(20,120,160,.09); border:1px solid var(--line); color:var(--surf); font-weight:800; font-size:12.5px; padding:9px 12px; border-radius:10px; cursor:pointer; font-family:inherit}
+  .to-book .bk-ok{color:#1a8a4a; font-weight:800}
+  .to-book:active{transform:scale(.99)}
+  .day-jump{margin-top:6px; background:rgba(20,120,160,.09); border:1px solid var(--line); color:var(--surf); font-weight:800; font-size:11.5px; padding:5px 10px; border-radius:8px; cursor:pointer; font-family:inherit}
+  .day-jump:active{transform:scale(.97)}
+  @keyframes flashpulse{0%{box-shadow:0 0 0 0 rgba(20,120,160,.55)}100%{box-shadow:0 0 0 14px rgba(20,120,160,0)}}
+  .flash{animation:flashpulse 1.4s ease-out 1}
+
   /* today focus mode */
   .today-strip{display:flex; align-items:center; gap:11px; width:100%; text-align:left; font-family:inherit; cursor:pointer;
     background:linear-gradient(135deg, var(--ocean), var(--surf)); color:#fff; border:0; border-radius:14px; padding:11px 14px; margin-bottom:13px; box-shadow:var(--shadow-md); position:relative; overflow:hidden}
@@ -828,8 +838,17 @@ function todayISO(){
   catch(e){ const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}`; }
 }
 function todayIndex(){ const t=todayISO(); return ITIN.findIndex(d=>isoOf(d)===t); }
-function scrollToToday(){ const el=document.getElementById("day-today"); if(!el) return;
-  const y=el.getBoundingClientRect().top+window.scrollY-72; window.scrollTo({top:Math.max(0,y), behavior:"smooth"}); }
+function scrollToEl(el){ if(!el) return; const y=el.getBoundingClientRect().top+window.scrollY-72; window.scrollTo({top:Math.max(0,y), behavior:"smooth"}); }
+function gotoTab(name){ const btn=document.querySelector(`nav.tabs button[data-tab="${name}"]`); if(btn) btn.click(); }
+function flash(el){ if(!el) return; el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); setTimeout(()=>{ el.classList.remove("flash"); }, 1700); }
+function scrollToToday(){ scrollToEl(document.querySelector(".day.today")); }
+/* map a booking's human `when` ("Jun 29, 8:30am", "Jul 1") to an ITIN day index, or -1 */
+function bookingDayIndex(b){ if(!b||!b.when) return -1;
+  const m=String(b.when).match(/([A-Za-z]{3})[A-Za-z]*\s+(\d{1,2})/); if(!m) return -1;
+  const mon=m[1][0].toUpperCase()+m[1].slice(1,3).toLowerCase(), d=String(parseInt(m[2],10));
+  return ITIN.findIndex(x=>x.m===mon && String(parseInt(x.d,10))===d); }
+/* all bookings (built-in + custom) that land on ITIN day index di */
+function bookingsOnDay(di){ return BOOKINGS.concat(state.customBookings||[]).filter(b=>bookingDayIndex(b)===di); }
 let WX={};
 function wxIcon(c,p){
   p = (p==null?0:p);
@@ -899,10 +918,12 @@ function renderItin(){
     const isOpen = !!movingId || openDays.has(dk);
     const dayCls = `day ${isOpen?'open':''}${isToday?' today':''}${isPast?' past':''}`;
     const badge = isToday ? `<span class="today-badge">TODAY</span>` : "";
-    return `<div class="${dayCls}" data-dk="${dk}"${isToday?' id="day-today"':''}><div class="day-head">
+    const bks=bookingsOnDay(di);
+    const bkLinks=bks.length?`<div class="day-bookings">${bks.map(b=>`<button class="to-book" data-bid="${b.id}">🎟 ${esc(b.name)}${state.booked[b.id]?' <span class="bk-ok">✓ booked</span>':''} →</button>`).join("")}</div>`:"";
+    return `<div class="${dayCls}" data-dk="${dk}" id="day-${dk}"><div class="day-head">
       <div class="day-date"><span class="d">${day.d}</span><span class="m">${day.m}</span></div>
       <div class="day-meta"><div class="day-dow">${day.dow}${badge}</div><div class="day-theme">${dayTitle(day,di,here)}</div>${tag}</div>${moveHere}${wx}
-      <span class="chev">›</span></div><div class="day-body">${slots}<button class="add-act" data-day="${dk}">＋ add activity</button></div></div>`;
+      <span class="chev">›</span></div><div class="day-body">${bkLinks}${slots}<button class="add-act" data-day="${dk}">＋ add activity</button></div></div>`;
   }).join("");
   let strip = "";
   if(ti>=0){ const td=ITIN[ti], dkT=td.d+td.m; const hereT=all.filter(x=>(moved[x.id]||x.origKey)===dkT);
@@ -920,8 +941,9 @@ function bookingRow(b, custom){
   if(b.phone) links.push(`<a class="call" href="tel:${esc(b.phone)}">\ud83d\udcde Call</a>`);
   if(b.map) links.push(`<a href="${esc(b.map)}" target="_blank" rel="noopener">\ud83d\udccd Map</a>`);
   const sub=[b.when,b.price].filter(Boolean).map(esc).join(" \u00b7 ");
+  const di=bookingDayIndex(b); const dchip=di>=0?`<button class="day-jump" data-di="${di}">\ud83d\udcc5 Day ${di+1} \u00b7 ${esc(ITIN[di].dow.slice(0,3))} ${esc(ITIN[di].m)} ${esc(ITIN[di].d)}</button>`:"";
   const acts=custom?`<div class="li-acts"><button class="bk-edit" data-id="${b.id}">Edit</button><button class="bk-del li-del" data-id="${b.id}">Delete</button></div>`:"";
-  return `<div class="li ${isB?'done':''}"><div class="li-top"><div class="body"><div class="name">${esc(b.name)}</div>${sub?`<div class="sub">${sub}</div>`:""}</div></div>
+  return `<div class="li ${isB?'done':''}" id="bk-${b.id}"><div class="li-top"><div class="body"><div class="name">${esc(b.name)}</div>${sub?`<div class="sub">${sub}</div>`:""}${dchip}</div></div>
     ${b.note?`<div class="note" style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45">${esc(b.note)}</div>`:""}
     ${links.length?`<div class="book">${links.join("")}</div>`:""}
     <div class="booked-row ${isB?'is-booked':''}"><input type="checkbox" class="ck bk-ck" data-id="${b.id}" ${isB?"checked":""} style="width:18px;height:18px;min-width:18px">
@@ -1004,10 +1026,12 @@ document.querySelectorAll("nav.tabs button").forEach(b=>{ b.onclick=()=>{
   window.scrollTo({top:0,behavior:"smooth"}); }; });
 
 document.addEventListener("click",e=>{
-  if(e.target.closest("#todayJump")){ const el=document.getElementById("day-today"); if(el){ el.classList.add("open"); if(el.dataset.dk) openDays.add(el.dataset.dk); } scrollToToday(); return; }
+  if(e.target.closest("#todayJump")){ const el=document.querySelector(".day.today"); if(el){ el.classList.add("open"); if(el.dataset.dk) openDays.add(el.dataset.dk); } scrollToToday(); return; }
   if(e.target.closest("#rmToggle")){ rmOpen=!rmOpen; const w=e.target.closest(".removed-wrap"); if(w) w.classList.toggle("open",rmOpen); return; }
   if(e.target.classList.contains("rm-restore")){ const id=e.target.dataset.id; const ea=effAct(id);
     if(state.deleted) delete state.deleted[id]; push("deleted",state.deleted||{}); logFeed(`restored "${esc(ea?ea.a:"activity")}"`); renderItin(); return; }
+  const tb=e.target.closest(".to-book"); if(tb){ gotoTab("book"); const el=document.getElementById("bk-"+tb.dataset.bid); if(el){ scrollToEl(el); flash(el); } return; }
+  const dj=e.target.closest(".day-jump"); if(dj){ const di=+dj.dataset.di, d=ITIN[di], dk=d.d+d.m; gotoTab("itin"); openDays.add(dk); renderItin(); const el=document.getElementById("day-"+dk); if(el){ scrollToEl(el); flash(el); } return; }
   const head=e.target.closest(".day-head");
   if(head&&!e.target.classList.contains("ck")&&!e.target.closest(".wx")&&!e.target.closest(".mvto")){
     const dayEl=head.closest(".day"), dk=dayEl.dataset.dk; const willOpen=!dayEl.classList.contains("open");
