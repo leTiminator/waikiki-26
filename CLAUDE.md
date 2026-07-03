@@ -11,7 +11,7 @@ free on GitHub Pages.
 
 - **Live:** https://letiminator.github.io/waikiki-26/
 - **Repo:** github.com/leTiminator/waikiki-26 — Pages deploys from **`main` / root**.
-- **Service worker version:** currently `waikiki-v34` (in `sw.js`).
+- **Service worker version:** currently `waikiki-v35` (in `sw.js`).
 
 ## Files
 - `index.html` — the **entire app** (HTML + CSS + JS in one file). ~All work happens here.
@@ -86,6 +86,18 @@ edit ✎ + delete), **rename** custom categories (✎), **+ button adds a custom
 **Undo toast** (`showUndo()`/`doUndo()`, `#toast`) on every single-item delete (activity,
 purchase, category, custom booking) — reset still confirms + asks the passcode · phone
 **back button** closes popups / cancels a move / else jumps to the Plan tab.
+
+## Scuba practice test (🤿 Test tab)
+A 6th tab, **🤿 Test**, holds a 15-question mock **PADI Open Water** exam (`QUIZ`
+array; `renderQuiz()`). Multiple choice, one answer each. Tap **Check answers** →
+each question grades in place: chosen-correct gets a green ✓, chosen-wrong gets a
+red ✕ + strikethrough and the right answer is highlighted green; inputs lock and a
+score card (X/15, %, pass ≥75%) appears. **Reset** rebuilds a blank form for the
+next taker. **Deliberately local-only:** quiz answers are NOT in `state` and NOT
+synced to Firebase, and `renderQuiz()` is NOT in `renderAll()` — so each test-taker
+on a phone gets a private run and an incoming sync never wipes an in-progress test.
+The graded-state CSS is scoped under `.graded` so it out-specifies the
+`input:checked ~ .q-mark` styling.
 
 ## DEV CONVENTIONS — read before editing
 1. **Bump `VERSION` in `sw.js`** (`waikiki-vN` → N+1) after ANY app change.

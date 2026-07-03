@@ -38,7 +38,7 @@
   .meter.over .fill{background:linear-gradient(90deg,#ff4d4d,#ff8a5c)}
   .meter-foot{display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-top:6px}
   nav.tabs{position:sticky; top:0; z-index:20; display:flex; background:var(--card); box-shadow:var(--shadow); border-bottom:1px solid var(--line);}
-  nav.tabs button{flex:1; border:0; background:none; padding:13px 2px; font-size:12.5px; font-weight:700; color:var(--muted); cursor:pointer; position:relative; font-family:inherit;}
+  nav.tabs button{flex:1; border:0; background:none; padding:13px 1px; font-size:11.5px; font-weight:700; color:var(--muted); cursor:pointer; position:relative; font-family:inherit; white-space:nowrap;}
   nav.tabs button.active{color:var(--ocean)}
   nav.tabs button.active::after{content:""; position:absolute; left:14%; right:14%; bottom:0; height:3px; background:var(--coral); border-radius:3px 3px 0 0;}
   main{padding:14px 14px 0}
@@ -272,6 +272,44 @@
   @keyframes flashpulse{0%{box-shadow:0 0 0 0 rgba(20,120,160,.55)}100%{box-shadow:0 0 0 14px rgba(20,120,160,0)}}
   .flash{animation:flashpulse 1.4s ease-out 1}
 
+  /* ===== mock scuba exam ===== */
+  .quiz-intro h2{font-size:18px; margin:4px 0 6px}
+  .quiz-intro p{font-size:13px; color:var(--muted); line-height:1.55; margin-bottom:16px}
+  .q-card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:12px; box-shadow:var(--shadow)}
+  .q-head{display:flex; gap:10px; align-items:flex-start; margin-bottom:11px}
+  .q-num{flex:none; width:24px; height:24px; border-radius:50%; background:var(--surf); color:#fff; font-weight:800; font-size:12px; display:flex; align-items:center; justify-content:center}
+  .q-q{font-weight:700; font-size:14px; line-height:1.4; padding-top:2px}
+  .q-opts{display:flex; flex-direction:column; gap:8px}
+  .q-opt{display:flex; align-items:center; gap:11px; padding:11px 12px; border:1px solid var(--line); border-radius:10px; cursor:pointer; font-size:13.5px; line-height:1.4; position:relative}
+  .q-opt input{position:absolute; opacity:0; width:0; height:0}
+  .q-mark{flex:none; width:19px; height:19px; border-radius:50%; border:2px solid var(--muted); position:relative; transition:.15s}
+  .q-opt input:checked ~ .q-mark{border-color:var(--surf); background:var(--surf); box-shadow:inset 0 0 0 3px var(--card)}
+  .q-opt input:checked ~ .q-text{font-weight:700; color:var(--ink)}
+  .q-text{flex:1}
+  .graded .q-opt{cursor:default}
+  /* .graded-scoped so these beat the `input:checked ~ .q-mark` rule on specificity */
+  .graded .q-opt.correct{border-color:#1a8a4a; background:rgba(26,138,74,.10)}
+  .graded .q-opt.correct .q-mark{border-color:#1a8a4a; background:#1a8a4a; box-shadow:none}
+  .graded .q-opt.correct .q-mark::after{content:"✓"; color:#fff; font-size:12px; font-weight:900; position:absolute; inset:0; display:flex; align-items:center; justify-content:center}
+  .graded .q-opt.correct .q-text{color:#1a8a4a; font-weight:800}
+  .graded .q-opt.wrong{border-color:#c23b3b; background:rgba(194,59,59,.09)}
+  .graded .q-opt.wrong .q-mark{border-color:#c23b3b; background:#c23b3b; box-shadow:none}
+  .graded .q-opt.wrong .q-mark::after{content:"✕"; color:#fff; font-size:11px; font-weight:900; position:absolute; inset:0; display:flex; align-items:center; justify-content:center}
+  .graded .q-opt.wrong .q-text{color:#c23b3b; text-decoration:line-through; font-weight:700}
+  .q-card.q-wrong{border-color:rgba(194,59,59,.35)}
+  .q-card.q-right{border-color:rgba(26,138,74,.35)}
+  .quiz-actions{display:flex; gap:10px; margin:6px 0 20px}
+  .quiz-submit{flex:1; background:var(--surf); color:#fff; border:0; border-radius:12px; padding:14px; font-size:15px; font-weight:800; font-family:inherit; cursor:pointer}
+  .quiz-submit:disabled{opacity:.45; cursor:default}
+  .quiz-reset{flex:none; background:none; border:1px solid var(--line); color:var(--muted); border-radius:12px; padding:14px 18px; font-size:13px; font-weight:700; font-family:inherit; cursor:pointer}
+  .quiz-score{border-radius:14px; padding:18px; text-align:center; margin-bottom:24px; border:1px solid var(--line)}
+  .quiz-score.pass{background:rgba(26,138,74,.12); border-color:#1a8a4a}
+  .quiz-score.fail{background:rgba(194,59,59,.10); border-color:#c23b3b}
+  .qs-big{font-size:34px; font-weight:900; line-height:1; color:var(--ink)}
+  .quiz-score.pass .qs-big{color:#1a8a4a}
+  .quiz-score.fail .qs-big{color:#c23b3b}
+  .qs-sub{font-size:13px; color:var(--muted); margin-top:7px; font-weight:700}
+
   /* today focus mode */
   .today-strip{display:flex; align-items:center; gap:11px; width:100%; text-align:left; font-family:inherit; cursor:pointer;
     background:linear-gradient(135deg, var(--ocean), var(--surf)); color:#fff; border:0; border-radius:14px; padding:11px 14px; margin-bottom:13px; box-shadow:var(--shadow-md); position:relative; overflow:hidden}
@@ -343,6 +381,7 @@
   <button data-tab="budget">Budget</button>
   <button data-tab="feed">Activity</button>
   <button data-tab="tips">Tips</button>
+  <button data-tab="quiz">🤿 Test</button>
 </nav>
 
 <main>
@@ -351,6 +390,7 @@
   <section class="tab-panel" id="budget"></section>
   <section class="tab-panel" id="feed"></section>
   <section class="tab-panel" id="tips"></section>
+  <section class="tab-panel" id="quiz"></section>
 </main>
 
 <button class="fab" id="fab" title="Add a budget category">+</button>
@@ -701,6 +741,24 @@ const TIPS = [
   "<b>Reef-safe sunscreen is law in Hawaii.</b> Oxybenzone/octinoxate sunscreens are banned \u2014 buy mineral (zinc) before or on-island.",
   "<b>Price-check everything</b> on Groupon vs Viator vs the operator's own site before booking. The gap can top 50%.",
 ];
+// Mock PADI Open Water knowledge-review. o=options, a=index of the correct answer.
+const QUIZ = [
+  {q:"As you descend, the air spaces in your body and equipment:", o:["Expand","Compress","Stay the same","Fill with water"], a:1},
+  {q:"The most important rule in scuba diving is:", o:["Always dive with a buddy","Never hold your breath — breathe continuously","Always wear a wetsuit","Never dive deeper than 18 meters"], a:1},
+  {q:"You should ascend at a rate no faster than:", o:["30 meters (100 ft) per minute","18 meters (60 ft) per minute","9 meters (30 ft) per minute","As fast as comfortable"], a:1},
+  {q:"A standard safety stop is:", o:["3 minutes at 5 meters (15 ft)","5 minutes at 3 meters (10 ft)","1 minute at 10 meters (30 ft)","Not necessary on recreational dives"], a:0},
+  {q:"If you feel pressure or pain in your ears while descending, you should:", o:["Continue down and it will clear","Stop, ascend slightly, and equalize","Hold your breath and push through","Remove your mask"], a:1},
+  {q:"The buddy pre-dive safety check (BWRAF) checks, in order:", o:["Buddy, Weights, Releases, Air, Final OK","BCD, Weights, Releases, Air, Final check","Both a and b are commonly used","Breathing, Water, Regulator, Ascent, Fins"], a:2},
+  {q:"When you run low on air and your buddy is nearby, you should:", o:["Make a rapid ascent to the surface","Signal your buddy and use their alternate air source","Hold your breath and swim up","Drop your weights immediately"], a:1},
+  {q:"According to Boyle's Law, if you take a full breath at 10 meters (2 ATA) and ascend to the surface while holding your breath, the air in your lungs will:", o:["Compress to half its volume","Stay the same","Expand to roughly double its volume","Disappear"], a:2},
+  {q:"Nitrogen absorbed by your body during a dive is released primarily by:", o:["Sweating it out after the dive","A slow, controlled ascent and off-gassing at the surface","Drinking lots of water","Holding your breath at depth"], a:1},
+  {q:"A controlled emergency swimming ascent (CESA) is used when:", o:["Your buddy is out of air","You are out of air, alone, and near enough to the surface to swim up","You want to descend quickly","Your mask floods"], a:1},
+  {q:"Staying longer than your no-decompression limit at a given depth increases your risk of:", o:["Nitrogen narcosis","Decompression sickness","Oxygen toxicity","Hypothermia"], a:1},
+  {q:"The purpose of a weight system quick-release is to:", o:["Adjust buoyancy during the dive","Allow you to drop weights fast in an emergency","Hold your dive knife","Store extra lead"], a:1},
+  {q:"If you become separated from your buddy underwater, you should:", o:["Continue the dive alone","Search for no more than one minute, then surface to reunite","Immediately end the dive and go home","Wait on the bottom until they find you"], a:1},
+  {q:"As depth increases, you consume the air in your tank:", o:["Slower","At the same rate","Faster","Not at all"], a:2},
+  {q:"A properly weighted diver at the surface with an empty BCD, holding a normal breath, should float:", o:["At chest level","At eye level","Fully above water","Sink immediately"], a:1},
+];
 const labelOf = id => {
   const b = BOOKINGS.find(x=>x.id===id); if(b) return b.name;
   const cb = (state.customBookings||[]).find(x=>x.id===id); if(cb) return cb.name;
@@ -1002,6 +1060,20 @@ function renderTips(){
     <a href="tel:911"><span class="ic">\ud83c\udd98</span>911</a></div>`+
     TIPS.map(t=>`<div class="tip">${t}</div>`).join("")+`<button class="reset" id="changePass">Change trip passcode</button><div class="foot">Add to home screen for an app-like view</div>`;
 }
+/* Mock scuba exam. Deliberately NOT in renderAll() and NOT synced to Firebase:
+   answers live only in this tab's DOM so each test-taker on this phone gets a
+   private run, and an incoming sync from the other phone never wipes it. */
+function renderQuiz(){
+  const rows = QUIZ.map((item,qi)=>{
+    const opts = item.o.map((opt,oi)=>`<label class="q-opt" data-oi="${oi}"><input type="radio" name="q${qi}" value="${oi}"><span class="q-mark"></span><span class="q-text">${esc(opt)}</span></label>`).join("");
+    return `<div class="q-card" id="q-${qi}"><div class="q-head"><span class="q-num">${qi+1}</span><span class="q-q">${esc(item.q)}</span></div><div class="q-opts">${opts}</div></div>`;
+  }).join("");
+  document.getElementById("quiz").innerHTML =
+    `<div class="quiz-intro"><h2>🤿 PADI Open Water — Practice Exam</h2><p>${QUIZ.length} questions. Answer them all, then tap <b>Check answers</b>. Answers stay on this phone only — nothing syncs to the trip or the other phone. Tap <b>Reset</b> to hand it to the next person.</p></div>`+
+    `<div id="quizForm">${rows}</div>`+
+    `<div class="quiz-actions"><button class="quiz-submit" id="quizSubmit">Check answers</button><button class="quiz-reset" id="quizReset">Reset</button></div>`+
+    `<div class="quiz-score" id="quizScore" hidden></div>`;
+}
 function renderMeter(){
   const P=planned();
   let spent=allItems().reduce((s,i)=>s+itemSpent(i),0);
@@ -1030,6 +1102,24 @@ document.addEventListener("click",e=>{
   if(e.target.closest("#rmToggle")){ rmOpen=!rmOpen; const w=e.target.closest(".removed-wrap"); if(w) w.classList.toggle("open",rmOpen); return; }
   if(e.target.classList.contains("rm-restore")){ const id=e.target.dataset.id; const ea=effAct(id);
     if(state.deleted) delete state.deleted[id]; push("deleted",state.deleted||{}); logFeed(`restored "${esc(ea?ea.a:"activity")}"`); renderItin(); return; }
+  if(e.target.id==="quizSubmit"){
+    const form=document.getElementById("quizForm"); if(!form || form.classList.contains("graded")) return;
+    let answered=0; QUIZ.forEach((it,qi)=>{ if(form.querySelector(`input[name="q${qi}"]:checked`)) answered++; });
+    if(answered<QUIZ.length && !confirm(`You've answered ${answered} of ${QUIZ.length}. Check anyway? Blank questions count as wrong.`)) return;
+    let score=0;
+    QUIZ.forEach((it,qi)=>{ const card=document.getElementById("q-"+qi);
+      const chosen=form.querySelector(`input[name="q${qi}"]:checked`); const ci=chosen?+chosen.value:-1;
+      const correctLabel=card.querySelector(`.q-opt[data-oi="${it.a}"]`); if(correctLabel) correctLabel.classList.add("correct");
+      if(ci===it.a){ score++; card.classList.add("q-right"); }
+      else { card.classList.add("q-wrong"); if(chosen){ const wl=card.querySelector(`.q-opt[data-oi="${ci}"]`); if(wl) wl.classList.add("wrong"); } }
+    });
+    form.classList.add("graded"); form.querySelectorAll("input[type=radio]").forEach(r=>r.disabled=true);
+    const pct=Math.round(score/QUIZ.length*100), pass=pct>=75;
+    const sc=document.getElementById("quizScore"); sc.hidden=false; sc.className="quiz-score "+(pass?"pass":"fail");
+    sc.innerHTML=`<div class="qs-big">${score} / ${QUIZ.length}</div><div class="qs-sub">${pct}% · ${pass?"Pass ✅ (PADI needs 75%)":"Keep studying — PADI needs 75%"}</div>`;
+    document.getElementById("quizSubmit").disabled=true; scrollToEl(sc); return;
+  }
+  if(e.target.id==="quizReset"){ renderQuiz(); scrollToEl(document.getElementById("quiz")); return; }
   const tb=e.target.closest(".to-book"); if(tb){ gotoTab("book"); const el=document.getElementById("bk-"+tb.dataset.bid); if(el){ scrollToEl(el); flash(el); } return; }
   const dj=e.target.closest(".day-jump"); if(dj){ const di=+dj.dataset.di, d=ITIN[di], dk=d.d+d.m; gotoTab("itin"); openDays.add(dk); renderItin(); const el=document.getElementById("day-"+dk); if(el){ scrollToEl(el); flash(el); } return; }
   const head=e.target.closest(".day-head");
@@ -1221,7 +1311,7 @@ document.getElementById("nameSave").onclick=async ()=>{
 };
 
 /* boot */
-loadLocal(); renderAll(); initFirebase(); loadWeather(); setInterval(loadWeather, 3600000);
+loadLocal(); renderAll(); renderQuiz(); initFirebase(); loadWeather(); setInterval(loadWeather, 3600000);
 function dismissSplash(){ const s=document.getElementById("splash"); if(!s||s.classList.contains("hide")) return; s.classList.add("hide"); setTimeout(()=>s.remove(), 600); }
 setTimeout(dismissSplash, 1150); window.addEventListener("load", ()=>setTimeout(dismissSplash, 1150));
 setTimeout(scrollToToday, 1350); // one-time focus on today's card once the splash clears
