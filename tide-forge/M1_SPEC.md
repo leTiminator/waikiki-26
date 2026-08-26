@@ -70,3 +70,64 @@ for a runtime particle system — support both).
 Flora, Tiles, and VFX selectable in the module switcher, each generating in-style art that previews
 with depth-grade + corruption and exports (sheet/tilesheet + JSON). The game can drop in a reef scene
 built entirely from TideForge output. Then move to M2 (characters + rig + keyframe editor + pixel-paint).
+
+---
+
+# DELIVERED — M1 build record
+
+M1 shipped in `index.html`. What was built against each item above:
+
+**Shared module interface** — done, as `defModule({id,label,icon,size,fit,groups,paramSchema,
+defaults,generate|generateFrames,motions,clips,hint,hud,label2})`. The control rail, the randomizer,
+the timeline, the asset library and every exporter are written once against it; a module declares
+`paramSchema` and gets its whole UI generated. `bakeClip`/timeline/export code paths are unchanged in
+shape — `bakeFrames` just gained a branch for pre-baked modules.
+
+**1. FloraForge** — done. All five archetypes (kelp, staghorn, fan, soft, grass). Stochastic L-system
+rewriting with `[ ]` branch pruning by `branchChance`, interpreted by a turtle stamping thick tapered
+segments; roles come from the segment normal vs. a fixed light direction (same countershading trick as
+creature bodies), with lower growth biased a step darker. Polyps/tips are shaded like little spheres;
+`bio` swaps them for GLOW. Sea fans web adjacent tips into a lattice. Corruption bleaches via the
+shared transform. `sway` now scales amplitude by height above the holdfast and takes a `current` bias.
+Anchors: `base` + `tips`.
+- *Refinement not in the spec:* segment length **and** taper are normalised by iteration count, so an
+  archetype fills the frame whatever the iteration setting — the `seglen` slider reads as a relative
+  multiplier. Without this the branching archetypes came out as stubs and kelp tapered to a hairline.
+- `branchChance` floors at 30%: the bracket-only archetypes (fan especially) collapse to a single
+  segment at 0.
+
+**2. TileForge** — done, with the **full 47-tile blob set** (not the 16-tile minimal). Base fill is
+periodic value noise (the lattice wraps at the tile edge, so a tile always seams with itself),
+quantised into stone cells with a shaded seam on the lower-right and a lit lip on the upper-left.
+Materials: sand / rock / rubble / coral-crust; params `grain`, `contrast`, `edgeStyle`
+(hard/soft/rounded). Edges and corners — outer corners carved and re-outlined, inner corners creased.
+The preview is a **live autotiled seabed**, so the seams are visible in context, and it depth-grades
+with the shared slider. Exports a tilesheet PNG (12×4 at 4×) plus JSON carrying the tile layout, the
+bit values, and the full **256-entry `maskToTile` map** a Godot autotiler can consume directly.
+- *Not done (spec marked it optional/later):* the `shimmer` caustics animation. Tiles are static.
+
+**3. VFXForge** — done. bubbles / silt / godray / glow / ink, params count, size, speed, spread,
+lifetime. **Both** outputs as specified: a looping spritesheet and the emitter params in the JSON, so
+the game can play the sheet or drive its own particle system. Every particle advances a whole number
+of cycles across the clip, so the loop is seam-free at any frame count (verified by comparing the
+wrap-around frame delta against the typical frame delta). Silt and ink accumulate a density field and
+map density→role rather than stamping discs first-write-wins, which is what makes them read as volume.
+
+**Supporting** — asset library (localStorage, capped at 24, thumbnails rendered from cfg+seed,
+reload/delete/clear) and the lite palette editor (10 master ramps, per-stop colour editing, add and
+delete custom ramps, live recolour everywhere, persisted).
+
+## Definition of done — met
+Flora, Tiles and VFX are all selectable in the module switcher, each generates in-style art that
+previews with depth-grade + corruption, and each exports (sheet/tilesheet + JSON). A reef scene can be
+built entirely from TideForge output.
+
+## Deliberate deviation
+The spec suggested migrating to Vite + ES modules for M1. The app stayed **single-file**, which
+`START_HERE.md` explicitly permits until the refactor lands ("new modules can be added to `index.html`
+following the existing `core / module / anim / io / ui` section layout"). Keeping it dependency-free
+preserved instant-open iteration, and the explicit Module contract is what actually buys the
+independence — the file split is now a mechanical move whenever it's wanted. Reassess at M2, when the
+pixel-paint layer and a rig arrive.
+
+Next: **M2** — CharacterForge + rig + keyframe timeline + the pixel-paint layer, then PropForge.

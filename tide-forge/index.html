@@ -101,6 +101,43 @@
   .subbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;font-family:var(--mono);font-size:10px;color:var(--dim)}
   #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--panel2);border:1px solid var(--line2);color:var(--ink);font-family:var(--mono);font-size:12px;padding:10px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:.25s;box-shadow:var(--shadow);z-index:20}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ---- M1 additions ---- */
+  .hidden{display:none !important}
+  .seg button .ico{margin-right:5px;font-size:11px}
+  .field .lab .sub{font-family:var(--mono);font-size:10px;color:var(--faint)}
+  .toggle{display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;user-select:none}
+  .toggle input{accent-color:var(--accent);width:15px;height:15px}
+
+  /* asset library */
+  .lib{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+  .lib .slot{position:relative;aspect-ratio:1;border:1px solid var(--line);border-radius:8px;background:#05090f;overflow:hidden;cursor:pointer;padding:0;transition:.14s}
+  .lib .slot:hover{border-color:var(--accent)}
+  .lib .slot canvas{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;display:block}
+  .lib .slot .kill{position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:4px;border:0;background:rgba(6,10,16,.78);color:var(--dim);font-size:10px;line-height:1;cursor:pointer;display:none;padding:0}
+  .lib .slot:hover .kill{display:block}
+  .lib .slot .kill:hover{color:var(--warn)}
+  .lib .slot .tag{position:absolute;left:0;right:0;bottom:0;font-family:var(--mono);font-size:8px;letter-spacing:.04em;color:var(--dim);background:rgba(6,10,16,.72);padding:2px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .libempty{font-size:11px;color:var(--faint);line-height:1.5;text-align:center;padding:14px 4px;border:1px dashed var(--line);border-radius:8px}
+
+  /* palette editor */
+  .palrow{display:flex;align-items:center;gap:7px;margin-top:9px}
+  .palrow .stops{display:flex;flex:1;gap:4px}
+  .palrow .stops input[type=color]{-webkit-appearance:none;appearance:none;flex:1;height:26px;padding:0;border:1px solid var(--line);border-radius:5px;background:none;cursor:pointer}
+  .palrow .stops input[type=color]::-webkit-color-swatch-wrapper{padding:2px}
+  .palrow .stops input[type=color]::-webkit-color-swatch{border:0;border-radius:3px}
+  .palname{font-family:var(--mono);font-size:11px;color:var(--accent);background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 8px;width:100%;margin-top:9px}
+  .minibtns{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  .minibtns button{flex:1;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);background:var(--panel2);border:1px solid var(--line);padding:7px 6px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .minibtns button:hover{color:var(--accent);border-color:var(--accent)}
+
+  /* collapsible group */
+  .group.fold h3{cursor:pointer;margin-bottom:0}
+  .group.fold h3 .caret{margin-left:auto;color:var(--faint);font-size:9px;transition:.18s}
+  .group.fold[open] h3{margin-bottom:12px}
+  .group.fold[open] h3 .caret{transform:rotate(90deg)}
+  .group.fold .body{display:none}
+  .group.fold[open] .body{display:block}
 </style>
 
 <div class="app">
@@ -111,6 +148,7 @@
     <div class="acts">
       <button class="btn" id="bRandom">Randomize</button>
       <button class="btn" id="bSeed">Seed</button>
+      <button class="btn" id="bSave">Save</button>
       <button class="btn solid" id="bPng">PNG</button>
       <button class="btn" id="bSheet">Sheet</button>
       <button class="btn" id="bJson">JSON</button>
@@ -124,8 +162,8 @@
           <canvas id="tank" aria-label="Asset preview"></canvas>
           <div class="hud" id="hud"></div>
         </div>
-        <div class="transport">
-          <button class="play" id="play" aria-label="Play / pause">▶</button>
+        <div class="transport" id="transport">
+          <button class="play" id="play" aria-label="Play / pause">&#9654;</button>
           <input type="range" class="scrub" id="scrub" min="0" max="11" value="0" aria-label="Scrub frame">
           <span class="tcount" id="tcount">frame 1 / 12</span>
           <label class="onion"><input type="checkbox" id="onion"> onion</label>
@@ -133,46 +171,11 @@
         <div class="strip" id="strip"></div>
         <div class="clips" id="clips"></div>
         <div class="ramp" id="ramp" aria-hidden="true"></div>
-        <div class="subbar"><span id="specInfo">ready</span><span>TideForge · M0</span></div>
+        <div class="subbar"><span id="specInfo">ready</span><span>TideForge &middot; M1</span></div>
       </section>
     </div>
 
-    <aside class="rail">
-      <div class="panel group">
-        <h3>Body plan</h3>
-        <div class="field"><div class="lab"><span>Archetype</span></div><div class="chips" id="archChips"></div></div>
-        <div class="field"><div class="lab"><span>Length</span><span class="val" id="lenV">1.00×</span></div><input type="range" id="len" min="70" max="130" value="100"></div>
-        <div class="field"><div class="lab"><span>Body depth</span><span class="val" id="depV">1.00×</span></div><input type="range" id="dep" min="70" max="130" value="100"></div>
-      </div>
-      <div class="panel group">
-        <h3>Fins &amp; tail</h3>
-        <div class="field"><div class="lab"><span>Tail</span></div><div class="chips" id="tailChips"></div></div>
-        <div class="field"><div class="lab"><span>Dorsal</span></div><div class="chips" id="dorsalChips"></div></div>
-      </div>
-      <div class="panel group">
-        <h3>Skin</h3>
-        <div class="field"><div class="lab"><span>Pattern</span></div><div class="chips" id="patChips"></div></div>
-        <div class="field"><div class="lab"><span>Palette ramp</span></div><div class="swatches" id="swatches"></div></div>
-      </div>
-      <div class="panel group">
-        <h3 class="animh">Animation · <span id="clipName">swim</span></h3>
-        <div class="field"><div class="lab"><span>Motion model</span></div><div class="chips" id="motionChips"></div></div>
-        <div class="field"><div class="lab"><span>Amplitude</span><span class="val amber" id="ampV">2.2</span></div><input type="range" id="amp" class="amber" min="0" max="60" value="22"></div>
-        <div class="field"><div class="lab"><span>Wave speed</span><span class="val amber" id="freqV">0.34</span></div><input type="range" id="freq" class="amber" min="5" max="90" value="34"></div>
-        <div class="field"><div class="lab"><span>Frames</span><span class="val amber" id="framesV">12</span></div><input type="range" id="frames" class="amber" min="2" max="24" value="12"></div>
-        <div class="field"><div class="lab"><span>Playback FPS</span><span class="val amber" id="fpsV">12</span></div><input type="range" id="fps" class="amber" min="2" max="24" value="12"></div>
-        <p class="hint">Motion is procedural — no drawn frames. Add clips (swim / idle / dart) below the preview; each exports as its own row in the spritesheet.</p>
-      </div>
-      <div class="panel group">
-        <h3>Dive conditions</h3>
-        <div class="field"><div class="lab"><span>Depth · light absorption</span><span class="val" id="mV">6 m</span></div><input type="range" id="mdepth" min="0" max="60" value="6"></div>
-      </div>
-      <div class="panel group">
-        <h3 class="warnh">The wrongness</h3>
-        <div class="field"><div class="lab"><span>Corruption</span><span class="val warn" id="cV">0%</span></div><input type="range" id="corrupt" class="warn" min="0" max="100" value="0"></div>
-      </div>
-      <div class="note"><b>Export.</b> PNG = current frame · Sheet = one row per clip (spritesheet) · JSON = manifest with clip names, frames, fps &amp; anchors, ready for a game engine.</div>
-    </aside>
+    <aside class="rail" id="rail"></aside>
   </div>
 </div>
 <div id="toast"></div>
@@ -181,12 +184,12 @@
 "use strict";
 (function(){
 // ===================== CORE =====================
-const tank=document.getElementById('tank'), tctx=tank.getContext('2d');
-const DPR=Math.max(1,Math.min(2,window.devicePixelRatio||1));
-const W=72,H=42,CY=H/2;
-const EMPTY=0,OUTLINE=1,SPEC=2,BACK=3,SHADOW=4,BASE=5,HIGH=6,BELLY=7,FIN=8,FINEDGE=9,PATTERN=10,EYEW=11,EYEP=12,EYEH=13,GLOW=14,MOUTH=15;
+// Role ids. A generated asset is a matrix of ROLES, never colors — one matrix
+// recolors into any palette / depth / corruption state. Shared by every module.
+const EMPTY=0,OUTLINE=1,SPEC=2,BACK=3,SHADOW=4,BASE=5,HIGH=6,BELLY=7,FIN=8,FINEDGE=9,
+      PATTERN=10,EYEW=11,EYEP=12,EYEH=13,GLOW=14,MOUTH=15,HAZE=16,HAZE2=17,GLOWDIM=18;
 
-const PALETTES=[
+const BASE_PALETTES=[
   {name:'coral',ramp:['#3a1410','#7a2d15','#c25a25','#e8873c','#f6c169']},
   {name:'tang',ramp:['#0d1f47','#1c3b8a','#2f6fd0','#4fa3e6','#a9dcff']},
   {name:'sunfish',ramp:['#4a3406','#8a6410','#d29a1c','#f0c53e','#ffe89a']},
@@ -195,25 +198,96 @@ const PALETTES=[
   {name:'silver',ramp:['#10161d','#2a3540','#4c5c6b','#7c8f9e','#cdd9e2']},
   {name:'crimson',ramp:['#3a0812','#7a1226','#bd2540','#e85068','#ff9fae']},
   {name:'lime',ramp:['#23380a','#47701a','#7db02c','#a7d94e','#dcf59a']},
+  {name:'sand',ramp:['#2b2117','#584533','#93765a','#c0a281','#e6d3b4']},
+  {name:'basalt',ramp:['#0c1013','#1e262c','#3b474f','#5f6e78','#93a3ad']},
 ];
+let PALETTES=BASE_PALETTES.map(p=>({name:p.name,ramp:p.ramp.slice()}));
+
+// --- rng / noise ---
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 function hash2(x,y,s){let h=x*374761393+y*668265263+s*982451653;h=(h^(h>>>13))*1274126177;return((h^(h>>>16))>>>0)/4294967296;}
+function smooth(t){return t*t*(3-2*t);}
+// value noise; period P>0 makes the lattice wrap, so a tile seams with itself
+function vnoise(x,y,s,P){
+  const xi=Math.floor(x),yi=Math.floor(y),xf=smooth(x-xi),yf=smooth(y-yi);
+  const wr=v=>P?((v%P)+P)%P:v;
+  const x0=wr(xi),x1=wr(xi+1),y0=wr(yi),y1=wr(yi+1);
+  const a=hash2(x0,y0,s),b=hash2(x1,y0,s),c=hash2(x0,y1,s),d=hash2(x1,y1,s);
+  const top=a+(b-a)*xf,bot=c+(d-c)*xf;return top+(bot-top)*yf;
+}
+function fbm(x,y,s,oct,gain,P){let amp=1,f=1,sum=0,norm=0;
+  for(let i=0;i<oct;i++){sum+=amp*vnoise(x*f,y*f,s+i*7919,P?P*f:0);norm+=amp;amp*=gain;f*=2;}
+  return sum/norm;}
+
+// --- color ---
 function hex2rgb(h){return[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
 function mix(a,b,t){return[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];}
 function darken(c,t){return mix(c,[3,6,10],t);}function lighten(c,t){return mix(c,[255,255,255],t);}
 function clamp(v,a,b){return v<a?a:v>b?b:v;}
 function corruptColor(c,a){if(a<=0)return c;const l=0.3*c[0]+0.59*c[1]+0.11*c[2];let d=mix(c,[l,l,l],0.62*a);d=mix(d,[201,206,188],0.55*a);return mix(d,[150,172,132],0.18*a);}
+// the signature light-absorption curve — red dies first, then green. Shared with the game runtime.
 function gradeColor(c,depth){const t=clamp(depth/60,0,1);let r=c[0]*(1-0.88*t),g=c[1]*(1-0.42*t),b=c[2]*(1-0.10*t);r+=(9-r)*0.30*t;g+=(22-g)*0.28*t;b+=(46-b)*0.26*t;const dk=1-0.28*t;return[clamp(r*dk,0,255)|0,clamp(g*dk,0,255)|0,clamp(b*dk,0,255)|0];}
+
 function buildColorCache(palIdx,depth,corrupt){
-  const ramp=PALETTES[palIdx].ramp.map(hex2rgb);const OL=darken(ramp[0],0.55);
-  const body={[SPEC]:lighten(ramp[4],0.22),[BACK]:ramp[0],[SHADOW]:ramp[1],[BASE]:ramp[2],[HIGH]:ramp[3],[BELLY]:mix(ramp[4],[224,236,240],0.5),[FIN]:mix(ramp[1],OL,0.30),[PATTERN]:darken(ramp[0],0.45)};
+  const pal=PALETTES[palIdx]||PALETTES[0];
+  const ramp=pal.ramp.map(hex2rgb),OL=darken(ramp[0],0.55);
+  const body={[SPEC]:lighten(ramp[4],0.22),[BACK]:ramp[0],[SHADOW]:ramp[1],[BASE]:ramp[2],[HIGH]:ramp[3],
+              [BELLY]:mix(ramp[4],[224,236,240],0.5),[FIN]:mix(ramp[1],OL,0.30),[PATTERN]:darken(ramp[0],0.45)};
   const c={};c[EMPTY]=[0,0,0,0];c[OUTLINE]=[...gradeColor(OL,depth),255];c[FINEDGE]=c[OUTLINE];
   for(const r of[SPEC,BACK,SHADOW,BASE,HIGH,BELLY,PATTERN])c[r]=[...gradeColor(corruptColor(body[r],corrupt),depth),255];
   c[FIN]=[...gradeColor(corruptColor(body[FIN],corrupt),depth),232];
   c[EYEW]=[...gradeColor([228,236,240],depth),255];c[EYEP]=[10,12,16,255];c[EYEH]=[...gradeColor([255,255,255],depth),255];c[MOUTH]=c[OUTLINE];
-  const gc=mix([40,120,110],[70,255,225],corrupt);c[GLOW]=[...gradeColor(gc,Math.max(0,depth-18)),Math.round(120+120*corrupt)];
+  const gc=mix([40,120,110],[70,255,225],corrupt);
+  c[GLOW]=[...gradeColor(gc,Math.max(0,depth-18)),Math.round(120+120*corrupt)];
+  c[GLOWDIM]=[c[GLOW][0],c[GLOW][1],c[GLOW][2],Math.round(c[GLOW][3]*0.45)];
+  const veil=gradeColor([196,226,238],Math.max(0,depth-10));
+  c[HAZE]=[...veil,58];c[HAZE2]=[...veil,124];
   return c;
 }
+
+// --- pixel-matrix helpers (shared stamping vocabulary for every generator) ---
+function newMat(w,h){const m=new Array(h);for(let y=0;y<h;y++)m[y]=new Uint8Array(w);return m;}
+function put(m,w,h,x,y,role,onlyEmpty){x|=0;y|=0;if(x<0||x>=w||y<0||y>=h)return;if(onlyEmpty&&m[y][x])return;m[y][x]=role;}
+// thick tapered segment. roleFn(u,t) — u = -1..1 across the width (lit side positive), t = 0..1 along it.
+function stampSeg(m,w,h,x0,y0,x1,y1,w0,w1,roleFn,onlyEmpty){
+  const dx=x1-x0,dy=y1-y0,len=Math.hypot(dx,dy)||1,steps=Math.max(2,Math.ceil(len*2));
+  const nx=-dy/len,ny=dx/len;
+  for(let i=0;i<=steps;i++){const t=i/steps,px=x0+dx*t,py=y0+dy*t,hw=(w0+(w1-w0)*t)/2;
+    for(let o=-hw;o<=hw;o+=0.5){const u=hw>0.01?o/hw:0;put(m,w,h,Math.round(px+nx*o),Math.round(py+ny*o),roleFn(u,t),onlyEmpty);}}
+}
+function stampDisc(m,w,h,cx,cy,r,roleFn,onlyEmpty){
+  const ri=Math.ceil(r);
+  for(let dy=-ri;dy<=ri;dy++)for(let dx=-ri;dx<=ri;dx++){const d=Math.hypot(dx,dy);if(d>r)continue;
+    put(m,w,h,Math.round(cx+dx),Math.round(cy+dy),roleFn(d/(r||1),dx,dy),onlyEmpty);}
+}
+// wrap every solid pixel in OUTLINE. `soft` roles (haze/glow) neither outline nor block one.
+const SOFT_ROLES=new Set([HAZE,HAZE2,GLOW,GLOWDIM]);
+function outlinePass(m,w,h){
+  const add=[];
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    if(m[y][x])continue;
+    const n=(xx,yy)=>xx>=0&&xx<w&&yy>=0&&yy<h&&m[yy][xx]&&!SOFT_ROLES.has(m[yy][xx]);
+    if(n(x-1,y)||n(x+1,y)||n(x,y-1)||n(x,y+1))add.push(y*w+x);}
+  for(const p of add)m[(p/w)|0][p%w]=OUTLINE;
+}
+
+// ===================== MODULE REGISTRY =====================
+// The explicit contract every generator implements, so the rail UI, the animation
+// system and the exporters are written exactly once:
+//
+//   Module = {
+//     id, label, icon, size:{w,h}, fit,
+//     groups:      [{key,title}]                      // rail panels
+//     paramSchema: [{key,group,label,type,...}]       // -> auto-generated rail controls
+//     defaults()   -> cfg                             // module-specific keys only
+//     generate(cfg,rng)            -> {w,h,roles,meta}          // motion-animated
+//     generateFrames(cfg,rng,clip) -> {w,h,frames:[roles],meta}  // pre-baked (baked:true)
+//     motions:     ['swim',...]                       // which motion models apply
+//     clips()      -> [clip]                          // starting timeline
+//   }
+const MODULES=[];
+function defModule(m){MODULES.push(m);return m;}
+function modById(id){return MODULES.find(m=>m.id===id)||MODULES[0];}
 
 // ===================== MODULE: CREATURE =====================
 const ARCHES=['reef','angel','eel','puffer','predator'];
@@ -222,25 +296,25 @@ const TAILS=['fork','fan','lunate','round','point'];
 const DORSALS=['none','low','sail','spiny'];
 const PATTERNS=['none','v-stripes','h-stripes','spots','diagonal','patches'];
 
-function generateCreature(c){
-  const rng=mulberry32(c.seed>>>0),A=ARCH_META[c.arch];
-  const rx=clamp(A.len*c.len*(W*0.5),8,W*0.5-2),ry=clamp(A.dep*c.dep*(H*0.5),4,H*0.5-3);
-  const cx=Math.round(W*0.50+rx*0.06);
-  const roles=Array.from({length:H},()=>new Uint8Array(W));
-  const topEdge=new Int16Array(W).fill(-1),botEdge=new Int16Array(W).fill(-1);
-  const set=(x,y,r,onlyEmpty)=>{if(x<0||x>=W||y<0||y>=H)return;if(onlyEmpty&&roles[y][x])return;roles[y][x]=r;};
+function generateCreature(c,rng){
+  const w=72,h=42,cy=h/2,A=ARCH_META[c.arch]||ARCH_META.reef;
+  const rx=clamp(A.len*c.len*(w*0.5),8,w*0.5-2),ry=clamp(A.dep*c.dep*(h*0.5),4,h*0.5-3);
+  const cx=Math.round(w*0.50+rx*0.06);
+  const roles=newMat(w,h);
+  const topEdge=new Int16Array(w).fill(-1),botEdge=new Int16Array(w).fill(-1);
+  const set=(x,y,r,onlyEmpty)=>put(roles,w,h,x,y,r,onlyEmpty);
   const curveAt=x=>A.curve?A.curve*Math.sin((x-cx)*0.18):0;
   const tailLen=Math.round(clamp(ry*1.5,8,17)),bx=Math.round(cx-rx);
-  for(let i=0;i<=tailLen;i++){const x=bx-i;if(x<1)break;const t=i/tailLen,yc=CY+curveAt(bx);let half;
+  for(let i=0;i<=tailLen;i++){const x=bx-i;if(x<1)break;const t=i/tailLen,yc=cy+curveAt(bx);let half;
     if(c.tail==='fan')half=ry*(0.35+0.95*t);else if(c.tail==='round')half=ry*(0.30+0.62*Math.sin(Math.PI*0.5*t));
     else if(c.tail==='point')half=ry*(0.55*(1-t))+1;else half=ry*(0.30+1.02*t);half=Math.round(half);
     if(c.tail==='fork'||c.tail==='lunate'){const notch=Math.round(half*(c.tail==='lunate'?0.85:0.72)*t);
       for(let y=yc-half;y<=yc-notch;y++)set(x,Math.round(y),FIN);for(let y=yc+notch;y<=yc+half;y++)set(x,Math.round(y),FIN);
       if(t<0.25)for(let y=yc-2;y<=yc+2;y++)set(x,Math.round(y),FIN);}
     else for(let y=yc-half;y<=yc+half;y++)set(x,Math.round(y),FIN);}
-  {const px=Math.round(cx+rx*0.20),py=Math.round(CY+curveAt(px)+ry*0.15);for(let i=0;i<Math.round(ry*0.9);i++){const w=Math.round((1-i/(ry*0.9))*ry*0.5);for(let j=0;j<=w;j++)set(px-j,py+i,FIN,true);}}
+  {const px=Math.round(cx+rx*0.20),py=Math.round(cy+curveAt(px)+ry*0.15);for(let i=0;i<Math.round(ry*0.9);i++){const ww=Math.round((1-i/(ry*0.9))*ry*0.5);for(let j=0;j<=ww;j++)set(px-j,py+i,FIN,true);}}
   for(let x=Math.round(cx-rx);x<=Math.round(cx+rx);x++){const dx=(x-cx)/rx;if(Math.abs(dx)>1)continue;
-    const h=ry*Math.sqrt(Math.max(0,1-dx*dx)),yc=CY+curveAt(x),topH=h*0.92,botH=h*1.08;
+    const hh=ry*Math.sqrt(Math.max(0,1-dx*dx)),yc=cy+curveAt(x),topH=hh*0.92,botH=hh*1.08;
     const yTop=Math.round(yc-topH),yBot=Math.round(yc+botH);topEdge[x]=yTop;botEdge[x]=yBot;const span=Math.max(1,yBot-yTop);
     for(let y=yTop;y<=yBot;y++){const f=(y-yTop)/span;let role;
       if(f<0.07)role=SPEC;else if(f<0.30)role=BACK;else if(f<0.55)role=SHADOW;else if(f<0.72)role=BASE;else if(f<0.87)role=HIGH;else role=BELLY;set(x,y,role);}}
@@ -248,45 +322,514 @@ function generateCreature(c){
     if(c.dorsal==='low')hgt=ry*0.34;else if(c.dorsal==='sail')hgt=ry*(0.55+0.45*Math.sin(Math.PI*(x-x0)/Math.max(1,x1-x0)));else hgt=ry*(0.30+0.42*Math.abs(Math.sin(x*0.95)));
     hgt=Math.round(hgt);for(let k=1;k<=hgt;k++)set(x,topEdge[x]-k,FIN,true);}}
   if(c.arch!=='eel'){const x0=Math.round(cx-rx*0.15),x1=Math.round(cx+rx*0.12);for(let x=x0;x<=x1;x++){if(botEdge[x]<0)continue;const hgt=Math.round(ry*0.22);for(let k=1;k<=hgt;k++)set(x,botEdge[x]+k,FIN,true);}}
-  const spots=[];if(c.pattern==='spots'){const n=4+Math.floor(rng()*5);for(let i=0;i<n;i++)spots.push([cx-rx*0.4+rng()*rx*1.2,CY-ry*0.5+rng()*ry,1.4+rng()*1.6]);}
+  const spots=[];if(c.pattern==='spots'){const n=4+Math.floor(rng()*5);for(let i=0;i<n;i++)spots.push([cx-rx*0.4+rng()*rx*1.2,cy-ry*0.5+rng()*ry,1.4+rng()*1.6]);}
   const sw=5,ph=Math.floor(rng()*4);
   const patHit=(x,y)=>{switch(c.pattern){case'v-stripes':return((x-ph)%sw+sw)%sw<sw*0.5;case'h-stripes':return(y%sw)<sw*0.5;case'diagonal':return((x+y)%sw)<sw*0.5;case'spots':return spots.some(s=>((x-s[0])**2+(y-s[1])**2)<s[2]*s[2]);case'patches':return hash2(x>>1,y>>1,c.seed)>0.58;default:return false;}};
-  if(c.pattern!=='none')for(let y=0;y<H;y++)for(let x=0;x<W;x++){const r=roles[y][x];if(r===SHADOW||r===BASE||r===HIGH||r===BACK){if(patHit(x,y))roles[y][x]=PATTERN;}}
-  if(A.jaw){const nx=Math.round(cx+rx);for(let i=0;i<Math.round(rx*0.28);i++)set(nx-i,Math.round(CY+curveAt(nx)+ry*0.10),MOUTH,false);}
-  const ex=Math.round(cx+rx*0.60),ey=Math.round(CY+curveAt(ex)-ry*0.34),er=ry>9?2:1;
+  if(c.pattern!=='none')for(let y=0;y<h;y++)for(let x=0;x<w;x++){const r=roles[y][x];if(r===SHADOW||r===BASE||r===HIGH||r===BACK){if(patHit(x,y))roles[y][x]=PATTERN;}}
+  if(A.jaw){const nx=Math.round(cx+rx);for(let i=0;i<Math.round(rx*0.28);i++)set(nx-i,Math.round(cy+curveAt(nx)+ry*0.10),MOUTH,false);}
+  const ex=Math.round(cx+rx*0.60),ey=Math.round(cy+curveAt(ex)-ry*0.34),er=ry>9?2:1;
   const drawEye=(exx,eyy,rr)=>{for(let dy=-rr;dy<=rr;dy++)for(let dx=-rr;dx<=rr;dx++)if(dx*dx+dy*dy<=rr*rr)set(exx+dx,eyy+dy,EYEW,false);set(exx,eyy,EYEP,false);if(rr>1){set(exx-1,eyy,EYEP,false);set(exx,eyy+1,EYEP,false);}set(exx+1,eyy-1,EYEH,false);};
   drawEye(ex,ey,er);if(c.corrupt>0.6)drawEye(ex-Math.round(rx*0.22),ey+1,Math.max(1,er-1));
   if(c.corrupt>0.4){const gr=er+2;for(let dy=-gr;dy<=gr;dy++)for(let dx=-gr;dx<=gr;dx++){const d=dx*dx+dy*dy;if(d<=gr*gr&&d>er*er)set(ex+dx,ey+dy,GLOW,true);}}
-  const add=[];for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(roles[y][x])continue;if((x>0&&roles[y][x-1])||(x<W-1&&roles[y][x+1])||(y>0&&roles[y-1][x])||(y<H-1&&roles[y+1][x]))add.push(y*W+x);}
-  for(const p of add)roles[(p/W)|0][p%W]=OUTLINE;
-  return{roles,meta:{cx,cy:CY,headX:cx+rx,tailX:bx-tailLen,ry}};
+  outlinePass(roles,w,h);
+  return{w,h,roles,meta:{cx,cy,headX:cx+rx,tailX:bx-tailLen,ry,anchors:{eye:[ex,ey],mouth:[Math.round(cx+rx),Math.round(cy+curveAt(cx+rx))]}}};
 }
 
-// ===================== ANIMATION =====================
-const MOTIONS={
-  swim:(x,y,role,ph,m,c)=>{const denom=Math.max(1,m.headX-m.tailX);const rel=clamp((m.headX-x)/denom,0,1);return{dy:c.amp*Math.pow(rel,1.5)*Math.sin(x*c.freq-ph)};},
-  sway:(x,y,role,ph,m,c)=>({dx:c.amp*Math.sin(ph-y*0.05)}),
-  bob:(x,y,role,ph,m,c)=>({dy:c.amp*Math.sin(ph)}),
-  breathe:(x,y,role,ph,m,c)=>{const k=c.amp*0.05*Math.sin(ph);return{dx:(x-m.cx)*k,dy:(y-m.cy)*k};},
-  flutter:(x,y,role,ph,m,c)=>role===FIN?{dy:c.amp*Math.sin(x*0.8-ph*2)}:{}
-};
-const MOTION_KEYS=['swim','sway','bob','breathe','flutter'];
+defModule({
+  id:'creature',label:'Creatures',icon:'\u{1F41F}',size:{w:72,h:42},fit:1.5,
+  groups:[{key:'body',title:'Body plan'},{key:'fins',title:'Fins &amp; tail'},{key:'skin',title:'Skin'}],
+  paramSchema:[
+    {key:'arch',group:'body',label:'Archetype',type:'chips',options:ARCHES},
+    {key:'len',group:'body',label:'Length',type:'range',min:0.7,max:1.3,step:0.01,fmt:v=>v.toFixed(2)+'×'},
+    {key:'dep',group:'body',label:'Body depth',type:'range',min:0.7,max:1.3,step:0.01,fmt:v=>v.toFixed(2)+'×'},
+    {key:'tail',group:'fins',label:'Tail',type:'chips',options:TAILS},
+    {key:'dorsal',group:'fins',label:'Dorsal',type:'chips',options:DORSALS},
+    {key:'pattern',group:'skin',label:'Pattern',type:'chips',options:PATTERNS}
+  ],
+  defaults:()=>({arch:'reef',len:1.0,dep:1.0,tail:'fork',dorsal:'low',pattern:'v-stripes',pal:1,depth:6,corrupt:0}),
+  generate:generateCreature,
+  motions:['swim','bob','breathe','flutter','sway'],
+  clips:()=>[{name:'swim',motion:'swim',amp:2.2,freq:0.34,bias:0,frames:12,fps:12}],
+  hint:'Motion is procedural — no drawn frames. Add clips (swim / idle / dart) below the preview; each exports as its own row in the spritesheet.',
+  hud:c=>[c.arch.toUpperCase()],
+  label2:c=>c.arch
+});
 
-function bakeClip(asset,cache,clip){
-  const {roles,meta}=asset,F=clip.frames,model=MOTIONS[clip.motion],frames=[];
-  const cfgm={amp:clip.amp,freq:clip.freq};
-  for(let f=0;f<F;f++){const ph=2*Math.PI*f/F;const img=tctx.createImageData(W,H),d=img.data;
-    for(let x=0;x<W;x++)for(let y=0;y<H;y++){const role=roles[y][x];if(!role)continue;
-      const disp=model(x,y,role,ph,meta,cfgm);const tx=x+Math.round(disp.dx||0),ty=y+Math.round(disp.dy||0);
-      if(tx<0||tx>=W||ty<0||ty>=H)continue;const col=cache[role],idx=(ty*W+tx)*4;d[idx]=col[0];d[idx+1]=col[1];d[idx+2]=col[2];d[idx+3]=col[3];}
-    const cv=document.createElement('canvas');cv.width=W;cv.height=H;cv.getContext('2d').putImageData(img,0,0);frames.push(cv);}
-  return frames;
+// ===================== MODULE: FLORA =====================
+// L-system string rewriting -> turtle that stamps thick tapered segments into the
+// role matrix. Countershading comes from the segment normal vs. a fixed light dir,
+// so branches read as round the same way creature bodies do.
+const FLORA_ARCH={
+  kelp:    {rules:{X:['F[+f]X','F[-f]X','FX','F[+f][-f]X']},          angle:58,iterMul:4.0,len:1.00,wid:1.20,tipR:0.9,curlMul:1.0,strandSpread:7,leaf:[1.15,0.75]},
+  staghorn:{rules:{X:['F[+X][-X]','F[+X]X','F[-X]X','FF[+X][-X]']},   angle:30,iterMul:1.6,len:0.98,wid:1.20,tipR:1.5,curlMul:0.7,strandSpread:9,leaf:[0.6,0.5]},
+  fan:     {rules:{X:['F[+X][-X]']},                                  angle:17,iterMul:1.7,len:0.94,wid:0.72,tipR:0.7,curlMul:0.3,strandSpread:5,membrane:1,leaf:[0.6,0.5]},
+  soft:    {rules:{X:['F[+X][-X]','FX','F[+X][-X]']},                 angle:42,iterMul:1.3,len:0.90,wid:2.60,tipR:1.9,curlMul:0.9,strandSpread:8,leaf:[0.6,0.6]},
+  grass:   {rules:{X:['FX']},                                         angle:20,iterMul:4.0,len:1.00,wid:0.80,tipR:0.5,curlMul:2.2,strandSpread:11,leaf:[0.7,0.5]}
+};
+const FLORA_KEYS=Object.keys(FLORA_ARCH);
+const LIGHT=[-0.55,-0.83]; // light from upper-left, shared by every stamped form
+
+function lsysExpand(axiom,rules,iter,rng){
+  let s=axiom;
+  for(let i=0;i<iter;i++){
+    let out='';
+    for(let k=0;k<s.length;k++){const ch=s[k],r=rules[ch];
+      out+=r?(Array.isArray(r)?r[(rng()*r.length)|0]:r):ch;}
+    s=out;
+    if(s.length>20000)break;
+  }
+  return s;
+}
+// skip from an unwanted '[' to its matching ']'
+function skipBranch(s,i){let d=0;for(;i<s.length;i++){if(s[i]==='[')d++;else if(s[i]===']'){d--;if(!d)return i;}}return s.length;}
+
+function generateFlora(c,rng){
+  const w=64,h=80,baseY=h-3,A=FLORA_ARCH[c.arch]||FLORA_ARCH.kelp;
+  const roles=newMat(w,h),tips=[];
+  const iter=Math.max(1,Math.round(c.iter*A.iterMul));
+  const strands=Math.max(1,Math.round(c.strands));
+  // Each L-system iteration adds roughly one segment along any path, so normalising
+  // segment length by the iteration count keeps every archetype filling the frame —
+  // the slider then reads as a relative multiplier instead of raw pixels.
+  const baseLen=clamp((h*0.80)/iter*A.len*c.height*c.seglen,1.4,26);
+  const baseWid=Math.max(1,c.width*A.wid*c.height*clamp(baseLen/4.5,0.85,1.8));
+  // taper is normalised the same way: the whole plant thins by the same amount whether
+  // it grew in 6 fat segments or 20 fine ones
+  const taperStep=Math.pow(clamp(c.taper,0.5,1),6/iter);
+  let minY=baseY;
+
+  // role across a segment: u = -1..1 across width, lit side positive; lower parts sit in shade
+  const segRole=(u,litSign,y)=>{
+    const s=u*litSign, deep=clamp((y-h*0.45)/(h*0.55),0,1);
+    let step = s>0.58?4 : s>0.12?3 : s>-0.34?2 : 1;      // 4=HIGH 3=BASE 2=SHADOW 1=BACK
+    if(deep>0.55&&step>1)step--;
+    return [BACK,BACK,SHADOW,BASE,HIGH][step];
+  };
+
+  for(let sIdx=0;sIdx<strands;sIdx++){
+    const srng=mulberry32((c.seed>>>0)+sIdx*7717);
+    const str=lsysExpand('X',A.rules,iter,srng);
+    const spread=(strands>1?(sIdx/(strands-1)-0.5):0)*A.strandSpread;
+    let t={x:w/2+spread*1.4,y:baseY,ang:-Math.PI/2+spread*0.055,len:baseLen,wid:baseWid};
+    const stack=[];
+    let segs=0;
+    for(let i=0;i<str.length&&segs<3000;i++){
+      const ch=str[i];
+      if(ch==='['){
+        if(srng()>c.branch){i=skipBranch(str,i);continue;}
+        stack.push({...t});
+      }
+      else if(ch===']'){ if(stack.length)t=stack.pop(); }
+      else if(ch==='+'){ t.ang+=(c.angle*Math.PI/180)*A.angle/30*(0.72+srng()*0.56); }
+      else if(ch==='-'){ t.ang-=(c.angle*Math.PI/180)*A.angle/30*(0.72+srng()*0.56); }
+      else if(ch==='F'||ch==='f'){
+        const leaf=ch==='f';
+        const ln=Math.max(1.2,t.len*(leaf?A.leaf[0]:1)),wd=Math.max(0.9,t.wid*(leaf?A.leaf[1]:1));
+        t.ang+=(c.curl*A.curlMul*0.16)+(srng()-0.5)*0.09;
+        const nx0=t.x+Math.cos(t.ang)*ln, ny0=t.y+Math.sin(t.ang)*ln;
+        const dx=nx0-t.x,dy=ny0-t.y,L=Math.hypot(dx,dy)||1;
+        const litSign=Math.sign((-dy/L)*LIGHT[0]+(dx/L)*LIGHT[1])||1;
+        const w1=Math.max(0.9,wd*taperStep);
+        stampSeg(roles,w,h,t.x,t.y,nx0,ny0,wd,w1,(u)=>segRole(u,litSign,ny0));
+        t.x=nx0;t.y=ny0;t.wid=leaf?t.wid:w1;t.len=Math.max(1.2,t.len*(0.965+taperStep*0.035));
+        if(ny0<minY)minY=ny0;
+        segs++;
+        // a branch that ends here (next symbol closes it, or is an unexpanded apex) grows a tip cluster
+        const nxt=str[i+1];
+        if(leaf||nxt===undefined||nxt===']'||nxt==='X')tips.push([nx0,ny0,t.wid]);
+      }
+    }
+  }
+
+  // sea-fan membrane: web adjacent tips together into a flat lattice
+  if(A.membrane){
+    const lim=baseLen*1.55;
+    const step=Math.max(1,Math.ceil(tips.length/700)),pool=tips.filter((_,i)=>i%step===0);
+    for(let a=0;a<pool.length;a++)for(let b=a+1;b<pool.length;b++){
+      const d=Math.hypot(pool[a][0]-pool[b][0],pool[a][1]-pool[b][1]);
+      if(d>0.8&&d<lim)stampSeg(roles,w,h,pool[a][0],pool[a][1],pool[b][0],pool[b][1],1,1,()=>SHADOW,true);
+    }
+  }
+
+  // polyps / blade tips — bioluminescent variants glow instead
+  for(const tp of tips){
+    const r=A.tipR*c.tipsize*(0.75+tp[2]*0.22);
+    if(r<0.7)continue;
+    stampDisc(roles,w,h,tp[0],tp[1],r,(d,dx,dy)=>{
+      if(c.bio)return d<0.5?GLOW:GLOWDIM;
+      const len=Math.max(0.7,Math.hypot(dx,dy)),lit=(dx*LIGHT[0]+dy*LIGHT[1])/len;
+      if(d<0.4&&lit>0.1)return SPEC;
+      return lit>0.34?BELLY:lit>-0.32?HIGH:BASE;});
+  }
+  if(c.bio)for(const tp of tips)stampDisc(roles,w,h,tp[0],tp[1],A.tipR*c.tipsize+2.4,()=>GLOWDIM,true);
+
+  // holdfast
+  const hw=Math.max(3,strands*A.strandSpread*0.45);
+  for(let x=-hw;x<=hw;x++){const hgt=Math.round(2.4*Math.cos(x/hw*1.3));
+    for(let y=0;y<=hgt+1;y++)put(roles,w,h,Math.round(w/2+x),baseY+1-y,y>hgt-1?SHADOW:BACK,true);}
+
+  outlinePass(roles,w,h);
+  const height=Math.max(6,baseY-minY);
+  return{w,h,roles,meta:{cx:w/2,cy:h/2,baseY,height,
+    anchors:{base:[Math.round(w/2),baseY],tips:tips.slice(0,24).map(t=>[Math.round(t[0]),Math.round(t[1])])}}};
+}
+
+defModule({
+  id:'flora',label:'Flora',icon:'\u{1F33F}',size:{w:64,h:80},fit:1.15,
+  groups:[{key:'grow',title:'Growth'},{key:'lsys',title:'L-system'},{key:'form',title:'Form'}],
+  paramSchema:[
+    {key:'arch',group:'grow',label:'Archetype',type:'chips',options:FLORA_KEYS},
+    {key:'height',group:'grow',label:'Height',type:'range',min:0.6,max:1.4,step:0.02,fmt:v=>v.toFixed(2)+'×'},
+    {key:'strands',group:'grow',label:'Strands',type:'range',min:1,max:6,step:1,fmt:v=>v|0},
+    {key:'iter',group:'lsys',label:'Iterations',type:'range',min:1,max:6,step:1,fmt:v=>v|0},
+    {key:'angle',group:'lsys',label:'Branch angle',type:'range',min:8,max:52,step:1,fmt:v=>(v|0)+'°'},
+    {key:'branch',group:'lsys',label:'Branch chance',type:'range',min:0.3,max:1,step:0.02,fmt:v=>Math.round(v*100)+'%'},
+    {key:'seglen',group:'lsys',label:'Segment length',type:'range',min:0.5,max:1.6,step:0.02,fmt:v=>v.toFixed(2)+'×'},
+    {key:'curl',group:'lsys',label:'Curl',type:'range',min:-1,max:1,step:0.05,fmt:v=>v.toFixed(2)},
+    {key:'width',group:'form',label:'Stem width',type:'range',min:1,max:6,step:0.1,fmt:v=>v.toFixed(1)+'px'},
+    {key:'taper',group:'form',label:'Taper',type:'range',min:0.6,max:1,step:0.01,fmt:v=>v.toFixed(2)},
+    {key:'tipsize',group:'form',label:'Polyp size',type:'range',min:0.4,max:2.4,step:0.05,fmt:v=>v.toFixed(2)+'×'},
+    {key:'bio',group:'form',label:'Bioluminescent tips',type:'toggle'}
+  ],
+  defaults:()=>({arch:'kelp',height:1.0,strands:3,iter:4,angle:24,branch:0.85,seglen:1.0,
+                 curl:0.15,width:3.0,taper:0.93,tipsize:1.0,bio:false,pal:3,depth:10,corrupt:0}),
+  generate:generateFlora,
+  motions:['sway','bob','breathe'],
+  clips:()=>[{name:'sway',motion:'sway',amp:2.6,freq:0.30,bias:0.6,frames:14,fps:10}],
+  hint:'Sway amplitude scales with height above the holdfast — the base stays planted, the tips travel. “Current” biases the sway one way, like a steady drift.',
+  hud:c=>[c.arch.toUpperCase(),c.bio?'BIOLUM':null],
+  label2:c=>c.arch
+});
+
+// ===================== MODULE: TILES =====================
+// Noise-filled material + a 47-tile blob autotile set built from edge/corner masks.
+// Neighbour bits: the four diagonals only count when both of their cardinals are set,
+// which collapses the 256 raw neighbourhoods onto exactly 47 distinct tiles.
+const TS=16;
+const NB_N=1,NB_NE=2,NB_E=4,NB_SE=8,NB_S=16,NB_SW=32,NB_W=64,NB_NW=128;
+function blobKey(mask){let k=mask;
+  if(!(k&NB_N)||!(k&NB_E))k&=~NB_NE;
+  if(!(k&NB_E)||!(k&NB_S))k&=~NB_SE;
+  if(!(k&NB_S)||!(k&NB_W))k&=~NB_SW;
+  if(!(k&NB_W)||!(k&NB_N))k&=~NB_NW;
+  return k>>>0;}
+const MASK_TO_KEY=new Uint8Array(256);
+const BLOB_KEYS=(function(){const seen=new Map();
+  for(let m=0;m<256;m++){const k=blobKey(m);MASK_TO_KEY[m]=k;if(!seen.has(k))seen.set(k,1);}
+  return[...seen.keys()].sort((a,b)=>a-b);})();          // 47 entries
+const KEY_TO_INDEX=(function(){const o={};BLOB_KEYS.forEach((k,i)=>o[k]=i);return o;})();
+
+const MATERIALS=['sand','rock','rubble','crust'];
+const EDGE_STYLES=['hard','soft','rounded'];
+
+function tileFill(c,x,y){
+  const s=c.seed>>>0, k=0.60+c.contrast*1.6;
+  const sc=c.grain<0.34?8:c.grain<0.67?4:2;
+  // Smooth, periodic cell noise: the lattice wraps at the tile edge (so a tile always
+  // seams with a copy of itself) and stays coarse enough that quantising it yields
+  // stone-sized cells rather than per-pixel confetti.
+  const nz=(xx,yy,scale,off)=>0.72*vnoise(xx/scale,yy/scale,s+off,TS/scale)
+                             +0.28*vnoise(xx/(scale*0.5),yy/(scale*0.5),s+off+13,TS/(scale*0.5));
+  const band=(xx,yy,bands,scale,off)=>Math.min(bands-1,(clamp(0.5+(nz(xx,yy,scale,off)-0.5)*k,0,0.9999)*bands)|0);
+
+  if(c.material==='sand'){
+    const n=band(x,y,3,Math.max(2,sc/2),0),g=hash2(x,y,s+11);
+    let r=[BASE,HIGH,BELLY][n];
+    if(g>0.945)r=SPEC;else if(g<0.055)r=SHADOW;
+    return r;
+  }
+  // rock & rubble are "stones": quantise the cell noise, seam the lower-right of each
+  // cell and catch light on its upper-left. Cheap, and it reads as packed stone.
+  if(c.material==='rock'||c.material==='rubble'){
+    const rubble=c.material==='rubble';
+    const scale=rubble?sc:Math.min(8,sc*2),bands=3;
+    const ramp=rubble?[SHADOW,BASE,HIGH,BELLY]:[SHADOW,BASE,HIGH];
+    const q=(xx,yy)=>band(xx,yy,bands,scale,0),me=q(x,y);
+    if(me!==q(x+1,y)||me!==q(x,y+1))return rubble?SHADOW:BACK;                 // shaded seam
+    if(me!==q(x-1,y)||me!==q(x,y-1))return ramp[Math.min(ramp.length-1,me+1)];// lit lip
+    if(!rubble&&Math.abs(vnoise(x/8,y/8,s+301,2)-0.5)<0.045)return SHADOW;    // hairline crack
+    const g=hash2(x,y,s+7);
+    if(g>0.94)return ramp[Math.min(ramp.length-1,me+1)];
+    if(g<0.06)return me?ramp[me-1]:BACK;
+    return ramp[me];
+  }
+  // coral crust — mottled, with polyp specks and the odd bioluminescent pinprick
+  const n=band(x,y,3,sc,0),m2=band(x,y,4,Math.max(2,sc/2),977),g=hash2(x,y,s+29);
+  let r=[SHADOW,BASE,HIGH][n];
+  if(m2===3)r=PATTERN;
+  if(g>0.965)r=SPEC;else if(g>0.945)r=BELLY;else if(g<0.012)r=GLOW;
+  return r;
+}
+
+function renderTile(c,key){
+  const m=newMat(TS,TS),has=b=>(key&b)!==0;
+  for(let y=0;y<TS;y++)for(let x=0;x<TS;x++)m[y][x]=tileFill(c,x,y);
+  const soft=c.edge==='soft',rounded=c.edge==='rounded';
+  const band=(x,y,role)=>{if(x>=0&&x<TS&&y>=0&&y<TS)m[y][x]=role;};
+  // exposed faces: light from upper-left, so the top lip is brightest, the underside darkest
+  if(!has(NB_N))for(let x=0;x<TS;x++){if(!soft)band(x,0,OUTLINE);band(x,soft?0:1,SPEC);band(x,soft?1:2,HIGH);}
+  if(!has(NB_S))for(let x=0;x<TS;x++){if(!soft)band(x,TS-1,OUTLINE);band(x,TS-(soft?1:2),BACK);band(x,TS-(soft?2:3),SHADOW);}
+  if(!has(NB_W))for(let y=0;y<TS;y++){if(!soft)band(0,y,OUTLINE);band(soft?0:1,y,HIGH);}
+  if(!has(NB_E))for(let y=0;y<TS;y++){if(!soft)band(TS-1,y,OUTLINE);band(TS-(soft?1:2),y,SHADOW);}
+
+  const corners=[[NB_N,NB_W,NB_NW,0,0],[NB_N,NB_E,NB_NE,1,0],[NB_S,NB_W,NB_SW,0,1],[NB_S,NB_E,NB_SE,1,1]];
+  const r=rounded?4:soft?2:3;
+  for(const[ca,cb,cd,sx,sy]of corners){
+    const px=(i,j)=>[sx?TS-1-i:i, sy?TS-1-j:j];
+    if(!has(ca)&&!has(cb)){
+      // outer corner — carve it round, then re-edge whatever the carve exposed
+      for(let i=0;i<r;i++)for(let j=0;j<r;j++)
+        if(Math.hypot(r-i-0.5,r-j-0.5)>r-0.3){const[x,y]=px(i,j);m[y][x]=EMPTY;}
+      for(let i=0;i<r+2;i++)for(let j=0;j<r+2;j++){const[x,y]=px(i,j);
+        if(x<0||x>=TS||y<0||y>=TS||!m[y][x])continue;
+        const hole=(xx,yy)=>xx>=0&&xx<TS&&yy>=0&&yy<TS&&!m[yy][xx];
+        if(hole(x-1,y)||hole(x+1,y)||hole(x,y-1)||hole(x,y+1))m[y][x]=OUTLINE;}
+    } else if(has(ca)&&has(cb)&&!has(cd)){
+      // inner corner — a concave crease where the diagonal neighbour is missing
+      for(let i=0;i<r+1;i++)for(let j=0;j<r+1;j++){
+        const d=Math.hypot(i+0.5,j+0.5);if(d>r)continue;const[x,y]=px(i,j);
+        m[y][x]=d<r*0.62?OUTLINE:(sy?BACK:SHADOW);}
+    }
+  }
+  return m;
+}
+
+function buildTileset(c){const set=[];for(const k of BLOB_KEYS)set.push(renderTile(c,k));return set;}
+
+// the in-context preview: a seabed of this material, autotiled so the seams are visible
+function generateTiles(c,rng){
+  const GW=9,GH=6,w=GW*TS,h=GH*TS;
+  const solid=[];
+  for(let gy=0;gy<GH;gy++){solid.push([]);
+    for(let gx=0;gx<GW;gx++){
+      const n=fbm(gx/2.2,gy/2.0,(c.seed>>>0)+5,2,0.55,0);
+      solid[gy][gx]=gy>=GH-2 ? true : n>1-c.coverage;
+    }}
+  const set=buildTileset(c),roles=newMat(w,h);
+  const at=(gx,gy)=>(gx<0||gx>=GW||gy>=GH)?(gy>=GH):(gy<0?false:solid[gy][gx]);
+  for(let gy=0;gy<GH;gy++)for(let gx=0;gx<GW;gx++){
+    if(!solid[gy][gx])continue;
+    let mask=0;
+    if(at(gx,gy-1))mask|=NB_N; if(at(gx+1,gy-1))mask|=NB_NE; if(at(gx+1,gy))mask|=NB_E;
+    if(at(gx+1,gy+1))mask|=NB_SE;if(at(gx,gy+1))mask|=NB_S;  if(at(gx-1,gy+1))mask|=NB_SW;
+    if(at(gx-1,gy))mask|=NB_W;   if(at(gx-1,gy-1))mask|=NB_NW;
+    const tile=set[KEY_TO_INDEX[MASK_TO_KEY[mask]]];
+    for(let y=0;y<TS;y++)for(let x=0;x<TS;x++){const r=tile[y][x];if(r)roles[gy*TS+y][gx*TS+x]=r;}
+  }
+  return{w,h,roles,meta:{cx:w/2,cy:h/2,tileSize:TS,tileset:set,grid:{cols:GW,rows:GH},anchors:{origin:[0,0]}}};
+}
+
+defModule({
+  id:'tiles',label:'Tiles',icon:'\u{1F9F1}',size:{w:9*TS,h:6*TS},fit:1.0,static:true,float:false,exportKind:'tiles',
+  groups:[{key:'mat',title:'Material'},{key:'edge',title:'Edges &amp; preview'}],
+  paramSchema:[
+    {key:'material',group:'mat',label:'Material',type:'chips',options:MATERIALS},
+    {key:'grain',group:'mat',label:'Grain',type:'range',min:0,max:1,step:0.02,fmt:v=>v<0.34?'coarse':v<0.67?'medium':'fine'},
+    {key:'contrast',group:'mat',label:'Contrast',type:'range',min:0,max:1,step:0.02,fmt:v=>Math.round(v*100)+'%'},
+    {key:'edge',group:'edge',label:'Edge style',type:'chips',options:EDGE_STYLES},
+    {key:'coverage',group:'edge',label:'Preview coverage',type:'range',min:0.25,max:0.9,step:0.02,fmt:v=>Math.round(v*100)+'%'}
+  ],
+  defaults:()=>({material:'rock',grain:0.5,contrast:0.42,edge:'hard',coverage:0.55,pal:9,depth:14,corrupt:0}),
+  generate:generateTiles,
+  motions:['none'],
+  clips:()=>[{name:'static',motion:'none',amp:0,freq:0,bias:0,frames:1,fps:1}],
+  hint:'The preview is a live autotiled seabed — every tile you see is picked from the 47-tile blob set by its neighbours. “Sheet” exports that whole set plus the 256-entry bitmask→tile map.',
+  hud:c=>[c.material.toUpperCase(),BLOB_KEYS.length+' TILES'],
+  label2:c=>c.material
+});
+
+// ===================== MODULE: VFX =====================
+// Pre-baked looping effects: particle constants are drawn once from the seed, then
+// evaluated per frame. Every particle advances a whole number of cycles across the
+// clip, so frame F wraps onto frame 0 exactly — no seam, at any frame count.
+const EFFECTS=['bubbles','silt','godray','glow','ink'];
+
+function vfxParticles(c,rng){
+  const n=Math.max(1,Math.round(c.count)),p=[];
+  for(let i=0;i<n;i++)p.push({
+    x:rng(),y:rng(),p0:rng(),a0:rng()*Math.PI*2,
+    cyc:Math.max(1,Math.round(c.speed*(1+Math.floor(rng()*2.4)))),
+    wf:1+Math.floor(rng()*3),r:0.55+rng()*0.9,jit:rng()
+  });
+  return p;
+}
+
+// Clouds (silt, ink) accumulate density and then map density -> role, instead of
+// stamping discs first-write-wins — which is what makes them read as layered volume
+// rather than a pile of flat blobs.
+function vfxCloud(c,parts,t,w,h,fq,wob,dark){
+  const den=new Float32Array(w*h),s=c.seed>>>0;
+  for(const p of parts){
+    const u=((p.p0+t*p.cyc*fq)%1+1)%1;
+    if(u>c.life)continue;
+    const age=u/Math.max(0.01,c.life),amp=Math.pow(1-age,dark?1.15:0.8),k=Math.pow(u,0.55);
+    let x,y,rr;
+    if(dark){ // ink: a few puffs that bloom outward from the wound
+      x=w/2+(p.x-0.5)*w*0.30*c.spread+Math.cos(p.a0)*k*w*0.20*c.spread+Math.sin(u*6.28*p.wf)*wob;
+      y=h/2+(p.y-0.5)*h*0.26*c.spread+Math.sin(p.a0)*k*h*0.18*c.spread-u*h*0.16;
+      rr=c.size*p.r*(0.9+k*2.6)*(0.55+c.spread);
+    }else{  // silt: a ring of particles thrown out and drifting up
+      x=w/2+Math.cos(p.a0)*k*c.spread*w*0.42+Math.sin(u*6.28*p.wf)*wob;
+      y=h/2+Math.sin(p.a0)*k*c.spread*h*0.36-k*h*0.18;
+      rr=c.size*p.r*(1.5+u*2.8);
+    }
+    const ri=Math.ceil(rr);
+    for(let dy=-ri;dy<=ri;dy++)for(let dx=-ri;dx<=ri;dx++){
+      const d=Math.hypot(dx,dy);if(d>rr)continue;
+      const xx=Math.round(x+dx),yy=Math.round(y+dy);
+      if(xx<0||xx>=w||yy<0||yy>=h)continue;
+      const f=1-d/rr;den[yy*w+xx]+=amp*f*f;
+    }
+  }
+  const m=newMat(w,h);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const v=den[y*w+x]*(0.86+0.28*hash2(x,y,s+61));   // dithered edge
+    if(v<0.07)continue;
+    m[y][x]=dark?(v>0.95?BACK:v>0.52?SHADOW:v>0.22?HAZE2:HAZE)
+                :(v>0.80?BELLY:v>0.34?HAZE2:HAZE);
+  }
+  return m;
+}
+
+function vfxFrame(c,clip,parts,t,w,h){
+  const m=newMat(w,h),s=c.seed>>>0;
+  const wob=(clip.amp||0)*0.9+0.4, fq=Math.max(0.25,clip.freq*3||1);
+  const disc=(cx,cy,r,fn,only)=>stampDisc(m,w,h,cx,cy,r,fn,only);
+
+  if(c.effect==='bubbles'){
+    for(const p of parts){
+      const u=((p.p0+t*p.cyc*fq)%1+1)%1;
+      const rr=c.size*p.r*(u>0.9?Math.max(0,1-(u-0.9)/0.1):u<0.05?u/0.05:1);
+      if(rr<0.6)continue;
+      const x=p.x*w+Math.sin(u*Math.PI*2*p.wf+p.a0)*wob*c.spread*3;
+      const y=h-1-u*(h-2);
+      disc(x,y,rr,d=>d>0.60?BELLY:HAZE);
+      if(rr>1.6)put(m,w,h,Math.round(x-rr*0.42),Math.round(y-rr*0.42),SPEC);
+    }
+  } else if(c.effect==='silt'){
+    return vfxCloud(c,parts,t,w,h,fq,wob,false);
+  } else if(c.effect==='godray'){
+    const n=Math.max(2,Math.round(c.count/6)),lean=w*0.34;
+    for(let i=0;i<n;i++){
+      const base=(i+0.5)/n*w+Math.sin(t*Math.PI*2+i*1.7)*wob*2.2;
+      const halfw=c.size*(1.6+c.spread*4);
+      for(let y=0;y<h;y++){
+        const cx=base+lean*(y/h),fall=1-y/h*0.82;
+        for(let x=Math.floor(cx-halfw);x<=Math.ceil(cx+halfw);x++){
+          const d=Math.abs(x-cx)/halfw;if(d>1)continue;
+          const a=(1-d*d)*fall*(0.45+c.life*0.75);
+          if(a>0.62)put(m,w,h,x,y,HAZE2,true);
+          else if(hash2(x,y,s+i*97)<a*1.35)put(m,w,h,x,y,HAZE,true);
+        }
+      }
+    }
+  } else if(c.effect==='glow'){
+    const pulse=0.78+0.22*Math.sin(t*Math.PI*2*Math.max(1,Math.round(fq)));
+    const R=c.size*2.4*pulse;
+    disc(w/2,h/2,R*2.5,d=>d>0.55?GLOWDIM:GLOW,true);
+    disc(w/2,h/2,R,d=>d<0.42?SPEC:d<0.72?BELLY:GLOW);
+    for(const p of parts){
+      const ang=p.a0+t*Math.PI*2*p.cyc*(p.jit>0.5?1:-1);
+      const rad=R*2.0+p.r*c.spread*w*0.24;
+      put(m,w,h,Math.round(w/2+Math.cos(ang)*rad),Math.round(h/2+Math.sin(ang)*rad),GLOW,true);
+    }
+  } else { // ink / blood — a diffusing cloud
+    return vfxCloud(c,parts,t,w,h,fq,wob,true);
+  }
+  return m;
+}
+
+function generateVfxFrames(c,rng,clip){
+  const w=48,h=48,F=Math.max(1,clip.frames|0),parts=vfxParticles(c,rng),frames=[];
+  for(let f=0;f<F;f++)frames.push(vfxFrame(c,clip,parts,f/F,w,h));
+  return{w,h,frames,meta:{cx:w/2,cy:h/2,
+    emitter:{effect:c.effect,count:Math.round(c.count),size:c.size,speed:c.speed,spread:c.spread,lifetime:c.life},
+    anchors:{center:[w>>1,h>>1],source:[w>>1,c.effect==='bubbles'?h-1:h>>1]}}};
+}
+
+defModule({
+  id:'vfx',label:'VFX',icon:'✨',size:{w:48,h:48},fit:1.5,baked:true,
+  groups:[{key:'fx',title:'Effect'},{key:'emit',title:'Emitter'}],
+  paramSchema:[
+    {key:'effect',group:'fx',label:'Effect',type:'chips',options:EFFECTS},
+    {key:'count',group:'emit',label:'Count',type:'range',min:1,max:80,step:1,fmt:v=>v|0},
+    {key:'size',group:'emit',label:'Particle size',type:'range',min:0.5,max:6,step:0.1,fmt:v=>v.toFixed(1)+'px'},
+    {key:'speed',group:'emit',label:'Speed',type:'range',min:1,max:5,step:1,fmt:v=>(v|0)+'× loop'},
+    {key:'spread',group:'emit',label:'Spread',type:'range',min:0.1,max:1.6,step:0.02,fmt:v=>v.toFixed(2)},
+    {key:'life',group:'emit',label:'Lifetime',type:'range',min:0.2,max:1,step:0.02,fmt:v=>Math.round(v*100)+'%'}
+  ],
+  defaults:()=>({effect:'bubbles',count:26,size:1.8,speed:1,spread:0.5,life:0.85,pal:1,depth:8,corrupt:0}),
+  generateFrames:generateVfxFrames,
+  motions:['baked'],
+  clips:()=>[{name:'loop',motion:'baked',amp:1.2,freq:0.33,bias:0,frames:16,fps:14}],
+  hint:'Baked per-frame, and loop-exact at any frame count. The clip’s amplitude drives wobble/turbulence and wave speed scales the emitter — so a second clip can be the same effect, churned harder. JSON carries the emitter params too, so the game can play the sheet or run its own particles.',
+  hud:c=>[c.effect.toUpperCase(),Math.round(c.count)+'P'],
+  label2:c=>c.effect
+});
+
+// ===================== ANIMATION =====================
+// Procedural motion models: pure (x,y,role,phase,meta,params) -> {dx,dy}, applied at
+// bake time. No frames are ever drawn by hand.
+const MOTIONS={
+  swim:(x,y,role,ph,m,c)=>{const denom=Math.max(1,(m.headX||0)-(m.tailX||0));const rel=clamp(((m.headX||0)-x)/denom,0,1);return{dy:c.amp*Math.pow(rel,1.5)*Math.sin(x*c.freq-ph)};},
+  // amplitude scales with height above the holdfast when the module supplies one:
+  // the base stays planted and the tips travel. `bias` is a steady current.
+  sway:(x,y,role,ph,m,c)=>{const k=m.baseY!=null?Math.pow(clamp((m.baseY-y)/Math.max(1,m.height),0,1),1.55):1;
+    return{dx:(c.amp*Math.sin(ph-y*0.09)+c.bias*2.4)*k};},
+  bob:(x,y,role,ph,m,c)=>({dy:c.amp*Math.sin(ph)+c.bias}),
+  breathe:(x,y,role,ph,m,c)=>{const k=c.amp*0.05*Math.sin(ph);return{dx:(x-m.cx)*k,dy:(y-m.cy)*k};},
+  flutter:(x,y,role,ph,m,c)=>role===FIN?{dy:c.amp*Math.sin(x*0.8-ph*2)}:{},
+  none:()=>({}),
+  baked:()=>({})
+};
+const MOTION_LABEL={none:'static',baked:'baked'};
+
+const SCRATCH=document.createElement('canvas').getContext('2d',{willReadFrequently:true});
+function matToCanvas(roles,w,h,cache){
+  const img=SCRATCH.createImageData(w,h),d=img.data;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const r=roles[y][x];if(!r)continue;const col=cache[r];if(!col)continue;
+    const i=(y*w+x)*4;d[i]=col[0];d[i+1]=col[1];d[i+2]=col[2];d[i+3]=col[3];}
+  const cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').putImageData(img,0,0);return cv;
+}
+function buildAsset(m,c,cl){const rng=mulberry32((c.seed>>>0)||1);return m.baked?m.generateFrames(c,rng,cl):m.generate(c,rng);}
+function bakeFrames(asset,cache,cl){
+  const w=asset.w,h=asset.h;
+  if(asset.frames)return asset.frames.map(r=>matToCanvas(r,w,h,cache));  // pre-baked module
+  const F=Math.max(1,cl.frames|0),model=MOTIONS[cl.motion]||MOTIONS.none,out=[];
+  const cp={amp:cl.amp,freq:cl.freq,bias:cl.bias||0},roles=asset.roles,meta=asset.meta;
+  for(let f=0;f<F;f++){
+    const ph=2*Math.PI*f/F,img=SCRATCH.createImageData(w,h),d=img.data;
+    for(let x=0;x<w;x++)for(let y=0;y<h;y++){const role=roles[y][x];if(!role)continue;
+      const disp=model(x,y,role,ph,meta,cp),tx=x+Math.round(disp.dx||0),ty=y+Math.round(disp.dy||0);
+      if(tx<0||tx>=w||ty<0||ty>=h)continue;const col=cache[role];if(!col)continue;
+      const i=(ty*w+tx)*4;d[i]=col[0];d[i+1]=col[1];d[i+2]=col[2];d[i+3]=col[3];}
+    const cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').putImageData(img,0,0);out.push(cv);
+  }
+  return out;
+}
+// one asset -> one thumbnail, used by the library without touching live state
+function thumbOf(entry,px){
+  const m=modById(entry.module),cl=entry.clips[0];
+  const asset=buildAsset(m,entry.cfg,cl),cache=buildColorCache(entry.cfg.pal,entry.cfg.depth,entry.cfg.corrupt);
+  const fr=bakeFrames(asset,cache,cl)[0];
+  const cv=document.createElement('canvas'),s=Math.max(1,Math.floor(px/Math.max(asset.w,asset.h)));
+  cv.width=asset.w*s;cv.height=asset.h*s;const x=cv.getContext('2d');x.imageSmoothingEnabled=false;
+  x.drawImage(fr,0,0,cv.width,cv.height);return cv;
 }
 
 // ===================== STATE =====================
-const cfg={arch:'reef',len:1.0,dep:1.0,tail:'fork',dorsal:'low',pattern:'v-stripes',pal:1,depth:6,corrupt:0,seed:1234};
-const state={clips:[{name:'swim',motion:'swim',amp:2.2,freq:0.34,frames:12,fps:12}],clipIdx:0,frame:0,playing:true,onion:false,asset:null,cache:null,frames:[]};
-const clip=()=>state.clips[state.clipIdx];
+const tank=document.getElementById('tank'),tctx=tank.getContext('2d');
+const DPR=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+const state={modId:'creature',cfgs:{},clipsets:{},clipIdxs:{},frame:0,playing:true,onion:false,asset:null,cache:null,frames:[]};
+MODULES.forEach((m,i)=>{
+  state.cfgs[m.id]=Object.assign(m.defaults(),{seed:1234+i*7717});
+  state.clipsets[m.id]=m.clips();
+  state.clipIdxs[m.id]=0;
+});
+const mod=()=>modById(state.modId);
+const cfg=()=>state.cfgs[state.modId];
+const clips=()=>state.clipsets[state.modId];
+const clip=()=>{const cs=clips();return cs[Math.min(state.clipIdxs[state.modId],cs.length-1)];}
 
 // ===================== TANK / RENDER =====================
 let motes=[];for(let i=0;i<60;i++)motes.push({x:Math.random(),y:Math.random(),z:Math.random(),s:0.15+Math.random()*0.5});
@@ -295,7 +838,8 @@ let tms=0,last=0,acc=0;
 function resize(){const r=tank.getBoundingClientRect();tank.width=Math.round(r.width*DPR);tank.height=Math.round(r.height*DPR);}
 window.addEventListener('resize',resize);
 function drawTankBG(w,h){
-  const g=tctx.createLinearGradient(0,0,0,h),top=gradeColor([26,74,96],Math.max(0,cfg.depth-6)),bot=gradeColor([6,14,26],cfg.depth+10);
+  const d=cfg().depth;
+  const g=tctx.createLinearGradient(0,0,0,h),top=gradeColor([26,74,96],Math.max(0,d-6)),bot=gradeColor([6,14,26],d+10);
   g.addColorStop(0,`rgb(${top[0]},${top[1]},${top[2]})`);g.addColorStop(1,`rgb(${bot[0]},${bot[1]},${bot[2]})`);
   tctx.fillStyle=g;tctx.fillRect(0,0,w,h);
   tctx.save();tctx.globalCompositeOperation='lighter';
@@ -304,36 +848,55 @@ function drawTankBG(w,h){
   for(const m of motes){if(!reduceMotion){m.y+=0.00018*m.s*(1+m.z);if(m.y>1.02)m.y=-0.02;}const px=m.x*w,py=((m.y%1)+1)%1*h,r=0.5+m.z*1.6;tctx.fillStyle=`rgba(180,210,225,${0.05+m.z*0.13})`;tctx.beginPath();tctx.arc(px,py,r,0,7);tctx.fill();}
   tctx.restore();
 }
-function blit(frameCanvas,cx,cy,scale,alpha){tctx.imageSmoothingEnabled=false;tctx.save();tctx.globalAlpha=alpha==null?1:alpha;tctx.drawImage(frameCanvas,cx-W*scale/2,cy-H*scale/2,W*scale,H*scale);tctx.restore();}
+function blit(fr,cx,cy,scale,alpha){const A=state.asset;tctx.imageSmoothingEnabled=false;tctx.save();tctx.globalAlpha=alpha==null?1:alpha;
+  tctx.drawImage(fr,Math.round(cx-A.w*scale/2),Math.round(cy-A.h*scale/2),A.w*scale,A.h*scale);tctx.restore();}
 function loop(ts){
   if(!last)last=ts;const dt=ts-last;last=ts;tms=ts;
   const w=tank.width,h=tank.height;drawTankBG(w,h);
-  if(state.frames.length){
-    const F=state.frames.length,scale=Math.max(3,Math.min(w/(W*1.5),h/(H*1.7)));
-    if(state.playing&&!reduceMotion){acc+=dt;const step=1000/clip().fps;while(acc>=step){acc-=step;state.frame=(state.frame+1)%F;}syncScrub();}
-    const cx=w*0.5,cy=h*0.5+(reduceMotion?0:Math.sin(ts/1400)*h*0.015);
-    if(state.onion&&!state.playing){blit(state.frames[(state.frame-1+F)%F],cx,cy,scale,0.22);blit(state.frames[(state.frame+1)%F],cx,cy,scale,0.22);}
+  if(state.frames.length&&state.asset){
+    const A=state.asset,M=mod(),fit=M.fit||1.5,F=state.frames.length;
+    const scale=Math.max(2,Math.floor(Math.min(w/(A.w*fit),h/(A.h*fit*1.13))));
+    if(state.playing&&!reduceMotion&&F>1){acc+=dt;const step=1000/clip().fps;while(acc>=step){acc-=step;state.frame=(state.frame+1)%F;}syncScrub();}
+    const bobY=(M.float===false||reduceMotion)?0:Math.sin(ts/1400)*h*0.015;
+    const cx=w*0.5,cy=h*0.5+bobY;
+    if(state.onion&&!state.playing&&F>1){blit(state.frames[(state.frame-1+F)%F],cx,cy,scale,0.22);blit(state.frames[(state.frame+1)%F],cx,cy,scale,0.22);}
     blit(state.frames[state.frame%F],cx,cy,scale,1);
   }
   requestAnimationFrame(loop);
 }
 
 // ===================== BUILD PIPELINE =====================
-function rebuildAsset(){cfg.corrupt=cfg.corrupt;state.asset=generateCreature(cfg);}
-function rebuildCache(){state.cache=buildColorCache(cfg.pal,cfg.depth,cfg.corrupt);}
-function rebakeClip(){state.frames=bakeClip(state.asset,state.cache,clip());if(state.frame>=state.frames.length)state.frame=0;buildStrip();syncScrub();drawRamp();}
+function rebuildAsset(){state.asset=buildAsset(mod(),cfg(),clip());}
+function rebuildCache(){const c=cfg();state.cache=buildColorCache(c.pal,c.depth,c.corrupt);}
+function rebakeClip(){
+  if(mod().baked)rebuildAsset();                        // baked modules regenerate per clip
+  state.frames=bakeFrames(state.asset,state.cache,clip());
+  if(state.frame>=state.frames.length)state.frame=0;
+  buildStrip();syncScrub();drawRamp();
+}
 function fullRebuild(){rebuildAsset();rebuildCache();rebakeClip();updateHud();updateInfo();}
-
-function updateHud(){const warn=cfg.corrupt>0.01;document.getElementById('hud').innerHTML=`<div class="chip">SEED <b>${cfg.seed>>>0}</b></div><div class="chip">${cfg.arch.toUpperCase()}</div><div class="chip">DEPTH <b>${cfg.depth}m</b></div>`+(warn?`<div class="chip warn">CORRUPT <b>${Math.round(cfg.corrupt*100)}%</b></div>`:'');}
-function updateInfo(){document.getElementById('specInfo').textContent=`${cfg.arch} · ${clip().name} clip · ${clip().frames}f @ ${clip().fps}fps · ${PALETTES[cfg.pal].name}`;}
-function drawRamp(){const el=document.getElementById('ramp');el.innerHTML='';const cache=state.cache,order=[OUTLINE,BACK,SHADOW,BASE,HIGH,SPEC,BELLY,FIN,PATTERN,EYEW];for(const r of order){const c=cache[r];const i=document.createElement('i');i.style.background=`rgb(${c[0]},${c[1]},${c[2]})`;el.appendChild(i);}}
+function updateHud(){
+  const c=cfg(),extra=(mod().hud?mod().hud(c):[]).filter(Boolean);
+  document.getElementById('hud').innerHTML=
+    `<div class="chip">SEED <b>${c.seed>>>0}</b></div>`+extra.map(e=>`<div class="chip">${e}</div>`).join('')+
+    `<div class="chip">DEPTH <b>${c.depth}m</b></div>`+
+    (c.corrupt>0.01?`<div class="chip warn">CORRUPT <b>${Math.round(c.corrupt*100)}%</b></div>`:'');
+}
+function updateInfo(){const c=cfg(),cl=clip(),M=mod();
+  const anim=M.static?`${state.asset?state.asset.w+'×'+state.asset.h:''} static`:`${cl.name} clip · ${cl.frames}f @ ${cl.fps}fps`;
+  document.getElementById('specInfo').textContent=`${M.label2?M.label2(c):M.label} · ${anim} · ${PALETTES[c.pal].name}`;}
+function drawRamp(){const el=document.getElementById('ramp');el.innerHTML='';
+  const cache=state.cache,order=[OUTLINE,BACK,SHADOW,BASE,HIGH,SPEC,BELLY,FIN,PATTERN,EYEW];
+  for(const r of order){const c=cache[r];const i=document.createElement('i');i.style.background=`rgb(${c[0]},${c[1]},${c[2]})`;el.appendChild(i);}}
 
 // ===================== TIMELINE UI =====================
 function buildStrip(){
   const el=document.getElementById('strip');el.innerHTML='';
+  const A=state.asset;if(!A)return;
   state.frames.forEach((fr,i)=>{
     const d=document.createElement('div');d.className='fr';d.setAttribute('aria-pressed',i===state.frame);
-    const cv=document.createElement('canvas');cv.width=W;cv.height=H;cv.style.width='58px';cv.style.height=(58*H/W)+'px';
+    const cv=document.createElement('canvas');cv.width=A.w;cv.height=A.h;
+    const tw=Math.round(58*Math.min(1.6,A.w/A.h));cv.style.width=tw+'px';cv.style.height=Math.round(tw*A.h/A.w)+'px';
     cv.getContext('2d').drawImage(fr,0,0);
     d.appendChild(cv);const n=document.createElement('span');n.className='n';n.textContent=i+1;d.appendChild(n);
     d.onclick=()=>{state.playing=false;setPlayIcon();state.frame=i;syncScrub();markStrip();};
@@ -341,93 +904,290 @@ function buildStrip(){
   });
 }
 function markStrip(){[...document.getElementById('strip').children].forEach((c,i)=>c.setAttribute('aria-pressed',i===state.frame));}
-function syncScrub(){const s=document.getElementById('scrub');s.max=Math.max(0,state.frames.length-1);s.value=state.frame;document.getElementById('tcount').textContent=`frame ${state.frame+1} / ${state.frames.length}`;markStrip();}
+function syncScrub(){const s=document.getElementById('scrub');s.max=Math.max(0,state.frames.length-1);s.value=state.frame;
+  document.getElementById('tcount').textContent=`frame ${state.frame+1} / ${state.frames.length}`;markStrip();}
 function buildClips(){
   const el=document.getElementById('clips');el.innerHTML='<span class="lbl">Clips</span>';
-  state.clips.forEach((cl,i)=>{const b=document.createElement('button');b.className='clip';b.setAttribute('aria-pressed',i===state.clipIdx);
-    b.innerHTML=`${cl.name}`+(state.clips.length>1?` <span class="x" title="delete">✕</span>`:'');
-    b.onclick=(e)=>{if(e.target.classList.contains('x')){state.clips.splice(i,1);if(state.clipIdx>=state.clips.length)state.clipIdx=state.clips.length-1;buildClips();loadClipControls();rebakeClip();updateInfo();return;}state.clipIdx=i;buildClips();loadClipControls();rebakeClip();updateInfo();};
+  const cs=clips(),idx=state.clipIdxs[state.modId];
+  cs.forEach((cl,i)=>{const b=document.createElement('button');b.className='clip';b.setAttribute('aria-pressed',i===idx);
+    b.innerHTML=`${cl.name}`+(cs.length>1?` <span class="x" title="delete">✕</span>`:'');
+    b.onclick=e=>{
+      if(e.target.classList.contains('x')){cs.splice(i,1);if(state.clipIdxs[state.modId]>=cs.length)state.clipIdxs[state.modId]=cs.length-1;}
+      else state.clipIdxs[state.modId]=i;
+      buildClips();buildRail();rebakeClip();updateInfo();};
     el.appendChild(b);});
   const add=document.createElement('button');add.className='add';add.textContent='+ clip';
-  add.onclick=()=>{const base=clip();const names=['idle','dart','hurt','feed','drift'];const nm=names.find(n=>!state.clips.some(c=>c.name===n))||('clip'+(state.clips.length+1));state.clips.push({name:nm,motion:base.motion,amp:base.amp,freq:base.freq,frames:base.frames,fps:base.fps});state.clipIdx=state.clips.length-1;buildClips();loadClipControls();rebakeClip();updateInfo();toast('added clip “'+nm+'”');};
+  add.onclick=()=>{const base=clip(),names=['idle','dart','hurt','feed','drift','calm','churn','storm'];
+    const nm=names.find(n=>!cs.some(c=>c.name===n))||('clip'+(cs.length+1));
+    cs.push(Object.assign({},base,{name:nm}));state.clipIdxs[state.modId]=cs.length-1;
+    buildClips();buildRail();rebakeClip();updateInfo();toast('added clip “'+nm+'”');};
   el.appendChild(add);
 }
-function loadClipControls(){
-  const cl=clip();document.getElementById('clipName').textContent=cl.name;
-  document.getElementById('amp').value=cl.amp*10;document.getElementById('ampV').textContent=cl.amp.toFixed(1);
-  document.getElementById('freq').value=cl.freq*100;document.getElementById('freqV').textContent=cl.freq.toFixed(2);
-  document.getElementById('frames').value=cl.frames;document.getElementById('framesV').textContent=cl.frames;
-  document.getElementById('fps').value=cl.fps;document.getElementById('fpsV').textContent=cl.fps;
-  [...document.getElementById('motionChips').children].forEach(c=>c.setAttribute('aria-pressed',c.textContent===cl.motion));
-}
 
-// ===================== UI WIRING =====================
+// ===================== RAIL (generated from paramSchema) =====================
 let dirtyAsset=false,dirtyColor=false,dirtyClip=false;
 function markAsset(){dirtyAsset=true;}function markColor(){dirtyColor=true;}function markClip(){dirtyClip=true;}
-function tick(){if(dirtyAsset){dirtyAsset=false;rebuildAsset();rebakeClip();updateHud();updateInfo();}
-  else if(dirtyColor){dirtyColor=false;rebuildCache();rebakeClip();updateHud();}
-  else if(dirtyClip){dirtyClip=false;rebakeClip();updateInfo();}requestAnimationFrame(tick);}
+function tick(){
+  if(dirtyAsset){dirtyAsset=false;rebuildAsset();rebakeClip();updateHud();updateInfo();}
+  else if(dirtyColor){dirtyColor=false;rebuildCache();rebakeClip();updateHud();updateInfo();}
+  else if(dirtyClip){dirtyClip=false;rebakeClip();updateInfo();}
+  requestAnimationFrame(tick);
+}
+const foldOpen={palette:false};
 
-function chipRow(id,items,getVal,onPick){const el=document.getElementById(id);el.innerHTML='';items.forEach(it=>{const b=document.createElement('button');b.textContent=it;b.setAttribute('aria-pressed',getVal()===it);b.onclick=()=>{onPick(it);[...el.children].forEach(c=>c.setAttribute('aria-pressed',c.textContent===it));};el.appendChild(b);});}
-chipRow('archChips',ARCHES,()=>cfg.arch,v=>{cfg.arch=v;markAsset();});
-chipRow('tailChips',TAILS,()=>cfg.tail,v=>{cfg.tail=v;markAsset();});
-chipRow('dorsalChips',DORSALS,()=>cfg.dorsal,v=>{cfg.dorsal=v;markAsset();});
-chipRow('patChips',PATTERNS,()=>cfg.pattern,v=>{cfg.pattern=v;markAsset();});
-chipRow('motionChips',MOTION_KEYS,()=>clip().motion,v=>{clip().motion=v;markClip();});
+function elm(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;}
+function panelGroup(title,hcls){
+  const p=elm('div','panel group');const h=elm('h3',hcls||'',title);p.appendChild(h);return p;
+}
+function fieldChips(parent,label,options,get,set,fmt){
+  const f=elm('div','field');f.appendChild(elm('div','lab',`<span>${label}</span>`));
+  const row=elm('div','chips');
+  options.forEach(o=>{const b=elm('button',null,fmt?fmt(o):o);b.dataset.v=o;b.setAttribute('aria-pressed',get()===o);
+    b.onclick=()=>{set(o);[...row.children].forEach(c=>c.setAttribute('aria-pressed',c.dataset.v===String(o)));};row.appendChild(b);});
+  f.appendChild(row);parent.appendChild(f);
+}
+function fieldRange(parent,label,min,max,step,get,set,fmt,tone){
+  const f=elm('div','field'),val=elm('span','val'+(tone?' '+tone:''),fmt(get()));
+  const lab=elm('div','lab',`<span>${label}</span>`);lab.appendChild(val);f.appendChild(lab);
+  const inp=elm('input');inp.type='range';inp.min=min;inp.max=max;inp.step=step;inp.value=get();if(tone)inp.className=tone;
+  inp.addEventListener('input',e=>{const v=+e.target.value;set(v);val.textContent=fmt(v);});
+  f.appendChild(inp);parent.appendChild(f);
+}
+function fieldToggle(parent,label,get,set){
+  const f=elm('div','field'),l=elm('label','toggle');const i=elm('input');i.type='checkbox';i.checked=!!get();
+  i.addEventListener('change',e=>set(e.target.checked));
+  l.appendChild(i);l.appendChild(document.createTextNode(' '+label));f.appendChild(l);parent.appendChild(f);
+}
 
-(function(){const el=document.getElementById('swatches');PALETTES.forEach((p,i)=>{const b=document.createElement('button');b.title=p.name;b.style.background=`linear-gradient(135deg,${p.ramp[1]},${p.ramp[3]})`;b.setAttribute('aria-pressed',cfg.pal===i);b.onclick=()=>{cfg.pal=i;[...el.children].forEach((c,j)=>c.setAttribute('aria-pressed',j===i));markColor();};el.appendChild(b);});})();
+function buildRail(){
+  const rail=document.getElementById('rail');rail.innerHTML='';
+  const M=mod(),c=cfg();
 
-function bindSlider(id,fn){document.getElementById(id).addEventListener('input',e=>fn(+e.target.value));}
-bindSlider('len',v=>{cfg.len=v/100;document.getElementById('lenV').textContent=(v/100).toFixed(2)+'×';markAsset();});
-bindSlider('dep',v=>{cfg.dep=v/100;document.getElementById('depV').textContent=(v/100).toFixed(2)+'×';markAsset();});
-bindSlider('mdepth',v=>{cfg.depth=v;document.getElementById('mV').textContent=v+' m';markColor();});
-bindSlider('corrupt',v=>{cfg.corrupt=v/100;document.getElementById('cV').textContent=v+'%';markAsset();});
-bindSlider('amp',v=>{clip().amp=v/10;document.getElementById('ampV').textContent=(v/10).toFixed(1);markClip();});
-bindSlider('freq',v=>{clip().freq=v/100;document.getElementById('freqV').textContent=(v/100).toFixed(2);markClip();});
-bindSlider('frames',v=>{clip().frames=v;document.getElementById('framesV').textContent=v;markClip();});
-bindSlider('fps',v=>{clip().fps=v;document.getElementById('fpsV').textContent=v;updateInfo();});
+  // --- module params, grouped exactly as the module declares ---
+  (M.groups||[{key:'main',title:M.label}]).forEach(g=>{
+    const items=M.paramSchema.filter(p=>(p.group||'main')===g.key);
+    if(!items.length)return;
+    const p=panelGroup(g.title);
+    items.forEach(s=>{
+      if(s.type==='chips')fieldChips(p,s.label,s.options,()=>c[s.key],v=>{c[s.key]=v;markAsset();});
+      else if(s.type==='range')fieldRange(p,s.label,s.min,s.max,s.step,()=>c[s.key],v=>{c[s.key]=v;markAsset();},s.fmt||(v=>v));
+      else if(s.type==='toggle')fieldToggle(p,s.label,()=>c[s.key],v=>{c[s.key]=v;markAsset();});
+    });
+    rail.appendChild(p);
+  });
 
-// transport
+  // --- palette (shared by every module) ---
+  const pg=panelGroup('Palette');
+  const sw=elm('div','swatches');
+  const paintSwatches=()=>{sw.innerHTML='';PALETTES.forEach((p,i)=>{const b=elm('button');b.title=p.name;
+    b.style.background=`linear-gradient(135deg,${p.ramp[1]},${p.ramp[3]})`;b.setAttribute('aria-pressed',c.pal===i);
+    b.onclick=()=>{c.pal=i;[...sw.children].forEach((q,j)=>q.setAttribute('aria-pressed',j===i));paintEditor();markColor();};sw.appendChild(b);});};
+  const f=elm('div','field');f.appendChild(elm('div','lab','<span>Master ramp</span>'));f.appendChild(sw);pg.appendChild(f);
+  rail.appendChild(pg);
+
+  // --- animation (shared; a static module has no timeline) ---
+  document.getElementById('transport').classList.toggle('hidden',!!M.static);
+  document.getElementById('strip').classList.toggle('hidden',!!M.static);
+  document.getElementById('clips').classList.toggle('hidden',!!M.static);
+  if(!M.static){
+    const cl=clip(),ag=panelGroup(`Animation · <span>${cl.name}</span>`,'animh');
+    if(M.motions.length>1)fieldChips(ag,'Motion model',M.motions,()=>cl.motion,v=>{cl.motion=v;markClip();},v=>MOTION_LABEL[v]||v);
+    fieldRange(ag,'Amplitude',0,6,0.1,()=>cl.amp,v=>{cl.amp=v;markClip();},v=>v.toFixed(1),'amber');
+    fieldRange(ag,M.baked?'Emitter speed':'Wave speed',0.05,0.9,0.01,()=>cl.freq,v=>{cl.freq=v;markClip();},v=>v.toFixed(2),'amber');
+    fieldRange(ag,'Current · bias',-2,2,0.1,()=>cl.bias||0,v=>{cl.bias=v;markClip();},v=>v.toFixed(1),'amber');
+    fieldRange(ag,'Frames',2,24,1,()=>cl.frames,v=>{cl.frames=v|0;markClip();},v=>v|0,'amber');
+    fieldRange(ag,'Playback FPS',2,24,1,()=>cl.fps,v=>{cl.fps=v|0;updateInfo();},v=>v|0,'amber');
+    if(M.hint)ag.appendChild(elm('p','hint',M.hint));
+    rail.appendChild(ag);
+  } else if(M.hint){const hg=panelGroup('Autotiling');hg.appendChild(elm('p','hint',M.hint));rail.appendChild(hg);}
+
+  // --- dive conditions + corruption (shared) ---
+  const dg=panelGroup('Dive conditions');
+  fieldRange(dg,'Depth · light absorption',0,60,1,()=>c.depth,v=>{c.depth=v;markColor();},v=>(v|0)+' m');
+  rail.appendChild(dg);
+  const wg=panelGroup('The wrongness','warnh');
+  fieldRange(wg,'Corruption',0,1,0.01,()=>c.corrupt,v=>{c.corrupt=v;M.corruptShape?markAsset():markColor();},v=>Math.round(v*100)+'%','warn');
+  rail.appendChild(wg);
+
+  // --- asset library ---
+  const lg=panelGroup('Asset library');
+  const grid=elm('div','lib');lg.appendChild(grid);
+  const mb=elm('div','minibtns');
+  const bAdd=elm('button',null,'Save current');bAdd.onclick=()=>libAdd();
+  const bClr=elm('button',null,'Clear all');bClr.onclick=()=>{if(libRead().length&&confirm('Delete every saved asset?')){libWrite([]);paintLib();toast('library cleared');}};
+  mb.appendChild(bAdd);mb.appendChild(bClr);lg.appendChild(mb);
+  lg.appendChild(elm('p','hint','A seed + cfg reproduces an asset exactly, so entries are tiny. Saved in this browser.'));
+  rail.appendChild(lg);
+  const paintLib=()=>{
+    const items=libRead();grid.innerHTML='';
+    if(!items.length){grid.style.display='block';grid.appendChild(elm('div','libempty','No saved assets yet.<br>Hit <b>Save current</b> or the Save button up top.'));return;}
+    grid.style.display='grid';
+    items.forEach(en=>{
+      const b=elm('button','slot');b.title=`${en.module} · ${en.name}`;
+      try{b.appendChild(thumbOf(en,48));}catch(err){b.appendChild(elm('div',null,'?'));}
+      b.appendChild(elm('span','tag',en.name));
+      const k=elm('button','kill','✕');k.title='delete';
+      k.onclick=ev=>{ev.stopPropagation();libWrite(libRead().filter(q=>q.id!==en.id));paintLib();toast('removed');};
+      b.appendChild(k);
+      b.onclick=()=>libLoadEntry(en);
+      grid.appendChild(b);});
+  };
+  railPaintLib=paintLib;paintLib();
+
+  // --- palette editor (lite) ---
+  const eg=elm('details','panel group fold');if(foldOpen.palette)eg.open=true;
+  eg.addEventListener('toggle',()=>{foldOpen.palette=eg.open;});
+  const sum=elm('summary');sum.appendChild(elm('h3',null,'Palette editor<span class="caret">▶</span>'));
+  eg.appendChild(sum);
+  const body=elm('div','body');eg.appendChild(body);
+  const stopsRow=elm('div','palrow'),stops=elm('div','stops');stopsRow.appendChild(stops);body.appendChild(stopsRow);
+  const nameIn=elm('input','palname');nameIn.type='text';nameIn.maxLength=14;body.appendChild(nameIn);
+  const pb=elm('div','minibtns');
+  const bDup=elm('button',null,'+ Ramp');bDup.onclick=()=>{
+    const src=PALETTES[c.pal];PALETTES.push({name:(src.name+'-2').slice(0,14),ramp:src.ramp.slice(),custom:true});
+    c.pal=PALETTES.length-1;palPersist();paintSwatches();paintEditor();markColor();toast('added custom ramp');};
+  const bRst=elm('button',null,'Reset');bRst.onclick=()=>{
+    const b=BASE_PALETTES[c.pal];if(!b){toast('custom ramp — nothing to reset to');return;}
+    PALETTES[c.pal]={name:b.name,ramp:b.ramp.slice()};palPersist();paintSwatches();paintEditor();markColor();};
+  const bDel=elm('button',null,'Delete');bDel.onclick=()=>{
+    if(c.pal<BASE_PALETTES.length){toast('master ramps can’t be deleted');return;}
+    PALETTES.splice(c.pal,1);Object.values(state.cfgs).forEach(q=>{if(q.pal>=PALETTES.length)q.pal=PALETTES.length-1;});
+    palPersist();paintSwatches();paintEditor();markColor();toast('ramp deleted');};
+  pb.appendChild(bDup);pb.appendChild(bRst);pb.appendChild(bDel);body.appendChild(pb);
+  body.appendChild(elm('p','hint','Roles map onto ramp steps, so every asset in every module recolors the moment you move a stop.'));
+  function paintEditor(){
+    const p=PALETTES[c.pal];nameIn.value=p.name;stops.innerHTML='';
+    p.ramp.forEach((hex,i)=>{const inp=elm('input');inp.type='color';inp.value=hex;inp.title='step '+(i+1);
+      inp.addEventListener('input',e=>{p.ramp[i]=e.target.value;palPersist();paintSwatches();markColor();});
+      stops.appendChild(inp);});
+  }
+  nameIn.addEventListener('input',e=>{PALETTES[c.pal].name=e.target.value.slice(0,14)||'ramp';palPersist();paintSwatches();updateInfo();});
+  paintSwatches();paintEditor();
+  rail.appendChild(eg);
+
+  rail.appendChild(elm('div','note','<b>Export.</b> PNG = current frame · '+
+    (M.exportKind==='tiles'?'Sheet = the full 47-tile blob set · JSON = tile size, layout and the 256-entry bitmask→tile map':
+     'Sheet = one row per clip (spritesheet) · JSON = manifest with clip names, frames, fps &amp; anchors')+', ready for a game engine.'));
+
+  document.getElementById('bSheet').textContent=M.exportKind==='tiles'?'Tilesheet':'Sheet';
+}
+let railPaintLib=()=>{};
+
+// ===================== ASSET LIBRARY =====================
+const LIB_KEY='tideforge.library.v1',PAL_KEY='tideforge.palettes.v1',LIB_MAX=24;
+function libRead(){try{const a=JSON.parse(localStorage.getItem(LIB_KEY));return Array.isArray(a)?a:[];}catch(e){return[];}}
+function libWrite(a){try{localStorage.setItem(LIB_KEY,JSON.stringify(a));}catch(e){toast('browser storage is full');}}
+function libAdd(){
+  const M=mod(),c=cfg();
+  const en={id:'a'+Date.now().toString(36)+Math.floor(Math.random()*999).toString(36),
+    module:state.modId,name:(M.label2?M.label2(c):M.label)+' '+((c.seed>>>0)%10000),
+    cfg:JSON.parse(JSON.stringify(c)),clips:JSON.parse(JSON.stringify(clips())),ts:Date.now()};
+  const a=libRead();a.unshift(en);libWrite(a.slice(0,LIB_MAX));railPaintLib();toast('saved “'+en.name+'”');
+}
+function libLoadEntry(en){
+  const M=modById(en.module);state.modId=M.id;
+  state.cfgs[M.id]=Object.assign(M.defaults(),en.cfg);
+  state.clipsets[M.id]=JSON.parse(JSON.stringify(en.clips));
+  state.clipIdxs[M.id]=0;state.frame=0;
+  syncModuleButtons();buildRail();buildClips();fullRebuild();toast('loaded “'+en.name+'”');
+}
+function palPersist(){try{localStorage.setItem(PAL_KEY,JSON.stringify(PALETTES));}catch(e){}}
+function palRestore(){
+  try{const a=JSON.parse(localStorage.getItem(PAL_KEY));
+    if(Array.isArray(a)&&a.length>=BASE_PALETTES.length&&a.every(p=>p&&Array.isArray(p.ramp)&&p.ramp.length===5))
+      PALETTES=a.map(p=>({name:String(p.name||'ramp'),ramp:p.ramp.slice(),custom:!!p.custom}));
+  }catch(e){}
+}
+
+// ===================== MODULE SWITCHER + TRANSPORT =====================
+function syncModuleButtons(){[...document.getElementById('modules').children].forEach(b=>b.setAttribute('aria-pressed',b.dataset.id===state.modId));}
+(function(){const el=document.getElementById('modules');
+  MODULES.forEach(m=>{const b=elm('button',null,`<span class="ico">${m.icon}</span>${m.label}`);b.dataset.id=m.id;
+    b.setAttribute('aria-pressed',m.id===state.modId);
+    b.onclick=()=>{if(state.modId===m.id)return;state.modId=m.id;state.frame=0;syncModuleButtons();buildRail();buildClips();fullRebuild();};
+    el.appendChild(b);});
+  const soon=elm('button',null,'Props<span class="soon">M2</span>');soon.disabled=true;el.appendChild(soon);
+  const soon2=elm('button',null,'Characters<span class="soon">M2</span>');soon2.disabled=true;el.appendChild(soon2);
+})();
 function setPlayIcon(){document.getElementById('play').textContent=state.playing?'❚❚':'▶';}
 document.getElementById('play').onclick=()=>{state.playing=!state.playing;setPlayIcon();};
 document.getElementById('scrub').addEventListener('input',e=>{state.playing=false;setPlayIcon();state.frame=+e.target.value;syncScrub();});
 document.getElementById('onion').addEventListener('change',e=>{state.onion=e.target.checked;});
 
-// modules
-const MODULES=[{id:'creature',label:'Creatures'},{id:'flora',label:'Flora',soon:1},{id:'tiles',label:'Tiles',soon:1},{id:'props',label:'Props',soon:1},{id:'char',label:'Characters',soon:1}];
-(function(){const el=document.getElementById('modules');MODULES.forEach(m=>{const b=document.createElement('button');b.setAttribute('aria-pressed',m.id==='creature');if(m.soon){b.disabled=true;b.innerHTML=`${m.label}<span class="soon">soon</span>`;b.onclick=()=>toast(m.label+' module — coming in M1/M2');}else{b.textContent=m.label;}el.appendChild(b);});})();
+// ===================== ACTIONS =====================
+// Randomize is driven by the same paramSchema as the rail, so a new module gets it free.
+document.getElementById('bRandom').onclick=()=>{
+  const M=mod(),c=cfg(),R=Math.random;
+  M.paramSchema.forEach(s=>{
+    if(s.type==='chips')c[s.key]=s.options[(R()*s.options.length)|0];
+    else if(s.type==='range'){const n=Math.round((s.min+R()*(s.max-s.min))/s.step)*s.step;c[s.key]=Math.round(n*1000)/1000;}
+    else if(s.type==='toggle')c[s.key]=R()<0.35;
+  });
+  c.pal=(R()*PALETTES.length)|0;c.seed=(R()*1e9)|0;
+  buildRail();fullRebuild();
+};
+document.getElementById('bSeed').onclick=()=>{cfg().seed=(Math.random()*1e9)|0;rebuildAsset();rebakeClip();updateHud();};
+document.getElementById('bSave').onclick=()=>libAdd();
 
-// actions
-function syncControls(){
-  document.getElementById('len').value=cfg.len*100;document.getElementById('lenV').textContent=cfg.len.toFixed(2)+'×';
-  document.getElementById('dep').value=cfg.dep*100;document.getElementById('depV').textContent=cfg.dep.toFixed(2)+'×';
-  document.getElementById('mdepth').value=cfg.depth;document.getElementById('mV').textContent=cfg.depth+' m';
-  document.getElementById('corrupt').value=cfg.corrupt*100;document.getElementById('cV').textContent=Math.round(cfg.corrupt*100)+'%';
-  ['archChips','tailChips','dorsalChips','patChips'].forEach(id=>{const m={archChips:'arch',tailChips:'tail',dorsalChips:'dorsal',patChips:'pattern'}[id];[...document.getElementById(id).children].forEach(c=>c.setAttribute('aria-pressed',c.textContent===cfg[m]));});
-  document.querySelectorAll('#swatches button').forEach((c,j)=>c.setAttribute('aria-pressed',j===cfg.pal));
-  loadClipControls();
-}
-document.getElementById('bRandom').onclick=()=>{const R=a=>a[(Math.random()*a.length)|0];cfg.arch=R(ARCHES);cfg.tail=R(TAILS);cfg.dorsal=R(DORSALS);cfg.pattern=R(PATTERNS);cfg.pal=(Math.random()*PALETTES.length)|0;cfg.len=0.8+Math.random()*0.5;cfg.dep=0.8+Math.random()*0.5;cfg.seed=(Math.random()*1e9)|0;syncControls();fullRebuild();};
-document.getElementById('bSeed').onclick=()=>{cfg.seed=(Math.random()*1e9)|0;rebuildAsset();rebakeClip();updateHud();};
-
+// ===================== IO / EXPORT =====================
 function download(url,name){const a=document.createElement('a');a.href=url;a.download=name;a.click();}
-document.getElementById('bPng').onclick=()=>{const S=8,cv=document.createElement('canvas');cv.width=W*S;cv.height=H*S;const x=cv.getContext('2d');x.imageSmoothingEnabled=false;x.drawImage(state.frames[state.frame],0,0,W*S,H*S);download(cv.toDataURL('image/png'),`tf_${cfg.arch}_${clip().name}_f${state.frame+1}.png`);toast('exported frame PNG');};
-document.getElementById('bSheet').onclick=()=>{
-  const S=5,maxF=Math.max(...state.clips.map(c=>c.frames));
-  const cv=document.createElement('canvas');cv.width=W*S*maxF;cv.height=H*S*state.clips.length;const x=cv.getContext('2d');x.imageSmoothingEnabled=false;
-  state.clips.forEach((cl,row)=>{const frames=bakeClip(state.asset,state.cache,cl);frames.forEach((fr,i)=>x.drawImage(fr,i*W*S,row*H*S,W*S,H*S));});
-  download(cv.toDataURL('image/png'),`tf_${cfg.arch}_${cfg.seed>>>0}_sheet.png`);toast('exported spritesheet ('+state.clips.length+' clips)');
-};
-document.getElementById('bJson').onclick=()=>{
-  const manifest={engine:'TideForge',module:'creature',source:{cfg:{...cfg}},frameSize:{w:W,h:H},sheet:{scale:5,cols:Math.max(...state.clips.map(c=>c.frames)),rows:state.clips.length},
-    anchors:{eye:[Math.round(state.asset.meta.cx+ (state.asset.meta.headX-state.asset.meta.cx)*0.6),Math.round(state.asset.meta.cy-state.asset.meta.ry*0.34)]},
-    clips:state.clips.map((c,i)=>({name:c.name,row:i,frames:c.frames,fps:c.fps,motion:c.motion,loop:true}))};
-  download('data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(manifest,null,2)),`tf_${cfg.arch}_${cfg.seed>>>0}.json`);toast('exported JSON manifest');
+function stamp(){const c=cfg(),M=mod();return `tf_${M.id}_${(M.label2?M.label2(c):M.label).replace(/[^a-z0-9]+/gi,'-')}_${c.seed>>>0}`;}
+function framesForClip(cl){const M=mod();const asset=M.baked?buildAsset(M,cfg(),cl):state.asset;return{asset,frames:bakeFrames(asset,state.cache,cl)};}
+
+document.getElementById('bPng').onclick=()=>{
+  const A=state.asset,S=8,cv=document.createElement('canvas');cv.width=A.w*S;cv.height=A.h*S;
+  const x=cv.getContext('2d');x.imageSmoothingEnabled=false;x.drawImage(state.frames[state.frame],0,0,A.w*S,A.h*S);
+  download(cv.toDataURL('image/png'),`${stamp()}_f${state.frame+1}.png`);toast('exported frame PNG');
 };
 
-let toastT;function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
+document.getElementById('bSheet').onclick=()=>{
+  const M=mod();
+  if(M.exportKind==='tiles'){
+    const set=state.asset.meta.tileset,S=4,cols=12,rows=Math.ceil(set.length/cols);
+    const cv=document.createElement('canvas');cv.width=cols*TS*S;cv.height=rows*TS*S;
+    const x=cv.getContext('2d');x.imageSmoothingEnabled=false;
+    set.forEach((tile,i)=>{const fr=matToCanvas(tile,TS,TS,state.cache);
+      x.drawImage(fr,(i%cols)*TS*S,((i/cols)|0)*TS*S,TS*S,TS*S);});
+    download(cv.toDataURL('image/png'),`${stamp()}_tilesheet.png`);
+    toast(`exported ${set.length}-tile blob set`);return;
+  }
+  const cs=clips(),A=state.asset,S=5,maxF=Math.max(...cs.map(c=>c.frames));
+  const cv=document.createElement('canvas');cv.width=A.w*S*maxF;cv.height=A.h*S*cs.length;
+  const x=cv.getContext('2d');x.imageSmoothingEnabled=false;
+  cs.forEach((cl,row)=>{framesForClip(cl).frames.forEach((fr,i)=>x.drawImage(fr,i*A.w*S,row*A.h*S,A.w*S,A.h*S));});
+  download(cv.toDataURL('image/png'),`${stamp()}_sheet.png`);toast('exported spritesheet ('+cs.length+' clips)');
+};
+
+document.getElementById('bJson').onclick=()=>{
+  const M=mod(),c=cfg(),A=state.asset;let manifest;
+  if(M.exportKind==='tiles'){
+    const cols=12,count=BLOB_KEYS.length;
+    manifest={engine:'TideForge',version:'M1',module:'tiles',source:{cfg:{...c}},
+      tileSize:TS,sheet:{cols,rows:Math.ceil(count/cols),scale:4,count},
+      bits:{n:NB_N,ne:NB_NE,e:NB_E,se:NB_SE,s:NB_S,sw:NB_SW,w:NB_W,nw:NB_NW},
+      tiles:BLOB_KEYS.map((k,i)=>({index:i,key:k,col:i%cols,row:(i/cols)|0,
+        neighbors:{n:!!(k&NB_N),ne:!!(k&NB_NE),e:!!(k&NB_E),se:!!(k&NB_SE),s:!!(k&NB_S),sw:!!(k&NB_SW),w:!!(k&NB_W),nw:!!(k&NB_NW)}})),
+      maskToTile:Array.from(MASK_TO_KEY,k=>KEY_TO_INDEX[k]),
+      note:'OR the bits of every solid neighbour into `mask` (0-255), then maskToTile[mask] is the tile index. Diagonals only count when both of their cardinals are solid.'};
+  }else{
+    const cs=clips();
+    manifest={engine:'TideForge',version:'M1',module:M.id,source:{cfg:{...c}},
+      frameSize:{w:A.w,h:A.h},sheet:{scale:5,cols:Math.max(...cs.map(q=>q.frames)),rows:cs.length},
+      anchors:A.meta.anchors||{},
+      clips:cs.map((q,i)=>({name:q.name,row:i,frames:q.frames,fps:q.fps,motion:q.motion,
+        amp:q.amp,freq:q.freq,bias:q.bias||0,loop:true}))};
+    if(A.meta.emitter)manifest.emitter=A.meta.emitter;
+  }
+  download('data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(manifest,null,2)),`${stamp()}.json`);
+  toast('exported JSON manifest');
+};
+
+let toastT;function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
 
 // ===================== BOOT =====================
-resize();fullRebuild();buildClips();loadClipControls();setPlayIcon();syncControls();requestAnimationFrame(loop);requestAnimationFrame(tick);
+palRestore();
+resize();buildRail();buildClips();fullRebuild();setPlayIcon();
+requestAnimationFrame(loop);requestAnimationFrame(tick);
 })();
 </script>

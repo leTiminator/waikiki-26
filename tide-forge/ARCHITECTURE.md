@@ -76,9 +76,9 @@ Module = {
 | Module | Produces | Technique | Priority |
 |---|---|---|---|
 | CreatureForge | fish / sea life | ellipse body + part kit + pattern | **M0 (built)** |
-| FloraForge | coral, kelp, weeds | L-systems / growth rules | M1 |
-| TileForge | rock/sand/reef tiles | noise + edge/autotile masks | M1 |
-| VFXForge | bubbles, silt, godrays, glow | particle/shader bakes | M1 |
+| FloraForge | coral, kelp, weeds | L-systems / growth rules | **M1 (built)** |
+| TileForge | rock/sand/reef tiles | noise + edge/autotile masks | **M1 (built)** |
+| VFXForge | bubbles, silt, godrays, glow | particle/shader bakes | **M1 (built)** |
 | PropForge | gear, wrecks, debris, UI icons | modular kit + symmetry | M2 |
 | CharacterForge | diver + NPCs (rigged) | modular humanoid + skeleton | M2 |
 
@@ -103,7 +103,7 @@ Two complementary paths, unified by **Clips**:
 - **Asset library** — save/browse generated+edited assets (localStorage first, file-backed later).
 
 ## 6. Tech & pipeline
-- **Now (M0):** single self-contained `index.html`, Canvas 2D, zero deps — instantly openable and
+- **Now (M0–M1):** single self-contained `index.html`, Canvas 2D, zero deps — instantly openable and
   publishable, ideal for fast iteration and sharing. Internally organized into `core / module /
   anim / io / ui` sections mirroring the eventual file split.
 - **Next (in the real repo):** migrate to **Vite + vanilla ES modules** (`/src/core`, `/src/modules`,
@@ -114,9 +114,10 @@ Two complementary paths, unified by **Clips**:
   so generation *seeds* and humans *finish*. Non-negotiable for hero art.
 
 ## 7. Roadmap
-- **M0 — Core + Creatures + procedural animation** *(this build).* PaletteSystem, PixelMatrix,
+- **M0 — Core + Creatures + procedural animation** *(built).* PaletteSystem, PixelMatrix,
   DepthGrade, Corruption, CreatureForge, motion models, clip timeline, spritesheet+JSON export.
-- **M1 — Environment & VFX.** FloraForge, TileForge (autotiling), VFXForge; asset library.
+- **M1 — Environment & VFX** *(built).* An explicit Module contract with a schema-generated control
+  rail; FloraForge, TileForge (47-tile blob autotiling), VFXForge; asset library; palette editor.
 - **M2 — Characters & authoring.** CharacterForge + rig, keyframe timeline, the pixel-editor paint
   layer, PropForge.
 - **M3 — Pipeline.** Godot/Aseprite export polish, project files, batch generation, palette editor,
