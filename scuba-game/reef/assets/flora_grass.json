@@ -1,0 +1,81 @@
+{
+  "engine": "TideForge",
+  "version": "M1",
+  "module": "flora",
+  "source": {
+    "cfg": {
+      "arch": "grass",
+      "height": 0.7,
+      "strands": 6,
+      "iter": 4,
+      "angle": 24,
+      "branch": 0.85,
+      "seglen": 1,
+      "curl": 0.15,
+      "width": 3,
+      "taper": 0.93,
+      "tipsize": 1,
+      "bio": false,
+      "pal": 7,
+      "depth": 0,
+      "corrupt": 0,
+      "seed": 8951
+    }
+  },
+  "frameSize": {
+    "w": 64,
+    "h": 80
+  },
+  "sheet": {
+    "scale": 5,
+    "cols": 14,
+    "rows": 1
+  },
+  "anchors": {
+    "base": [
+      32,
+      77
+    ],
+    "tips": [
+      [
+        32,
+        35
+      ],
+      [
+        41,
+        36
+      ],
+      [
+        46,
+        37
+      ],
+      [
+        57,
+        40
+      ],
+      [
+        62,
+        42
+      ],
+      [
+        68,
+        44
+      ]
+    ]
+  },
+  "clips": [
+    {
+      "name": "sway",
+      "row": 0,
+      "frames": 14,
+      "fps": 10,
+      "motion": "sway",
+      "amp": 2.6,
+      "freq": 0.3,
+      "bias": 0.6,
+      "loop": true
+    }
+  ],
+  "asset": "flora_grass",
+  "sheetFile": "flora_grass.png"
+}

@@ -1,0 +1,484 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DEEP — reef vertical slice</title>
+<style>
+  :root{
+    --abyss:#070b11; --panel:#0d141d; --panel2:#111b26; --line:#1d2a38;
+    --ink:#d3e3ef; --dim:#7f97aa; --faint:#3a4a5a;
+    --accent:#31e0c6; --warn:#ff6f8b; --good:#63e08a; --amber:#ffb454;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box} html,body{margin:0}
+  body{background:radial-gradient(130% 90% at 50% -10%,#0c1826 0%,var(--abyss) 62%);
+    color:var(--ink);font-family:var(--sans);min-height:100vh}
+  .app{max-width:1180px;margin:0 auto;padding:16px clamp(10px,2.5vw,22px) 40px;display:flex;flex-direction:column;gap:13px}
+  .topbar{display:flex;align-items:baseline;gap:11px;flex-wrap:wrap;font-family:var(--mono)}
+  .topbar b{font-weight:600;letter-spacing:.2em;font-size:15px}
+  .topbar .tag{color:var(--dim);font-size:11px}
+  .topbar .spacer{flex:1}
+  .topbar .src{font-size:10.5px;color:var(--faint)}
+  .stage{position:relative;border:1px solid var(--line);border-radius:13px;overflow:hidden;
+    box-shadow:0 12px 40px -14px rgba(0,0,0,.7);background:#04070c}
+  #view{display:block;width:100%;height:clamp(360px,62vh,620px);image-rendering:pixelated}
+  /* wrist dive computer — a glance, not a wall of numbers (GDD §5) */
+  .dc{position:absolute;left:12px;top:11px;background:rgba(7,12,18,.74);border:1px solid var(--line);
+    border-radius:9px;padding:9px 11px;font-family:var(--mono);font-size:11px;backdrop-filter:blur(4px);min-width:186px}
+  .dc .big{font-size:23px;font-weight:600;color:var(--accent);line-height:1.05;font-variant-numeric:tabular-nums}
+  .dc .big small{font-size:11px;color:var(--dim);font-weight:400;margin-left:3px}
+  .dc .zone{color:var(--ink);letter-spacing:.11em;text-transform:uppercase;font-size:9.5px;margin-bottom:6px}
+  .dc .row{display:flex;justify-content:space-between;gap:12px;color:var(--dim);margin-top:3px}
+  .dc .row b{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}
+  .bar{height:4px;border-radius:3px;background:#16222e;margin-top:4px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--accent);transition:width .12s linear}
+  .bar.air i{background:var(--good)} .bar.air.low i{background:var(--amber)} .bar.air.crit i{background:var(--warn)}
+  .bar.asc i{background:var(--good)} .bar.asc.fast i{background:var(--warn)}
+  .alert{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:rgba(60,8,20,.82);
+    border:1px solid var(--warn);color:#ffd9e1;font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;
+    padding:7px 13px;border-radius:8px;opacity:0;transition:.2s;pointer-events:none}
+  .alert.on{opacity:1}
+  .keys{position:absolute;right:12px;bottom:11px;background:rgba(7,12,18,.7);border:1px solid var(--line);
+    border-radius:9px;padding:9px 11px;font-family:var(--mono);font-size:10.5px;color:var(--dim);line-height:1.75;backdrop-filter:blur(4px)}
+  .keys b{color:var(--ink);font-weight:500}
+  .keys .hold{color:var(--accent)}
+  .note{font-size:11.5px;color:var(--dim);line-height:1.6;background:var(--panel2);border:1px solid var(--line);
+    border-left:2px solid var(--accent);border-radius:9px;padding:11px 13px}
+  .note b{color:var(--ink);font-weight:600}
+  .note code{font-family:var(--mono);font-size:11px;color:var(--accent)}
+  .err{border-left-color:var(--warn)} .err b{color:var(--warn)}
+  #boot{padding:26px;font-family:var(--mono);font-size:12px;color:var(--dim)}
+</style>
+
+<div class="app">
+  <header class="topbar">
+    <b>DEEP</b><span class="tag">reef vertical slice</span>
+    <span class="spacer"></span>
+    <span class="src">every sprite &amp; tile imported from TideForge exports</span>
+  </header>
+
+  <div class="stage">
+    <canvas id="view"></canvas>
+    <div class="dc" id="dc" hidden>
+      <div class="zone" id="zone">—</div>
+      <div class="big"><span id="depth">0.0</span><small>m</small></div>
+      <div class="row"><span>max</span><b><span id="maxd">0.0</span> m</b></div>
+      <div class="row"><span>time</span><b id="time">0:00</b></div>
+      <div class="row"><span>air</span><b><span id="air">200</span> bar</b></div>
+      <div class="bar air" id="airbar"><i style="width:100%"></i></div>
+      <div class="row"><span>ascent</span><b><span id="asc">0</span> m/min</b></div>
+      <div class="bar asc" id="ascbar"><i style="width:0%"></i></div>
+    </div>
+    <div class="alert" id="alert"></div>
+    <div class="keys" id="keys" hidden>
+      <b>← →</b> swim &nbsp; <b>↑ ↓</b> kick<br>
+      <b>Q</b> / <b>E</b> dump / inflate BCD<br>
+      <span class="hold"><b>Space</b> hold breath</span> — no bubbles, no air burn
+    </div>
+    <div id="boot">loading reef…</div>
+  </div>
+
+  <div class="note" id="info">
+    <b>What this is.</b> The first thing the art bible asks for (§14.1): a depth colour-grade over a
+    single reef, proving the atmosphere thesis — and the first consumer of TideForge output. The
+    seabed is autotiled from the exported <code>maskToTile</code> map, flora is planted on its
+    <code>base</code> anchors, fish play their <code>swim</code> clips, and bubbles/godrays/silt are
+    exported VFX sheets. Sprites ship <i>ungraded</i>; the depth grade runs at runtime from
+    <code>depth-grade.js</code>, the same math TideForge previews with. Diver art is a placeholder —
+    that's the M2 hero asset.
+  </div>
+</div>
+
+<script type="module">
+import { gradeColor, css, zoneAt } from './depth-grade.js';
+import { loadAll } from './tideforge.js';
+
+const boot = document.getElementById('boot');
+if(location.protocol === 'file:'){
+  document.getElementById('info').className = 'note err';
+  document.getElementById('info').innerHTML =
+    '<b>Needs a local server.</b> Browsers block <code>fetch()</code> of the asset manifests from ' +
+    '<code>file://</code>. Run <code>npx http-server scuba-game -p 8080</code> from the repo root, ' +
+    'then open <code>http://localhost:8080/reef/</code>.';
+  boot.textContent = 'blocked: opened from file:// — see the note below';
+  throw new Error('file:// protocol');
+}
+
+// ---------------------------------------------------------------- world scale
+const TILE = 16;            // art-pixels per tile, straight from the tileset manifest
+const PX_PER_M = 34;        // art-pixels per metre  ->  one tile ≈ 0.47 m
+const ZOOM = 2;             // screen pixels per art-pixel (integer: keeps the grid honest)
+const WT = 160, WH = 100;   // world size in tiles  (≈ 49 m wide, ≈ 30.8 m deep)
+const depthAt = artY => artY / PX_PER_M;
+
+const view = document.getElementById('view');
+const ctx  = view.getContext('2d');
+const DPR  = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+function resize(){
+  const r = view.getBoundingClientRect();
+  view.width  = Math.round(r.width  * DPR);
+  view.height = Math.round(r.height * DPR);
+}
+addEventListener('resize', resize);
+
+// ---------------------------------------------------------------- terrain
+function rng(seed){ return () => (seed = (seed*1664525 + 1013904223) >>> 0) / 4294967296; }
+const R = rng(20260623);
+const surfaceY = new Int16Array(WT);       // terrain top, in tiles, per column
+{
+  let base = 48;
+  const a=R()*6.28, b=R()*6.28, c=R()*6.28;
+  for(let x=0;x<WT;x++){
+    const n = Math.sin(x*0.055+a)*3.2 + Math.sin(x*0.017+b)*4.5 + Math.sin(x*0.13+c)*1.4;
+    surfaceY[x] = Math.round(Math.max(36, Math.min(WH-8, base + n)));
+  }
+  // a couple of outcrops so the autotiler has real corners and overhangs to solve
+  for(let k=0;k<5;k++){
+    const cx = 12 + Math.floor(R()*(WT-24)), w = 5 + Math.floor(R()*9), h = 4 + Math.floor(R()*7);
+    for(let x=cx-w;x<=cx+w;x++){
+      if(x<0||x>=WT) continue;
+      const t = 1 - Math.abs(x-cx)/(w+1);
+      surfaceY[x] = Math.min(surfaceY[x], surfaceY[x] - Math.round(h*t*t));
+    }
+  }
+}
+const solid = [];
+for(let y=0;y<WH;y++){
+  const row = new Uint8Array(WT);
+  for(let x=0;x<WT;x++) row[x] = y >= surfaceY[x] ? 1 : 0;
+  solid.push(row);
+}
+// carve a few pockets so the tileset's inner corners actually get exercised
+for(let k=0;k<14;k++){
+  const cx=6+Math.floor(R()*(WT-12)), cy=surfaceY[6+Math.floor(R()*(WT-12))]+4+Math.floor(R()*10), r=1+Math.floor(R()*2.6);
+  for(let y=cy-r;y<=cy+r;y++)for(let x=cx-r;x<=cx+r;x++){
+    if(x<1||x>=WT-1||y<1||y>=WH-1) continue;
+    if(Math.hypot(x-cx,y-cy)<=r) solid[y][x]=0;
+  }
+}
+const terrainTopArt = x => {                 // art-px y of the seabed under a world x
+  const c = Math.max(0, Math.min(WT-1, Math.floor(x/TILE)));
+  return surfaceY[c]*TILE;
+};
+// Spawn hovering a few metres over a representative stretch of reef — averaging the
+// local seabed rather than seeking its highest point, so you start over open reef
+// instead of straddling a pinnacle or a trough.
+const spawnCol = Math.floor(WT*0.5);
+let spawnAvg = 0;
+for(let x=spawnCol-12;x<=spawnCol+12;x++) spawnAvg += surfaceY[Math.max(0,Math.min(WT-1,x))];
+spawnAvg /= 25;
+const SPAWN_X = spawnCol*TILE + TILE/2;
+const SPAWN_Y = spawnAvg*TILE - 3.2*PX_PER_M;
+
+// ---------------------------------------------------------------- load
+let A;
+try{
+  A = await loadAll('./assets', ['tile_rock','tile_sand',
+    'flora_kelp','flora_staghorn','flora_fan','flora_grass',
+    'fish_reef','fish_angel','fish_predator',
+    'vfx_bubbles','vfx_godray','vfx_silt']);
+}catch(e){
+  boot.textContent = 'failed to load assets: ' + e.message;
+  throw e;
+}
+boot.remove();
+document.getElementById('dc').hidden = false;
+document.getElementById('keys').hidden = false;
+
+// pre-resolve the tile index for every solid cell — the autotiler runs once, not per frame
+const tileIdx = [], tileMat = [];
+for(let y=0;y<WH;y++){
+  tileIdx.push(new Uint8Array(WT));
+  tileMat.push(new Uint8Array(WT));
+  for(let x=0;x<WT;x++){
+    if(!solid[y][x]) continue;
+    tileIdx[y][x] = A.tile_rock.tileFor(solid, x, y, WT, WH);
+    tileMat[y][x] = (y - surfaceY[x]) < 1 ? 1 : 0;      // a single sand course caps the reef, rock beneath
+  }
+}
+
+// ---------------------------------------------------------------- scatter
+const FLORA = [
+  {a:A.flora_kelp,     w:0.30, minD:4,  maxD:24},
+  {a:A.flora_staghorn, w:0.28, minD:6,  maxD:26},
+  {a:A.flora_fan,      w:0.17, minD:8,  maxD:28},
+  {a:A.flora_grass,    w:0.25, minD:3,  maxD:25}
+];
+const plants = [];
+for(let x=2;x<WT-2;x++){
+  if(R() > 0.44) continue;
+  const topArt = surfaceY[x]*TILE;
+  const d = depthAt(topArt);
+  const pool = FLORA.filter(f => d >= f.minD && d <= f.maxD);
+  if(!pool.length) continue;
+  let r = R()*pool.reduce((s,f)=>s+f.w,0), pick = pool[0];
+  for(const f of pool){ r -= f.w; if(r<=0){ pick=f; break; } }
+  plants.push({
+    a: pick.a, x: x*TILE + TILE/2 + (R()-0.5)*TILE,
+    y: topArt + 1,
+    phase: R()*Math.PI*2, rate: 0.55 + R()*0.5, flip: R()<0.5
+  });
+}
+plants.sort((p,q)=>p.y-q.y);
+
+const fish = [];
+for(let i=0;i<34;i++){
+  const kind = R();
+  const a = kind<0.52 ? A.fish_reef : kind<0.86 ? A.fish_angel : A.fish_predator;
+  const fx = R()*WT*TILE;
+  const ceilArt = 2.2*PX_PER_M, floorArt = terrainTopArt(fx) - 26;
+  fish.push({
+    a, x: fx, y: ceilArt + R()*Math.max(20, floorArt-ceilArt),
+    dir: R()<0.5?-1:1, speed: (a===A.fish_predator?9:14) + R()*11,
+    phase: R()*Math.PI*2, rate: 0.7 + R()*0.7, bobA: 1.5+R()*3, bobR: 0.4+R()*0.7
+  });
+}
+
+// ---------------------------------------------------------------- diver
+const diver = {
+  x: SPAWN_X, y: SPAWN_Y, vx:0, vy:0,
+  bcd: 0.5,            // 0 = dumped (sink) … 1 = inflated (rise)
+  air: 200,            // bar
+  breath: 0,           // breathing cycle phase
+  holding: false,
+  t: 0, maxD: 0, ascent: 0, lastDepth: 0,
+  face: 1
+};
+const keys = new Set();
+addEventListener('keydown', e => {
+  if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key)) e.preventDefault();
+  keys.add(e.key.length===1 ? e.key.toLowerCase() : e.key);
+});
+addEventListener('keyup', e => keys.delete(e.key.length===1 ? e.key.toLowerCase() : e.key));
+addEventListener('blur', () => keys.clear());
+
+const silts = [];      // {x,y,t}
+let lastSilt = 0;
+
+function stepDiver(dt){
+  const d = depthAt(diver.y);
+  diver.t += dt;
+
+  // --- breath: the fine buoyancy layer. Holding it stops the bubbles and the burn.
+  diver.holding = keys.has(' ');
+  if(!diver.holding) diver.breath += dt * 0.85;
+  const lung = diver.holding ? 0 : Math.sin(diver.breath * Math.PI * 2) * 5.5;
+
+  // --- BCD: the coarse layer
+  if(keys.has('e')) diver.bcd = Math.min(1, diver.bcd + dt*0.42);
+  if(keys.has('q')) diver.bcd = Math.max(0, diver.bcd - dt*0.42);
+
+  // --- swim
+  const left = keys.has('ArrowLeft')||keys.has('a'), right = keys.has('ArrowRight')||keys.has('d');
+  const up   = keys.has('ArrowUp')||keys.has('w'),   down  = keys.has('ArrowDown')||keys.has('s');
+  const finning = left||right||up||down;
+  if(left)  { diver.vx -= 190*dt; diver.face = -1; }
+  if(right) { diver.vx += 190*dt; diver.face =  1; }
+  if(up)    diver.vy -= 260*dt;
+  if(down)  diver.vy += 260*dt;
+
+  // the vest is the coarse layer: fully dumped sinks you, fully inflated floats you
+  diver.vy += (0.5 - diver.bcd) * 200 * dt;
+
+  // drag — water is thick; nothing snaps (GDD §5)
+  diver.vx *= Math.pow(0.004, dt);
+  diver.vy *= Math.pow(0.020, dt);
+  diver.x += diver.vx*dt;
+  // lungs trim depth directly rather than accelerating you — how a real diver holds a level
+  diver.y += diver.vy*dt + lung*dt;
+
+  // --- bounds: surface and seabed
+  if(diver.y < 6){ diver.y = 6; diver.vy = Math.max(0, diver.vy); }
+  diver.x = Math.max(TILE, Math.min(WT*TILE - TILE, diver.x));
+  const floor = terrainTopArt(diver.x) - 20;
+  if(diver.y > floor){
+    diver.y = floor;
+    if(diver.vy > 18 && diver.t - lastSilt > 0.45){   // fin the bottom, kick up silt
+      silts.push({x:diver.x, y:floor+12, t:0});
+      lastSilt = diver.t;
+    }
+    diver.vy = Math.min(0, diver.vy);
+  }
+
+  // --- air: surface-rate consumption scaled by ambient pressure (1 bar per 10 m)
+  if(!diver.holding && diver.air > 0){
+    const sac = 0.42 * (finning ? 1.9 : 1);
+    diver.air = Math.max(0, diver.air - sac * (1 + d/10) * dt);
+  }
+
+  // --- ascent rate, in m/min, smoothed
+  const rate = (diver.lastDepth - d) / Math.max(dt,1e-4) * 60;
+  diver.ascent += (rate - diver.ascent) * Math.min(1, dt*3.5);
+  diver.lastDepth = d;
+  diver.maxD = Math.max(diver.maxD, d);
+
+  for(let i=silts.length-1;i>=0;i--){ silts[i].t += dt; if(silts[i].t > 1.5) silts.splice(i,1); }
+}
+
+// ---------------------------------------------------------------- draw
+const snow = [];
+for(let i=0;i<230;i++) snow.push({x:R()*WT*TILE, y:R()*WH*TILE, z:0.35+R()*0.9, s:R()});
+
+function drawWater(camY, vw, vh){
+  const dTop = depthAt(camY), dBot = depthAt(camY + vh/ZOOM);
+  const g = ctx.createLinearGradient(0,0,0,vh);
+  for(let i=0;i<=4;i++){
+    const dd = dTop + (dBot-dTop)*(i/4);
+    g.addColorStop(i/4, css(gradeColor([26,74,96], Math.max(0, dd-3))));
+  }
+  ctx.fillStyle = g; ctx.fillRect(0,0,vw,vh);
+}
+
+function drawDiver(sx, sy, d){
+  // placeholder — the hero diver sprite is the M2 asset. Still graded like everything else.
+  const C = c => css(gradeColor(c, d));
+  const z = ZOOM, kick = diver.holding ? 0 : Math.sin(diver.breath*Math.PI*2)*1.4;
+  ctx.save();
+  ctx.translate(Math.round(sx), Math.round(sy));
+  ctx.scale(diver.face, 1);
+  ctx.fillStyle = C([22,30,40]);                       // tank
+  ctx.fillRect(-13*z, -20*z, 8*z, 26*z);
+  ctx.fillStyle = C([34,52,70]);                       // body
+  ctx.fillRect(-8*z, -22*z, 16*z, 34*z);
+  ctx.fillStyle = C([58,84,108]);                      // hood + shoulders
+  ctx.fillRect(-8*z, -22*z, 16*z, 7*z);
+  ctx.fillStyle = C([150,205,225]);                    // mask
+  ctx.fillRect(2*z, -20*z, 7*z, 5*z);
+  ctx.fillStyle = C([26,38,50]);                       // legs
+  ctx.fillRect(-6*z, 12*z, 5*z, 16*z);
+  ctx.fillRect(1*z, 12*z, 5*z, 16*z);
+  ctx.fillStyle = C([40,60,78]);                       // fins
+  ctx.fillRect(-8*z, (28+kick)*z, 9*z, 5*z);
+  ctx.fillRect(0*z, (28-kick)*z, 9*z, 5*z);
+  ctx.restore();
+}
+
+let last = 0, acc = 0;
+function frame(ts){
+  if(!last) last = ts;
+  const dt = Math.min(0.05, (ts-last)/1000); last = ts; acc += dt;
+  stepDiver(dt);
+
+  const vw = view.width, vh = view.height;
+  const d  = depthAt(diver.y);
+
+  // camera follows the diver, clamped to the world
+  let camX = diver.x - vw/(2*ZOOM), camY = diver.y - vh*0.38/ZOOM;
+  camX = Math.max(0, Math.min(WT*TILE - vw/ZOOM, camX));
+  camY = Math.max(0, Math.min(WH*TILE - vh/ZOOM, camY));
+  const sx = ax => Math.round((ax - camX) * ZOOM);
+  const sy = ay => Math.round((ay - camY) * ZOOM);
+
+  drawWater(camY, vw, vh);
+
+  // godrays — tiled down the top of the water column, strongest shallow (ART_BIBLE §9.2)
+  {
+    const RZ = ZOOM*3, span = 48*RZ/ZOOM, g = A.vfx_godray, f = Math.floor(acc*10);
+    for(let row=0; row<4; row++){
+      const wy = row*span*0.92, dd = depthAt(wy);
+      const a  = Math.max(0, 1 - dd/24) * 0.34;
+      if(a < 0.02) continue;
+      const py = sy(wy);
+      if(py > vh + span*ZOOM || py < -span*ZOOM*2) continue;
+      for(let col=-1; col<10; col++){
+        const wx = col*span*1.25 + Math.sin(acc*0.12 + row*1.3 + col)*14;
+        const px = sx(wx);
+        if(px < -span*ZOOM || px > vw + span*ZOOM) continue;
+        g.draw(ctx, Math.max(0, dd-6), 'loop', f + col*3 + row*5, px, py, RZ, {alpha:a});
+      }
+    }
+  }
+
+  // marine snow — denser as you go down (ART_BIBLE §9.3)
+  ctx.save();
+  const snowA = 0.10 + Math.min(0.30, d/70);
+  for(const p of snow){
+    p.y += dt * (2.2 + p.z*4);
+    if(p.y > WH*TILE) p.y = 0;
+    const px = sx(p.x), py = sy(p.y);
+    if(px<-4||px>vw+4||py<-4||py>vh+4) continue;
+    ctx.fillStyle = `rgba(184,214,228,${snowA*p.z})`;
+    ctx.fillRect(px, py, ZOOM, ZOOM);
+  }
+  ctx.restore();
+
+  // fish behind the reef read as background; keep them all on the gameplay layer for now
+  for(const f of fish){
+    f.x += f.dir * f.speed * dt;
+    if(f.x < -80) f.x = WT*TILE + 60;
+    if(f.x > WT*TILE + 80) f.x = -60;
+    const lim = terrainTopArt(f.x) - 24;          // don't swim through the reef
+    if(f.y > lim) f.y += (lim - f.y) * Math.min(1, dt*2.5);
+    const fy = f.y + Math.sin(acc*f.bobR + f.phase) * f.bobA;
+    const px = sx(f.x), py = sy(fy);
+    if(px < -160 || px > vw+160 || py < -120 || py > vh+120) continue;
+    f.a.draw(ctx, depthAt(fy), 'swim', Math.floor(acc*10*f.rate + f.phase*3), px, py, ZOOM,
+             {flip: f.dir > 0});
+  }
+
+  // terrain — only the cells on screen
+  const x0 = Math.max(0, Math.floor(camX/TILE)), x1 = Math.min(WT-1, Math.ceil((camX + vw/ZOOM)/TILE));
+  const y0 = Math.max(0, Math.floor(camY/TILE)), y1 = Math.min(WH-1, Math.ceil((camY + vh/ZOOM)/TILE));
+  for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){
+    if(!solid[y][x]) continue;
+    const set = tileMat[y][x] ? A.tile_sand : A.tile_rock;
+    set.drawTile(ctx, depthAt(y*TILE), tileIdx[y][x], sx(x*TILE), sy(y*TILE), ZOOM);
+  }
+
+  // flora, planted on its `base` anchor
+  for(const p of plants){
+    const px = sx(p.x), py = sy(p.y);
+    if(px < -140 || px > vw+140 || py < -260 || py > vh+80) continue;
+    p.a.draw(ctx, depthAt(p.y), 'sway', Math.floor(acc*9*p.rate + p.phase*4), px, py, ZOOM,
+             {anchor:'base', flip:p.flip});
+  }
+
+  // silt kicked off the bottom
+  for(const s of silts){
+    A.vfx_silt.draw(ctx, depthAt(s.y), 'loop', Math.floor(s.t*14), sx(s.x), sy(s.y), ZOOM*2,
+                    {alpha: Math.max(0, 1 - s.t/1.5)});
+  }
+
+  drawDiver(sx(diver.x), sy(diver.y), d);
+
+  // exhaled bubbles — silent when the breath is held (GDD §5)
+  if(!diver.holding && diver.air > 0){
+    A.vfx_bubbles.draw(ctx, d, 'loop', Math.floor(acc*14), sx(diver.x)+diver.face*8*ZOOM,
+                       sy(diver.y)-34*ZOOM, ZOOM, {alpha:0.85});
+  }
+
+  updateHud(d);
+  requestAnimationFrame(frame);
+}
+
+// ---------------------------------------------------------------- hud
+const el = id => document.getElementById(id);
+let alertT = 0;
+function updateHud(d){
+  const z = zoneAt(d);
+  el('zone').textContent = z.name;
+  el('depth').textContent = d.toFixed(1);
+  el('maxd').textContent  = diver.maxD.toFixed(1);
+  const m = Math.floor(diver.t/60), s = Math.floor(diver.t%60);
+  el('time').textContent = `${m}:${String(s).padStart(2,'0')}`;
+  el('air').textContent  = Math.round(diver.air);
+  const ab = el('airbar'); ab.firstElementChild.style.width = (diver.air/200*100)+'%';
+  ab.classList.toggle('low',  diver.air < 70);
+  ab.classList.toggle('crit', diver.air < 35);
+  const asc = Math.max(0, diver.ascent);
+  el('asc').textContent = asc.toFixed(0);
+  const bb = el('ascbar'); bb.firstElementChild.style.width = Math.min(100, asc/18*100)+'%';
+  bb.classList.toggle('fast', asc > 9);
+
+  // the ascent-rate rule: 9 m/min is the real ceiling (GDD §6.15)
+  let msg = '';
+  if(asc > 9)            msg = '⚠  ASCENDING TOO FAST — SLOW TO 9 M/MIN';
+  else if(diver.air <= 0)msg = '⚠  OUT OF AIR';
+  else if(diver.air < 50)msg = '⚠  LOW ON AIR — BEGIN YOUR ASCENT';
+  const a = el('alert');
+  a.textContent = msg; a.classList.toggle('on', !!msg);
+}
+
+resize();
+requestAnimationFrame(frame);
+</script>

@@ -228,19 +228,26 @@ function corruptColor(c,a){if(a<=0)return c;const l=0.3*c[0]+0.59*c[1]+0.11*c[2]
 // the signature light-absorption curve — red dies first, then green. Shared with the game runtime.
 function gradeColor(c,depth){const t=clamp(depth/60,0,1);let r=c[0]*(1-0.88*t),g=c[1]*(1-0.42*t),b=c[2]*(1-0.10*t);r+=(9-r)*0.30*t;g+=(22-g)*0.28*t;b+=(46-b)*0.26*t;const dk=1-0.28*t;return[clamp(r*dk,0,255)|0,clamp(g*dk,0,255)|0,clamp(b*dk,0,255)|0];}
 
+// Every colour is quantised to 8-bit BEFORE the depth grade, so a depth-0 export is
+// the exact input a runtime re-grade will see. Without this the tool keeps sub-unit
+// precision the exported PNG cannot carry, and tool and runtime drift by a bit or two.
+// (reef/tools/verify-grade.mjs asserts they don't.)
+function q8(c){return[Math.round(c[0]),Math.round(c[1]),Math.round(c[2])];}
 function buildColorCache(palIdx,depth,corrupt){
   const pal=PALETTES[palIdx]||PALETTES[0];
-  const ramp=pal.ramp.map(hex2rgb),OL=darken(ramp[0],0.55);
+  const ramp=pal.ramp.map(hex2rgb),OL=q8(darken(ramp[0],0.55));
   const body={[SPEC]:lighten(ramp[4],0.22),[BACK]:ramp[0],[SHADOW]:ramp[1],[BASE]:ramp[2],[HIGH]:ramp[3],
               [BELLY]:mix(ramp[4],[224,236,240],0.5),[FIN]:mix(ramp[1],OL,0.30),[PATTERN]:darken(ramp[0],0.45)};
   const c={};c[EMPTY]=[0,0,0,0];c[OUTLINE]=[...gradeColor(OL,depth),255];c[FINEDGE]=c[OUTLINE];
-  for(const r of[SPEC,BACK,SHADOW,BASE,HIGH,BELLY,PATTERN])c[r]=[...gradeColor(corruptColor(body[r],corrupt),depth),255];
-  c[FIN]=[...gradeColor(corruptColor(body[FIN],corrupt),depth),232];
-  c[EYEW]=[...gradeColor([228,236,240],depth),255];c[EYEP]=[10,12,16,255];c[EYEH]=[...gradeColor([255,255,255],depth),255];c[MOUTH]=c[OUTLINE];
-  const gc=mix([40,120,110],[70,255,225],corrupt);
+  for(const r of[SPEC,BACK,SHADOW,BASE,HIGH,BELLY,PATTERN])c[r]=[...gradeColor(q8(corruptColor(body[r],corrupt)),depth),255];
+  c[FIN]=[...gradeColor(q8(corruptColor(body[FIN],corrupt)),depth),232];
+  c[EYEW]=[...gradeColor([228,236,240],depth),255];
+  c[EYEP]=[...gradeColor([10,12,16],depth),255];   // the pupil absorbs light like everything else
+  c[EYEH]=[...gradeColor([255,255,255],depth),255];c[MOUTH]=c[OUTLINE];
+  const gc=q8(mix([40,120,110],[70,255,225],corrupt));
   c[GLOW]=[...gradeColor(gc,Math.max(0,depth-18)),Math.round(120+120*corrupt)];
   c[GLOWDIM]=[c[GLOW][0],c[GLOW][1],c[GLOW][2],Math.round(c[GLOW][3]*0.45)];
-  const veil=gradeColor([196,226,238],Math.max(0,depth-10));
+  const veil=gradeColor([196,226,238],Math.max(0,depth-10));  // water, not pigment — a shallower curve
   c[HAZE]=[...veil,58];c[HAZE2]=[...veil,124];
   return c;
 }

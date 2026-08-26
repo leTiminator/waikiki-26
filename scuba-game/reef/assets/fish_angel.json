@@ -1,0 +1,53 @@
+{
+  "engine": "TideForge",
+  "version": "M1",
+  "module": "creature",
+  "source": {
+    "cfg": {
+      "arch": "angel",
+      "len": 0.72,
+      "dep": 1.15,
+      "tail": "fork",
+      "dorsal": "low",
+      "pattern": "h-stripes",
+      "pal": 2,
+      "depth": 0,
+      "corrupt": 0,
+      "seed": 1234
+    }
+  },
+  "frameSize": {
+    "w": 72,
+    "h": 42
+  },
+  "sheet": {
+    "scale": 5,
+    "cols": 12,
+    "rows": 1
+  },
+  "anchors": {
+    "eye": [
+      43,
+      15
+    ],
+    "mouth": [
+      47,
+      21
+    ]
+  },
+  "clips": [
+    {
+      "name": "swim",
+      "row": 0,
+      "frames": 12,
+      "fps": 12,
+      "motion": "swim",
+      "amp": 2.2,
+      "freq": 0.34,
+      "bias": 0,
+      "loop": true
+    }
+  ],
+  "asset": "fish_angel",
+  "sheetFile": "fish_angel.png"
+}

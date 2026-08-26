@@ -1,0 +1,61 @@
+{
+  "engine": "TideForge",
+  "version": "M1",
+  "module": "vfx",
+  "source": {
+    "cfg": {
+      "effect": "godray",
+      "count": 18,
+      "size": 2.4,
+      "speed": 1,
+      "spread": 0.4,
+      "life": 0.8,
+      "pal": 5,
+      "depth": 0,
+      "corrupt": 0,
+      "seed": 24385
+    }
+  },
+  "frameSize": {
+    "w": 48,
+    "h": 48
+  },
+  "sheet": {
+    "scale": 5,
+    "cols": 16,
+    "rows": 1
+  },
+  "anchors": {
+    "center": [
+      24,
+      24
+    ],
+    "source": [
+      24,
+      24
+    ]
+  },
+  "clips": [
+    {
+      "name": "loop",
+      "row": 0,
+      "frames": 16,
+      "fps": 14,
+      "motion": "baked",
+      "amp": 1.2,
+      "freq": 0.33,
+      "bias": 0,
+      "loop": true
+    }
+  ],
+  "emitter": {
+    "effect": "godray",
+    "count": 18,
+    "size": 2.4,
+    "speed": 1,
+    "spread": 0.4,
+    "lifetime": 0.8
+  },
+  "asset": "vfx_godray",
+  "sheetFile": "vfx_godray.png"
+}

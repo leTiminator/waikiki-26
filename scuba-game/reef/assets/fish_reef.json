@@ -1,0 +1,53 @@
+{
+  "engine": "TideForge",
+  "version": "M1",
+  "module": "creature",
+  "source": {
+    "cfg": {
+      "arch": "reef",
+      "len": 0.78,
+      "dep": 0.95,
+      "tail": "fork",
+      "dorsal": "low",
+      "pattern": "v-stripes",
+      "pal": 1,
+      "depth": 0,
+      "corrupt": 0,
+      "seed": 1234
+    }
+  },
+  "frameSize": {
+    "w": 72,
+    "h": 42
+  },
+  "sheet": {
+    "scale": 5,
+    "cols": 12,
+    "rows": 1
+  },
+  "anchors": {
+    "eye": [
+      46,
+      17
+    ],
+    "mouth": [
+      52,
+      21
+    ]
+  },
+  "clips": [
+    {
+      "name": "swim",
+      "row": 0,
+      "frames": 12,
+      "fps": 12,
+      "motion": "swim",
+      "amp": 2.2,
+      "freq": 0.34,
+      "bias": 0,
+      "loop": true
+    }
+  ],
+  "asset": "fish_reef",
+  "sheetFile": "fish_reef.png"
+}
