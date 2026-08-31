@@ -4,10 +4,10 @@
   "module": "flora",
   "source": {
     "cfg": {
-      "arch": "soft",
-      "height": 0.8,
-      "strands": 2,
-      "iter": 3,
+      "arch": "plate",
+      "height": 1,
+      "strands": 3,
+      "iter": 4,
       "angle": 24,
       "branch": 0.85,
       "seglen": 1,
@@ -16,7 +16,7 @@
       "taper": 0.93,
       "tipsize": 1.2,
       "bio": false,
-      "pal": 12,
+      "pal": 10,
       "depth": 0,
       "corrupt": 0,
       "seed": 8951,
@@ -52,6 +52,6 @@
       "loop": true
     }
   ],
-  "asset": "flora_soft",
-  "sheetFile": "flora_soft.png"
+  "asset": "flora_plate",
+  "sheetFile": "flora_plate.png"
 }

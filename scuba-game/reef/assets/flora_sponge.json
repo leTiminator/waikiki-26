@@ -4,15 +4,15 @@
   "module": "flora",
   "source": {
     "cfg": {
-      "arch": "soft",
-      "height": 0.8,
-      "strands": 2,
+      "arch": "sponge",
+      "height": 0.9,
+      "strands": 4,
       "iter": 3,
       "angle": 24,
       "branch": 0.85,
       "seglen": 1,
       "curl": 0.15,
-      "width": 2.4,
+      "width": 2.6,
       "taper": 0.93,
       "tipsize": 1.2,
       "bio": false,
@@ -37,7 +37,28 @@
       32,
       77
     ],
-    "tips": []
+    "tips": [
+      [
+        7,
+        45
+      ],
+      [
+        20,
+        37
+      ],
+      [
+        31,
+        55
+      ],
+      [
+        41,
+        47
+      ],
+      [
+        50,
+        55
+      ]
+    ]
   },
   "clips": [
     {
@@ -52,6 +73,6 @@
       "loop": true
     }
   ],
-  "asset": "flora_soft",
-  "sheetFile": "flora_soft.png"
+  "asset": "flora_sponge",
+  "sheetFile": "flora_sponge.png"
 }

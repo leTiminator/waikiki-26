@@ -195,7 +195,8 @@ const SPAWN_Y = spawnAvg*TILE - 3.2*PX_PER_M;
 let A;
 try{
   A = await loadAll('./assets', ['tile_rock','tile_sand',
-    'flora_staghorn','flora_staghorn_lg','flora_soft','flora_kelp','flora_grass','flora_grass_lg','flora_fan',
+    'flora_boulder','flora_boulder_sm','flora_plate','flora_staghorn','flora_staghorn_lg',
+    'flora_soft','flora_sponge','flora_fan','flora_kelp','flora_grass','flora_grass_lg',
     'fish_chromis','fish_anthias','fish_yellowtang','fish_raccoon','fish_manini',
     'fish_taape','fish_akule','fish_uhu','fish_omilu','fish_puhi','fish_whitetip','fish_ulua',
     'prop_crate','prop_drum','prop_hull','prop_debris',
@@ -295,62 +296,203 @@ faces[FLOOR].sort((a,b)=>a.x-b.x || a.y-b.y);
 faces[CEIL ].sort((a,b)=>a.x-b.x || a.y-b.y);
 faces[WALL ].sort((a,b)=>a.rot-b.rot || a.gx-b.gx || a.gy-b.gy);
 
-// ---------------------------------------------------------------- scatter
-// Coral grows in COLONIES with bare substrate between them. An independent coin flip per
-// column — which this used to be — gives a statistically EVEN sprinkle: no clumps, no
-// gaps, and the eye reads even distribution as clutter. Patches also group colour into
-// masses instead of interleaving every hue at every position.
-// Families declare which surfaces they actually colonise: turf on the flat, fans and soft
-// coral out of walls, only small growth under overhangs.
-const FAMILIES = [
-  {name:'staghorn', members:[A.flora_staghorn, A.flora_staghorn_lg], w:0.30, on:[FLOOR],            minD:3, maxD:26},
-  {name:'grass',    members:[A.flora_grass, A.flora_grass_lg],       w:0.16, on:[FLOOR],            minD:1, maxD:24},
-  {name:'kelp',     members:[A.flora_kelp],                          w:0.14, on:[FLOOR],            minD:2, maxD:20},
-  {name:'soft',     members:[A.flora_soft],                          w:0.18, on:[FLOOR],            minD:4, maxD:24},
-  {name:'fan',      members:[A.flora_fan],                           w:0.14, on:[WALL,CEIL,FLOOR],  minD:6, maxD:28},
-  {name:'turf',     members:[A.flora_grass],                         w:0.10, on:[WALL,CEIL],        minD:2, maxD:28}
-];
-const pickWeighted = pool => {
-  let r = R()*pool.reduce((s,f)=>s+f.w,0);
-  for(const f of pool){ r -= f.w; if(r<=0) return f; }
-  return pool[pool.length-1];
+// ---------------------------------------------------------------- ecology
+// WHY THIS EXISTS. Placement used to be `if (random < density)`, which distributes things
+// evenly and therefore reads as clutter. Real reef distribution is not random — it is a
+// habitat-suitability function over a few physical quantities. Compute those quantities
+// once from the terrain and believable distribution falls out for free, with no per-colony
+// tuning constants at all.
+//
+//   light      how much surface light reaches a spot, blocked by rock and eaten by depth.
+//              Drives every photosynthetic coral. Sponges INVERT it — they are filter
+//              feeders and own the dark overhangs where coral cannot live.
+//   exposure   how open a spot is to the water column. High on crests and outcrops, low in
+//              hollows. Robust massive forms take exposure; delicate branching forms need
+//              shelter; sea fans want flow and so prefer it high.
+//   substrate  sand settles on flat low ground, rubble on moderate slopes, hard rock
+//              elsewhere. Nothing hard-bottomed grows on sand; seagrass grows ONLY there.
+//   relief     height above the local seabed — crest, slope or base.
+//
+// A growth form declares a niche as ranges over those four. Suitability is the product of
+// triangular membership functions, so a form appears exactly where its niche is satisfied
+// and thins out naturally toward the edges of it.
+
+const SAND=0, RUBBLE=1, ROCK=2;
+
+// --- light: march down each column, rock blocks it, water eats it, then scatter sideways
+const light = [];
+for(let y=0;y<WH;y++) light.push(new Float32Array(WT));
+for(let x=0;x<WT;x++){
+  let L = 1;
+  for(let y=0;y<WH;y++){
+    light[y][x] = L * Math.exp(-depthAt(y*TILE)/26);
+    L *= solid[y][x] ? 0.04 : 0.988;
+  }
+}
+for(let pass=0; pass<3; pass++)for(let y=0;y<WH;y++){
+  const row = light[y], cp = row.slice();
+  for(let x=1;x<WT-1;x++) row[x] = cp[x]*0.5 + cp[x-1]*0.25 + cp[x+1]*0.25;
+}
+
+// --- exposure: openness to the water column in a neighbourhood
+const exposure = [];
+for(let y=0;y<WH;y++) exposure.push(new Float32Array(WT));
+{
+  const RAD = 4, area = (RAD*2+1)*(RAD*2+1);
+  for(let y=0;y<WH;y++)for(let x=0;x<WT;x++){
+    let open = 0;
+    for(let dy=-RAD;dy<=RAD;dy++)for(let dx=-RAD;dx<=RAD;dx++){
+      const yy=y+dy, xx=x+dx;
+      if(yy<0){ open++; continue; }
+      if(yy>=WH||xx<0||xx>=WT) continue;
+      if(!solid[yy][xx]) open++;
+    }
+    exposure[y][x] = open/area;
+  }
+}
+
+// --- substrate: where sediment settles
+function substrateAt(gx, gy, rot){
+  if(rot !== 0) return ROCK;                        // nothing settles on a wall or ceiling
+  let flat = 0, basin = 0;
+  for(let d=-3; d<=3; d++){
+    const c = Math.max(0, Math.min(WT-1, gx+d));
+    if(Math.abs(surfaceY[c] - gy) <= 1) flat++;
+    if(surfaceY[c] < gy) basin++;                   // neighbour stands higher than us
+  }
+  if(flat >= 6 && basin >= 2) return SAND;
+  if(flat >= 4) return RUBBLE;
+  return ROCK;
+}
+
+// --- relief: how far this face stands above the local seabed, in metres
+function reliefAt(gx, gy){
+  let lo = gy;
+  for(let d=-6; d<=6; d++){
+    const c = Math.max(0, Math.min(WT-1, gx+d));
+    if(surfaceY[c] > lo) lo = surfaceY[c];
+  }
+  return (lo - gy) * TILE / PX_PER_M;
+}
+
+// triangular membership: 1 inside the core of the range, falling to 0 at its edges
+const fit = (v, lo, hi) => {
+  if(v <= lo || v >= hi) return 0;
+  const mid = (lo+hi)/2, half = (hi-lo)/2;
+  return 1 - Math.abs(v-mid)/half;
 };
 
-// Depth slices inside the gameplay layer. Without these everything renders at one contrast
-// and the scene reads as a sticker collage — the "pops too much" problem. BACK sits behind
-// the play plane and loses contrast to the water; NEAR sits in front and goes darker.
+// --- the niches -----------------------------------------------------------------------
+// Each entry is a real reef guild. `on` is which surface orientations it can attach to,
+// `sub` which substrates it can hold onto.
+const GUILDS = [
+  {name:'boulder',  members:[A.flora_boulder, A.flora_boulder_sm], on:[FLOOR],
+   sub:[ROCK,RUBBLE], light:[0.16,1.05], expo:[0.30,1.05], relief:[-0.5,9],  w:1.0},
+  {name:'plate',    members:[A.flora_plate], on:[FLOOR],
+   sub:[ROCK],        light:[0.34,1.05], expo:[0.14,0.78], relief:[-0.5,9],  w:0.7},
+  {name:'staghorn', members:[A.flora_staghorn, A.flora_staghorn_lg], on:[FLOOR],
+   sub:[ROCK],        light:[0.40,1.05], expo:[0.10,0.62], relief:[-0.5,9],  w:1.0},
+  {name:'soft',     members:[A.flora_soft], on:[FLOOR,WALL],
+   sub:[ROCK,RUBBLE], light:[0.06,0.62], expo:[0.05,0.70], relief:[-0.5,9],  w:0.8},
+  {name:'fan',      members:[A.flora_fan], on:[WALL,FLOOR],
+   sub:[ROCK],        light:[0.03,0.55], expo:[0.42,1.05], relief:[-0.5,9],  w:0.7},
+  // filter feeders, not photosynthetic: they own the dark undersides
+  {name:'sponge',   members:[A.flora_sponge], on:[CEIL,WALL],
+   sub:[ROCK],        light:[-0.05,0.26], expo:[0.02,0.62], relief:[-0.5,9], w:0.55},
+  {name:'turf',     members:[A.flora_grass], on:[WALL,CEIL],
+   sub:[ROCK,RUBBLE], light:[0.22,1.05], expo:[0.10,1.05], relief:[-0.5,9],  w:0.5},
+  // seagrass holds only in sediment, and only where there is light to photosynthesise
+  {name:'seagrass', members:[A.flora_grass, A.flora_grass_lg], on:[FLOOR],
+   sub:[SAND],        light:[0.34,1.05], expo:[0.05,1.05], relief:[-0.5,3],  w:1.0},
+  {name:'kelp',     members:[A.flora_kelp], on:[FLOOR],
+   sub:[SAND,RUBBLE], light:[0.42,1.05], expo:[0.20,1.05], relief:[-0.5,4],  w:0.6}
+];
+
+function suitability(g, f){
+  if(!g.on.includes(f.surf)) return 0;
+  if(!g.sub.includes(f.sub)) return 0;
+  return fit(f.light, g.light[0], g.light[1])
+       * fit(f.expo,  g.expo[0],  g.expo[1])
+       * fit(f.relief,g.relief[0],g.relief[1]) * g.w;
+}
+
+// --- annotate every exposed face with its habitat ---------------------------------------
+const habitat = [];
+for(const key of [FLOOR, WALL, CEIL]){
+  for(const f of faces[key]){
+    const gx = f.gx, gy = f.gy;
+    const oy = key===FLOOR ? gy-1 : key===CEIL ? gy+1 : gy;
+    const ox = key===WALL ? (f.rot===1 ? gx+1 : gx-1) : gx;
+    const cy = Math.max(0, Math.min(WH-1, oy)), cx2 = Math.max(0, Math.min(WT-1, ox));
+    habitat.push({
+      x:f.x, y:f.y, rot:f.rot, gx, gy, surf:key,
+      light: light[cy][cx2],
+      expo:  exposure[cy][cx2],
+      sub:   substrateAt(gx, gy, f.rot),
+      relief:reliefAt(gx, gy)
+    });
+  }
+}
+// best guild per face, and how well it fits — this is the density map
+for(const f of habitat){
+  let best = null, bestS = 0;
+  for(const g of GUILDS){ const s = suitability(g, f); if(s > bestS){ bestS = s; best = g; } }
+  f.guild = best; f.score = bestS;
+}
+// The substrate model also decides the TILE material: sand where sediment settles, rock
+// where it cannot. Capping every top cell with sand drew a continuous tan band across the
+// reef and was the single most artificial thing in frame.
+for(let x=0;x<WT;x++){
+  const gy = surfaceY[x];
+  if(gy >= WH) continue;
+  tileMat[gy][x] = substrateAt(x, gy, 0) === SAND ? 1 : 0;
+  if(gy+1 < WH && tileMat[gy][x] === 0) tileMat[gy+1][x] = 0;
+}
+
+const seedable = habitat.filter(f => f.score > 0.12);
+seedable.sort((a,b) => b.score - a.score);
+
+// ---------------------------------------------------------------- scatter
+// Colonies are SEEDED from the suitability map rather than sprinkled: pick a good face,
+// grow outward through neighbouring faces while the habitat still suits that guild, and
+// stop when it doesn't. Colony size therefore comes out of the habitat — big stands where
+// conditions are good, scattered individuals at the margins — instead of a tuned constant.
 const BACK=0, MID=1, NEAR=2;
 const SLICE_FOG  = [0.46, 0, 0];
-const SLICE_DEPTH= [2,    0, 11];     // NEAR pushed deeper into the grade = darker, unlit
+const SLICE_DEPTH= [2,    0, 11];
 const pickSlice = () => { const r=R(); return r<0.30 ? BACK : r<0.90 ? MID : NEAR; };
 
 const plants = [];
 {
-  const colonies = 13;
-  for(let k=0;k<colonies;k++){
-    // most colonies are small; a few are large. A flat size roll made one grass bed
-    // swallow the frame.
-    const n = 2 + Math.round(Math.pow(R(),2.3) * 9);
-    const surf = R()<0.72 ? FLOOR : (R()<0.80 ? WALL : CEIL);
-    const list = faces[surf];
-    if(!list.length) continue;
-    const seed = (R()*list.length)|0;
-    const d = depthAt(list[seed].y);
-    const pool = FAMILIES.filter(f => f.on.includes(surf) && d >= f.minD && d <= f.maxD);
-    if(!pool.length) continue;
-    const fam = pickWeighted(pool);
-    const spread = 1 + Math.round(n*0.9);
-    for(let i=0;i<n;i++){
-      const f = list[Math.max(0, Math.min(list.length-1, seed + Math.round((R()+R()-1)*spread)))];
-      const a = fam.members[(R()*fam.members.length)|0];
-      // along-face jitter, and embedded into the substrate rather than balanced on it
-      const along = (R()-0.5)*TILE*0.9, sink = 2 + R()*3;
-      const dx = f.rot===0 ? along : f.rot===2 ? along : (f.rot===1 ? -sink : sink);
-      const dy = f.rot===1 || f.rot===3 ? along : (f.rot===0 ? sink : -sink);
-      plants.push({a, x:f.x+dx, y:f.y+dy, rot:f.rot, surf,
-                   z: surf===FLOOR ? pickSlice() : (R()<0.4 ? BACK : MID),
+  const taken = new Set();
+  const key = f => f.gx + ',' + f.gy + ',' + f.rot;
+  // walk the suitability-ranked faces, strongest habitat first
+  for(const seed of seedable){
+    if(taken.has(key(seed))) continue;
+    if(R() > 0.30) continue;                      // not every good spot is occupied
+    const g = seed.guild;
+    // a colony reaches as far as the habitat stays good for this guild
+    const budget = 1 + Math.round(seed.score * 14);
+    let placed = 0;
+    const near = habitat.filter(f =>
+      Math.abs(f.gx - seed.gx) <= 5 && Math.abs(f.gy - seed.gy) <= 4 && f.surf === seed.surf);
+    near.sort((a,b) => (Math.abs(a.gx-seed.gx)+Math.abs(a.gy-seed.gy))
+                     - (Math.abs(b.gx-seed.gx)+Math.abs(b.gy-seed.gy)));
+    for(const f of near){
+      if(placed >= budget) break;
+      const k = key(f);
+      if(taken.has(k)) continue;
+      const s2 = suitability(g, f);
+      if(s2 < 0.10 || R() > s2*1.5) continue;     // thins out as the habitat degrades
+      taken.add(k); placed++;
+      const a = g.members[(R()*g.members.length)|0];
+      const along = (R()-0.5)*TILE*0.85, sink = 2 + R()*3;
+      const dx = f.rot===1 ? -sink : f.rot===3 ? sink : along;
+      const dy = f.rot===0 ? sink : f.rot===2 ? -sink : along;
+      plants.push({a, x:f.x+dx, y:f.y+dy, rot:f.rot, guild:g.name,
+                   z: f.surf===FLOOR ? pickSlice() : (R()<0.4 ? BACK : MID),
                    phase:R()*Math.PI*2, rate:0.55+R()*0.5, flip:R()<0.5,
-                   shade: surf===FLOOR ? 3.5+R()*4.5 : 0});
+                   shade: f.surf===FLOOR ? 3.5+R()*4.5 : 0});
     }
   }
 }
@@ -393,9 +535,9 @@ salvage.sort((a,b)=>a.y-b.y);
 
 const fgPlants = [];
 for(let i=0;i<12;i++){
-  const fam = FAMILIES[(R()*FAMILIES.length)|0];
+  const g = GUILDS[(R()*GUILDS.length)|0];
   const fx = R()*WT*TILE;
-  fgPlants.push({a: fam.members[(R()*fam.members.length)|0], x:fx, y:terrainTopArt(fx)+2,
+  fgPlants.push({a: g.members[(R()*g.members.length)|0], x:fx, y:terrainTopArt(fx)+2,
                  phase:R()*Math.PI*2, rate:0.5+R()*0.5, flip:R()<0.5});
 }
 

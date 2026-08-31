@@ -69,6 +69,30 @@ is why the reef sits at ~12 m, the shallow-reef zone this roster actually lives 
 earlier build put the seabed at 22.6 m and almost nothing spawned; the level was wrong,
 not the ecology.
 
+## Ecology: how growth finds its place
+
+Placement is not `if (random < density)`. That distributes things *evenly*, which is why
+an earlier build read as clutter. Real reef distribution is a habitat-suitability function
+over a few physical quantities, so those are computed once from the terrain and everything
+else follows with no per-colony tuning constants:
+
+| Field | Computed from | What it drives |
+|---|---|---|
+| **light** | ray marched down each column, blocked by rock, attenuated by depth, then scattered sideways | every photosynthetic coral — and sponges, which *invert* it |
+| **exposure** | openness to the water column in a radius | robust massive forms take it; delicate branching forms need shelter; fans want flow |
+| **substrate** | flatness + local basins → sand, rubble or hard rock | nothing hard-bottomed grows on sand; seagrass grows *only* there |
+| **relief** | height above the local seabed | crest / slope / base zonation |
+
+Each guild declares a niche as ranges over those four; suitability is the product of
+triangular membership functions. Colonies are then **seeded** from the suitability map —
+pick a good face, grow outward through neighbours while the habitat still suits that
+guild, stop when it doesn't. Colony size falls out of the habitat rather than a constant:
+big stands where conditions are good, scattered individuals at the margins.
+
+The same substrate model decides the **tile material**, which matters more than it sounds:
+capping every top cell with sand drew a continuous tan band across the whole reef and was
+the single most artificial thing on screen. Sand now appears in basins and flats only.
+
 ## Parallax layers
 
 Five layers, back to front (ART_BIBLE §8):

@@ -695,11 +695,101 @@ defModule({
 // L-system string rewriting -> turtle that stamps thick tapered segments into the
 // role matrix. Countershading comes from the segment normal vs. a fixed light dir,
 // so branches read as round the same way creature bodies do.
+// ---- solid growth forms -------------------------------------------------------------
+// An L-system can only make things that branch, so every coral came out spindly. These
+// are the forms that actually dominate a reef, and they are surfaces rather than skeletons:
+// each shades from a real 3D normal (nz = sqrt(1 - nx^2 - ny^2)) against a light vector,
+// which is what makes a boulder read as a dome instead of a flat disc with a gradient.
+const LIGHT3 = (()=>{const v=[LIGHT_X,LIGHT_Y,-0.62],m=Math.hypot(v[0],v[1],v[2]);
+  return [v[0]/m, v[1]/m, v[2]/m];})();
+
+function domeShade(nx,ny,px,py,DC,lift){
+  const r2 = nx*nx + ny*ny;
+  const nz = Math.sqrt(Math.max(0, 1 - r2));
+  const lit = -(nx*LIGHT3[0] + ny*LIGHT3[1]) + nz*(-LIGHT3[2]);
+  return shadeRole(SHADES, clamp(0.30 + lit*0.62 + (lift||0), 0, 1), px, py, 0.6, DC);
+}
+
+// Brain / boulder coral: a hemisphere with meandering surface grooves.
+function formBoulder(c,rng,roles,w,h,baseY,DC){
+  const R = Math.max(5, Math.min(w*0.44, h*0.62*c.height));
+  const cx = w/2, cy = baseY - R*0.72;
+  const s = c.seed>>>0;
+  for(let y=Math.round(cy-R); y<=baseY; y++)for(let x=Math.round(cx-R); x<=Math.round(cx+R); x++){
+    const nx=(x-cx)/R, ny=(y-cy)/(R*0.94);
+    if(nx*nx+ny*ny > 1) continue;
+    // the meandering grooves that give brain coral its name
+    const warp = fbm(x/7.5, y/7.5, s+31, 3, 0.55, 0);
+    const g = Math.sin((x*0.55 + y*0.30 + warp*11) * (0.55 + c.tipsize*0.35));
+    let r = domeShade(nx, ny, x, y, DC, 0);
+    if(Math.abs(g) < 0.26) r = shadeDown(r, 2) ?? r;
+    put(roles,w,h,x,y,r);
+  }
+  return {height:R*1.6, tips:[]};
+}
+
+// Plate / table coral: a wide thin lens on a short stalk. Seen from the side you read the
+// lit upper surface, the dark underside, and the shadow the plate throws on its own stalk.
+function formPlate(c,rng,roles,w,h,baseY,DC){
+  const R = Math.max(6, w*0.46), TH = Math.max(2.5, R*0.16*c.width*0.35+2);
+  const cy = baseY - Math.max(6, h*0.34*c.height);
+  const cx = w/2;
+  for(let i=0;i<Math.max(4,Math.round(3*c.width));i++){       // stalk
+    const sx0 = cx + (i - c.width)*1.2;
+    for(let y=Math.round(cy); y<=baseY; y++)
+      put(roles,w,h,Math.round(sx0), y, shadeRole(SHADES, 0.22, sx0, y, 0.5, DC));
+  }
+  for(let y=Math.round(cy-TH); y<=Math.round(cy+TH); y++)for(let x=Math.round(cx-R); x<=Math.round(cx+R); x++){
+    const nx=(x-cx)/R, ny=(y-cy)/TH;
+    if(nx*nx+ny*ny > 1) continue;
+    const top = ny < -0.05;
+    // radial ribs across the plate
+    const rib = Math.sin(Math.abs(nx)*Math.PI*(5+Math.round(c.tipsize*4)));
+    let v = top ? 0.74 + rib*0.10 : 0.16 - Math.abs(nx)*0.06;
+    put(roles,w,h,x,y, shadeRole(SHADES, clamp(v,0,1), x, y, 0.55, DC));
+  }
+  return {height:baseY-cy+TH, tips:[]};
+}
+
+// Tube sponge: a cluster of tubes with dark oscula. Non-photosynthetic, so this is what
+// fills the dark overhangs where coral cannot live.
+function formSponge(c,rng,roles,w,h,baseY,DC){
+  const n = 2 + Math.round(c.strands*0.8), tips=[];
+  let tallest = 0;
+  for(let i=0;i<n;i++){
+    const rad = Math.max(2, (2.2 + rng()*2.6) * c.width*0.5);
+    const len = Math.max(5, (h*0.30 + rng()*h*0.34) * c.height);
+    const bx = w/2 + (i - (n-1)/2) * rad*2.2 + (rng()-0.5)*2;
+    const lean = (rng()-0.5)*0.22;
+    tallest = Math.max(tallest, len);
+    for(let t=0;t<=len;t++){
+      const cxx = bx + lean*t, cyy = baseY - t;
+      const taper = 1 - 0.18*(t/len);
+      for(let dx=-rad; dx<=rad; dx+=0.5){
+        const nx = dx/(rad*taper);
+        if(Math.abs(nx) > 1) continue;
+        put(roles,w,h, Math.round(cxx+dx), Math.round(cyy), domeShade(nx, 0, Math.round(cxx+dx), Math.round(cyy), DC, 0.04));
+      }
+    }
+    // the osculum: a dark opening at the top
+    const oy = Math.round(baseY-len);
+    for(let dx=-rad*0.62; dx<=rad*0.62; dx+=0.5)
+      put(roles,w,h, Math.round(bx+lean*len+dx), oy, shadeRole(SHADES, 0.06, dx, oy, 0.4, DC));
+    tips.push([bx+lean*len, oy, rad]);
+  }
+  return {height:tallest, tips};
+}
+
+const SOLID_FORMS = {boulder:formBoulder, plate:formPlate, sponge:formSponge};
+
 const FLORA_ARCH={
   kelp:    {rules:{X:['F[+f]X','F[-f]X','FX','F[+f][-f]X']},          angle:58,iterMul:4.0,len:1.00,wid:1.20,tipR:0.9,curlMul:1.0,strandSpread:7,leaf:[1.15,0.75]},
   staghorn:{rules:{X:['F[+X][-X]','F[+X]X','F[-X]X','FF[+X][-X]']},   angle:30,iterMul:1.6,len:0.98,wid:1.20,tipR:1.5,curlMul:0.7,strandSpread:9,leaf:[0.6,0.5]},
   fan:     {rules:{X:['F[+X][-X]']},                                  angle:17,iterMul:1.7,len:0.94,wid:0.72,tipR:0.7,curlMul:0.3,strandSpread:5,membrane:1,leaf:[0.6,0.5]},
   soft:    {rules:{X:['F[+X][-X]','FX','F[+X][-X]']},                 angle:42,iterMul:1.3,len:0.90,wid:2.60,tipR:1.9,curlMul:0.9,strandSpread:8,leaf:[0.6,0.6]},
+  boulder: {solid:1,angle:0,iterMul:1,len:1,wid:1,tipR:1,curlMul:0,strandSpread:0},
+  plate:   {solid:1,angle:0,iterMul:1,len:1,wid:1,tipR:1,curlMul:0,strandSpread:0},
+  sponge:  {solid:1,angle:0,iterMul:1,len:1,wid:1,tipR:1,curlMul:0,strandSpread:0},
   grass:   {rules:{X:['FX']},                                         angle:20,iterMul:4.0,len:1.00,wid:0.80,tipR:0.5,curlMul:2.2,strandSpread:11,leaf:[0.7,0.5]}
 };
 const FLORA_KEYS=Object.keys(FLORA_ARCH);
@@ -738,6 +828,20 @@ function generateFlora(c,rng){
   // whole plant sits deeper in shade toward its base. Quantised through the dither so a
   // 3px stem can still imply a round surface.
   const FLORA_RAMP=SHADES;
+  const DC=1;
+  // Solid forms are surfaces, not skeletons — they skip the turtle entirely.
+  if(A.solid){
+    const built=SOLID_FORMS[c.arch](c,rng,roles,w,h,baseY,DC);
+    const hw=Math.max(3,w*0.16);
+    for(let x=-hw;x<=hw;x++){const hgt=Math.round(2.2*Math.cos(x/hw*1.3));
+      for(let y=0;y<=hgt+1;y++)put(roles,w,h,Math.round(w/2+x),baseY+1-y,y>hgt-1?S2:S1,true);}
+    aoPass(roles,w,h,3,3);
+    outlinePass(roles,w,h);
+    aaPass(roles,w,h);
+    return{w,h,roles,meta:{cx:w/2,cy:h/2,baseY,height:Math.max(6,built.height),
+      anchors:{base:[Math.round(w/2),baseY],
+               tips:built.tips.slice(0,12).map(t=>[Math.round(t[0]),Math.round(t[1])])}}};
+  }
   const segRole=(u,litSign,py,px)=>{
     const sgn=u*litSign, deep=clamp((py-h*0.42)/(h*0.58),0,1);
     let v=0.50+sgn*0.44-deep*0.17;
@@ -862,41 +966,43 @@ const MATERIALS=['sand','rock','rubble','crust'];
 const EDGE_STYLES=['hard','soft','rounded'];
 
 function tileFill(c,x,y){
-  const s=c.seed>>>0, k=0.60+c.contrast*1.6;
-  const sc=c.grain<0.34?8:c.grain<0.67?4:2;
-  // Smooth, periodic cell noise: the lattice wraps at the tile edge (so a tile always
-  // seams with a copy of itself) and stays coarse enough that quantising it yields
-  // stone-sized cells rather than per-pixel confetti.
-  const nz=(xx,yy,scale,off)=>0.72*vnoise(xx/scale,yy/scale,s+off,TS/scale)
-                             +0.28*vnoise(xx/(scale*0.5),yy/(scale*0.5),s+off+13,TS/(scale*0.5));
-  const band=(xx,yy,bands,scale,off)=>Math.min(bands-1,(clamp(0.5+(nz(xx,yy,scale,off)-0.5)*k,0,0.9999)*bands)|0);
+  const s=c.seed>>>0, k=0.55+c.contrast*1.5;
+  // Rock is FORM, not noise. The old fill was per-pixel hash speckle quantised into bands,
+  // which at 32 screen pixels a tile reads as television static and makes the tile grid
+  // obvious. This builds from big shapes instead: two or three broad tonal masses per
+  // tile, a sparse crack network on top, and only a whisper of grain — the same order a
+  // pixel artist would work in.
+  const sc = c.grain<0.34 ? 8 : c.grain<0.67 ? 6 : 4;
+  const nz=(xx,yy,scale,off)=>vnoise(xx/scale,yy/scale,s+off,TS/scale);
+  // one broad mass, gently perturbed so it isn't an obvious blob
+  const form = clamp(0.5 + (nz(x,y,sc,0)*0.74 + nz(x,y,Math.max(2,sc/2),311)*0.26 - 0.5)*k, 0, 0.9999);
 
   if(c.material==='sand'){
-    const fine=Math.max(2,sc/2),g=hash2(x,y,s+11);
-    let r=shadeRole([S3,S4,S5,S6,S7,S8],clamp(0.5+(nz(x,y,fine,0)-0.5)*k,0,1),x,y,0.25);
-    if(g>0.945)r=SPEC;else if(g<0.055)r=SHADOW;
+    // sediment is nearly featureless — a faint swell and the odd shell fragment
+    let r = shadeRole([S4,S5,S6,S7], form, x, y, 0.35);
+    const g = hash2(x,y,s+11);
+    if(g > 0.991) r = S7;
+    else if(g < 0.012) r = S3;
     return r;
   }
-  // rock & rubble are "stones": quantise the cell noise, seam the lower-right of each
-  // cell and catch light on its upper-left. Cheap, and it reads as packed stone.
-  if(c.material==='rock'||c.material==='rubble'){
-    const rubble=c.material==='rubble';
-    const scale=rubble?sc:Math.min(8,sc*2),bands=3;
-    const ramp=rubble?[S2,S4,S6,S8]:[S2,S4,S6];
-    const q=(xx,yy)=>band(xx,yy,bands,scale,0),me=q(x,y);
-    if(me!==q(x+1,y)||me!==q(x,y+1))return rubble?S1:S0;                       // shaded seam
-    if(me!==q(x-1,y)||me!==q(x,y-1))return ramp[Math.min(ramp.length-1,me+1)];// lit lip
-    if(!rubble&&Math.abs(vnoise(x/8,y/8,s+301,2)-0.5)<0.045)return S1;        // hairline crack
-    const g=hash2(x,y,s+7);
-    if(g>0.94)return ramp[Math.min(ramp.length-1,me+1)];
-    if(g<0.06)return me?ramp[me-1]:S0;
-    return shadeRole(ramp,clamp(0.5+(nz(x,y,scale,0)-0.5)*k,0,1),x,y,0.25);
+  if(c.material==='rock' || c.material==='rubble'){
+    const rubble = c.material==='rubble';
+    const ramp = rubble ? [S1,S2,S3,S4,S5,S6] : [S1,S2,S3,S4,S5];
+    let r = shadeRole(ramp, form, x, y, 0.30);
+    // joints: a thin dark network where the noise field crosses a level set
+    const j = nz(x,y,Math.max(3,sc-2),733);
+    if(Math.abs(j-0.5) < (rubble ? 0.055 : 0.035)) r = S0;
+    // and a lit lip just off the joint, which is what makes it read as a step not a scratch
+    else if(Math.abs(j-0.5) < (rubble ? 0.085 : 0.062)) r = shadeRole(ramp, Math.min(0.95, form+0.22), x, y, 0.3);
+    const g = hash2(x,y,s+7);
+    if(g > 0.972) r = shadeRole(ramp, Math.min(0.95, form+0.3), x, y, 0.2);
+    return r;
   }
-  // coral crust — mottled, with polyp specks and the odd bioluminescent pinprick
-  const m2=band(x,y,4,Math.max(2,sc/2),977),g=hash2(x,y,s+29);
-  let r=shadeRole([S2,S3,S4,S5,S6],clamp(0.5+(nz(x,y,sc,0)-0.5)*k,0,1),x,y,0.25);
-  if(m2===3)r=PATTERN;
-  if(g>0.965)r=SPEC;else if(g>0.945)r=BELLY;else if(g<0.012)r=GLOW;
+  // coral crust — a living skin over the rock: mottled, with polyps and the odd glow
+  let r = shadeRole([S2,S3,S4,S5,S6], form, x, y, 0.35);
+  const m2 = nz(x,y,Math.max(2,sc/2),977), g = hash2(x,y,s+29);
+  if(m2 > 0.62) r = PATTERN;
+  if(g > 0.988) r = S7; else if(g > 0.962) r = S6; else if(g < 0.008) r = GLOW;
   return r;
 }
 
