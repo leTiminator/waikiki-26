@@ -4,10 +4,10 @@
   "module": "flora",
   "source": {
     "cfg": {
-      "arch": "grass",
-      "height": 0.7,
-      "strands": 6,
-      "iter": 4,
+      "arch": "soft",
+      "height": 0.8,
+      "strands": 2,
+      "iter": 3,
       "angle": 24,
       "branch": 0.85,
       "seglen": 1,
@@ -16,7 +16,7 @@
       "taper": 0.93,
       "tipsize": 1,
       "bio": false,
-      "pal": 11,
+      "pal": 10,
       "depth": 0,
       "corrupt": 0,
       "seed": 8951,
@@ -37,32 +37,7 @@
       32,
       77
     ],
-    "tips": [
-      [
-        32,
-        35
-      ],
-      [
-        41,
-        36
-      ],
-      [
-        46,
-        37
-      ],
-      [
-        57,
-        40
-      ],
-      [
-        62,
-        42
-      ],
-      [
-        68,
-        44
-      ]
-    ]
+    "tips": []
   },
   "clips": [
     {
@@ -77,6 +52,6 @@
       "loop": true
     }
   ],
-  "asset": "flora_grass",
-  "sheetFile": "flora_grass.png"
+  "asset": "flora_soft",
+  "sheetFile": "flora_soft.png"
 }

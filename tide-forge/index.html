@@ -206,6 +206,12 @@ const BASE_PALETTES=[
   {name:'lime',ramp:['#23380a','#47701a','#7db02c','#a7d94e','#dcf59a']},
   {name:'sand',ramp:['#2b2117','#584533','#93765a','#c0a281','#e6d3b4']},
   {name:'basalt',ramp:['#0c1013','#1e262c','#3b474f','#5f6e78','#93a3ad']},
+  // Muted reef keys. A scene where every element is a different saturated hue reads as
+  // confetti; real reef is mostly tan and olive with a few colour accents, so these carry
+  // the mass and the saturated ramps above become accents used sparingly.
+  {name:'reefbrown',ramp:['#2a1d12','#4f3924','#7d5c3a','#a98457','#d8bb8d']},
+  {name:'olive',ramp:['#1a2110','#33401d','#556a31','#7e9450','#b6c68e']},
+  {name:'duskrose',ramp:['#2e1420','#54263a','#84455e','#b06f88','#dfaebe']},
 ];
 let PALETTES=BASE_PALETTES.map(p=>({name:p.name,ramp:p.ramp.slice()}));
 

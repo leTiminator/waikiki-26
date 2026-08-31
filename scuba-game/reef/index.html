@@ -175,7 +175,7 @@ const SPAWN_Y = spawnAvg*TILE - 3.2*PX_PER_M;
 let A;
 try{
   A = await loadAll('./assets', ['tile_rock','tile_sand',
-    'flora_kelp','flora_staghorn','flora_fan','flora_grass',
+    'flora_staghorn','flora_staghorn_lg','flora_soft','flora_kelp','flora_grass','flora_grass_lg','flora_fan',
     'fish_chromis','fish_anthias','fish_yellowtang','fish_raccoon','fish_manini',
     'fish_taape','fish_akule','fish_uhu','fish_omilu','fish_puhi','fish_whitetip','fish_ulua',
     'prop_crate','prop_drum','prop_hull','prop_debris',
@@ -232,58 +232,141 @@ const LAYERS = [
 ];
 const mixc = (a,b,t) => [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t];
 
-// ---------------------------------------------------------------- scatter
-const FLORA = [
-  {a:A.flora_kelp,     w:0.30, minD:4,  maxD:24},
-  {a:A.flora_staghorn, w:0.28, minD:6,  maxD:26},
-  {a:A.flora_fan,      w:0.17, minD:8,  maxD:28},
-  {a:A.flora_grass,    w:0.25, minD:3,  maxD:25}
-];
-const BG_FLORA = FLORA.filter(f => f.a === A.flora_grass || f.a === A.flora_fan);
-const plants = [];
-for(let x=2;x<WT-2;x++){
-  if(R() > 0.44) continue;
-  const topArt = surfaceY[x]*TILE;
-  const d = depthAt(topArt);
-  const pool = FLORA.filter(f => d >= f.minD && d <= f.maxD);
-  if(!pool.length) continue;
-  let r = R()*pool.reduce((s,f)=>s+f.w,0), pick = pool[0];
-  for(const f of pool){ r -= f.w; if(r<=0){ pick=f; break; } }
-  plants.push({
-    a: pick.a, x: x*TILE + TILE/2 + (R()-0.5)*TILE,
-    y: topArt + 1,
-    phase: R()*Math.PI*2, rate: 0.55 + R()*0.5, flip: R()<0.5
-  });
+// ---------------------------------------------------------------- surfaces
+// Growth attaches to a SURFACE, not to a column of the heightmap. Every solid cell with an
+// exposed side is a face with an outward normal; sprites are quarter-turned onto it so
+// coral grows out of a wall sideways and sponges hang under an overhang. Placing only on
+// floors is what left the terrain reading as bare stepped platforms with a lawn on top.
+const FLOOR=0, WALL=1, CEIL=2;
+const faces = {[FLOOR]:[], [WALL]:[], [CEIL]:[]};
+for(let gy=0; gy<WH; gy++)for(let gx=0; gx<WT; gx++){
+  if(!solid[gy][gx]) continue;
+  const open=(x,y)=> x<0||x>=WT||y<0 ? false : (y>=WH ? false : !solid[y][x]);
+  if(open(gx,gy-1))   faces[FLOOR].push({x:gx*TILE+TILE/2, y:gy*TILE,          rot:0, gx, gy});
+  if(open(gx+1,gy))   faces[WALL ].push({x:(gx+1)*TILE,    y:gy*TILE+TILE/2,   rot:1, gx, gy});
+  if(open(gx,gy+1))   faces[CEIL ].push({x:gx*TILE+TILE/2, y:(gy+1)*TILE,      rot:2, gx, gy});
+  if(open(gx-1,gy))   faces[WALL ].push({x:gx*TILE,        y:gy*TILE+TILE/2,   rot:3, gx, gy});
 }
-plants.sort((p,q)=>p.y-q.y);
+// sort so neighbours in the array are neighbours in space — a colony is then a contiguous run
+faces[FLOOR].sort((a,b)=>a.x-b.x || a.y-b.y);
+faces[CEIL ].sort((a,b)=>a.x-b.x || a.y-b.y);
+faces[WALL ].sort((a,b)=>a.rot-b.rot || a.gx-b.gx || a.gy-b.gy);
 
-// flora on the background reef, and a few near silhouettes in the foreground
+// ---------------------------------------------------------------- scatter
+// Coral grows in COLONIES with bare substrate between them. An independent coin flip per
+// column — which this used to be — gives a statistically EVEN sprinkle: no clumps, no
+// gaps, and the eye reads even distribution as clutter. Patches also group colour into
+// masses instead of interleaving every hue at every position.
+// Families declare which surfaces they actually colonise: turf on the flat, fans and soft
+// coral out of walls, only small growth under overhangs.
+const FAMILIES = [
+  {name:'staghorn', members:[A.flora_staghorn, A.flora_staghorn_lg], w:0.30, on:[FLOOR],            minD:3, maxD:26},
+  {name:'grass',    members:[A.flora_grass, A.flora_grass_lg],       w:0.24, on:[FLOOR],            minD:1, maxD:24},
+  {name:'kelp',     members:[A.flora_kelp],                          w:0.14, on:[FLOOR],            minD:2, maxD:20},
+  {name:'soft',     members:[A.flora_soft],                          w:0.18, on:[FLOOR],            minD:4, maxD:24},
+  {name:'fan',      members:[A.flora_fan],                           w:0.14, on:[WALL,CEIL,FLOOR],  minD:6, maxD:28},
+  {name:'turf',     members:[A.flora_grass],                         w:0.14, on:[WALL,CEIL],        minD:2, maxD:28}
+];
+const pickWeighted = pool => {
+  let r = R()*pool.reduce((s,f)=>s+f.w,0);
+  for(const f of pool){ r -= f.w; if(r<=0) return f; }
+  return pool[pool.length-1];
+};
+
+// Depth slices inside the gameplay layer. Without these everything renders at one contrast
+// and the scene reads as a sticker collage — the "pops too much" problem. BACK sits behind
+// the play plane and loses contrast to the water; NEAR sits in front and goes darker.
+const BACK=0, MID=1, NEAR=2;
+const SLICE_FOG  = [0.46, 0, 0];
+const SLICE_DEPTH= [2,    0, 11];     // NEAR pushed deeper into the grade = darker, unlit
+const pickSlice = () => { const r=R(); return r<0.30 ? BACK : r<0.90 ? MID : NEAR; };
+
+const plants = [];
 {
-  const back = LAYERS[1];
-  for(let x=3;x<WT-3;x++){
-    if(R() > 0.26) continue;
-    const pick = BG_FLORA[(R()*BG_FLORA.length)|0];
-    const wx = x*TILE + TILE/2;
-    back.plants.push({a:pick.a, x:wx, y:back.ridge[Math.min(back.ridge.length-1,Math.floor(wx/RIDGE_STEP))]+1,
-                      phase:R()*Math.PI*2, rate:0.4+R()*0.4, flip:R()<0.5});
+  const colonies = 22;
+  for(let k=0;k<colonies;k++){
+    // most colonies are small; a few are large. A flat size roll made one grass bed
+    // swallow the frame.
+    const n = 2 + Math.round(Math.pow(R(),2.1) * 15);
+    const surf = R()<0.72 ? FLOOR : (R()<0.80 ? WALL : CEIL);
+    const list = faces[surf];
+    if(!list.length) continue;
+    const seed = (R()*list.length)|0;
+    const d = depthAt(list[seed].y);
+    const pool = FAMILIES.filter(f => f.on.includes(surf) && d >= f.minD && d <= f.maxD);
+    if(!pool.length) continue;
+    const fam = pickWeighted(pool);
+    const spread = 1 + Math.round(n*0.9);
+    for(let i=0;i<n;i++){
+      const f = list[Math.max(0, Math.min(list.length-1, seed + Math.round((R()+R()-1)*spread)))];
+      const a = fam.members[(R()*fam.members.length)|0];
+      // along-face jitter, and embedded into the substrate rather than balanced on it
+      const along = (R()-0.5)*TILE*0.9, sink = 2 + R()*3;
+      const dx = f.rot===0 ? along : f.rot===2 ? along : (f.rot===1 ? -sink : sink);
+      const dy = f.rot===1 || f.rot===3 ? along : (f.rot===0 ? sink : -sink);
+      plants.push({a, x:f.x+dx, y:f.y+dy, rot:f.rot, surf,
+                   z: surf===FLOOR ? pickSlice() : (R()<0.4 ? BACK : MID),
+                   phase:R()*Math.PI*2, rate:0.55+R()*0.5, flip:R()<0.5,
+                   shade: surf===FLOOR ? 3.5+R()*4.5 : 0});
+    }
   }
 }
-// Salvage on the bottom — the reason for the dive (GDD §4). Props sit on their `base`
-// anchor like flora, so the same placement rule works for both.
+plants.sort((p,q)=> p.z - q.z || p.y - q.y);
+
+const BG_FLORA = [A.flora_grass, A.flora_fan, A.flora_soft];
+{ // background reef gets its own sparse colonies
+  const back = LAYERS[1];
+  let xt = 2 + R()*6;
+  while(xt < WT-3){
+    xt += 3 + R()*8;
+    if(xt >= WT-3) break;
+    const a = BG_FLORA[(R()*BG_FLORA.length)|0];
+    const radT = 1 + R()*2.5, n = Math.round(2 + radT*2);
+    for(let i=0;i<n;i++){
+      const wx = (xt + ((R()+R()+R())/1.5-1)*radT)*TILE;
+      if(wx < 0 || wx > WT*TILE) continue;
+      back.plants.push({a, x:wx,
+        y: back.ridge[Math.max(0,Math.min(back.ridge.length-1,Math.floor(wx/RIDGE_STEP)))] + 2,
+        phase:R()*Math.PI*2, rate:0.4+R()*0.4, flip:R()<0.5});
+    }
+    xt += radT*1.8;
+  }
+}
+
+// Salvage clusters too — debris fields, not an even sprinkle of crates.
 const PROPS = [A.prop_crate, A.prop_drum, A.prop_hull, A.prop_debris];
 const salvage = [];
-for(let i=0;i<32;i++){
-  const x = 4*TILE + R()*(WT-8)*TILE;
-  salvage.push({a: PROPS[(R()*PROPS.length)|0], x, y: terrainTopArt(x) + 1, flip: R()<0.5});
+for(let k=0;k<7;k++){
+  const list = faces[FLOOR];
+  if(!list.length) break;
+  const seed = (R()*list.length)|0, n = 1 + Math.round(R()*3);
+  for(let i=0;i<n;i++){
+    const f = list[Math.max(0, Math.min(list.length-1, seed + Math.round((R()+R()-1)*4)))];
+    salvage.push({a: PROPS[(R()*PROPS.length)|0], x:f.x+(R()-0.5)*TILE, y:f.y+2+R()*2,
+                  flip: R()<0.5, shade: 4+R()*4});
+  }
 }
 salvage.sort((a,b)=>a.y-b.y);
 
 const fgPlants = [];
-for(let i=0;i<14;i++){
-  const pick = FLORA[(R()*FLORA.length)|0];
+for(let i=0;i<12;i++){
+  const fam = FAMILIES[(R()*FAMILIES.length)|0];
   const fx = R()*WT*TILE;
-  fgPlants.push({a:pick.a, x:fx, y:terrainTopArt(fx)+1,
+  fgPlants.push({a: fam.members[(R()*fam.members.length)|0], x:fx, y:terrainTopArt(fx)+2,
                  phase:R()*Math.PI*2, rate:0.5+R()*0.5, flip:R()<0.5});
+}
+
+// A sprite sitting exactly on the surface line reads as pasted on. An occlusion pool under
+// its base is most of what makes it look like it grew there.
+function contactShade(px, py, halfW, depth, alpha){
+  if(halfW <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = css(gradeColor([5,11,17], depth));
+  ctx.beginPath();
+  ctx.ellipse(px, py, halfW*ZOOM, Math.max(1.4, halfW*0.34*ZOOM), 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
 }
 
 // ---------------------------------------------------------------- sea life
@@ -313,7 +396,7 @@ for(const a of FISH_ASSETS){
     // Reef fish hold station over the structure. Intersect the species' true depth band
     // with the water actually above this reef; if they don't overlap, this species simply
     // isn't found at this depth and we skip it rather than teleporting it here.
-    const hoverLo = floorArt - 8*PX_PER_M, hoverHi = floorArt - 0.7*PX_PER_M;
+    const hoverLo = floorArt - (3 + R()*9)*PX_PER_M, hoverHi = floorArt - (0.5 + R()*3)*PX_PER_M;
     const lo2 = Math.max(lo, hoverLo, 0.8*PX_PER_M), hi2 = Math.min(hi, hoverHi);
     if(hi2 - lo2 < 8) continue;
     const fy = lo2 + R()*(hi2 - lo2);
@@ -326,10 +409,13 @@ for(const a of FISH_ASSETS){
         ox:(R()-0.5)*(tight?46:90), oy:(R()-0.5)*(tight?26:44),
         ph:R()*Math.PI*2, rate:0.8+R()*0.6});
       shoals.push({a, sp, x:fx, y:fy, dir, speed:base*(tight?0.85:1)+R()*6,
-                   members, wob:tight?2.2:5.0, phase:R()*Math.PI*2});
+                   members, wob:tight?2.2:5.0, phase:R()*Math.PI*2, z:pickSlice()});
     } else {
+      // big solitary hunters mostly cruise the far water — one at full contrast in the
+      // middle of frame is the single loudest thing in the scene
       loners.push({a, sp, x:fx, y:fy, dir, speed:base+R()*8,
-                   ph:R()*Math.PI*2, rate:0.6+R()*0.6, bobA:1.2+R()*2.6, bobR:0.35+R()*0.6});
+                   ph:R()*Math.PI*2, rate:0.6+R()*0.6, bobA:1.2+R()*2.6, bobR:0.35+R()*0.6,
+                   z: sp.cm > 90 ? (R()<0.75 ? BACK : MID) : pickSlice()});
     }
   }
 }
@@ -553,7 +639,8 @@ function frame(ts){
       const my = sh.y + m.oy + Math.cos(acc*m.rate*0.8 + m.ph)*sh.wob*0.7;
       const px = sx(mx), py = sy(my);
       if(px < -140 || px > vw+140 || py < -110 || py > vh+110) continue;
-      sh.a.draw(ctx, depthAt(my), 'swim', Math.floor(acc*11*m.rate + m.ph*3), px, py, ZOOM, {flip});
+      sh.a.draw(ctx, depthAt(my) + SLICE_DEPTH[sh.z], 'swim',
+        Math.floor(acc*11*m.rate + m.ph*3), px, py, ZOOM, {flip, fog:SLICE_FOG[sh.z]});
     }
   }
   for(const f of loners){
@@ -561,7 +648,8 @@ function frame(ts){
     const fy = f.y + Math.sin(acc*f.bobR + f.ph) * f.bobA;
     const px = sx(f.x), py = sy(fy);
     if(px < -180 || px > vw+180 || py < -140 || py > vh+140) continue;
-    f.a.draw(ctx, depthAt(fy), 'swim', Math.floor(acc*10*f.rate + f.ph*3), px, py, ZOOM, {flip: f.dir > 0});
+    f.a.draw(ctx, depthAt(fy) + SLICE_DEPTH[f.z], 'swim',
+      Math.floor(acc*10*f.rate + f.ph*3), px, py, ZOOM, {flip: f.dir > 0, fog:SLICE_FOG[f.z]});
   }
 
   // terrain — only the cells on screen
@@ -573,6 +661,29 @@ function frame(ts){
     set.drawTile(ctx, depthAt(y*TILE), tileIdx[y][x], sx(x*TILE), sy(y*TILE), ZOOM, 0, tileVar[y][x]);
   }
 
+  // --- flora behind the play plane: drawn first and hazed, so the mid plane reads as
+  // the subject instead of everything competing at one contrast ---
+  for(const p of plants){
+    if(p.z !== BACK) continue;
+    const px = sx(p.x), py = sy(p.y);
+    if(px < -140 || px > vw+140 || py < -260 || py > vh+120) continue;
+    p.a.draw(ctx, depthAt(p.y), 'sway', Math.floor(acc*9*p.rate + p.phase*4), px, py, ZOOM,
+             {anchor:'base', flip:p.flip, rot:p.rot, fog:SLICE_FOG[BACK]});
+  }
+
+  // contact occlusion for everything standing on the bottom, in one pass underneath
+  for(const p of salvage){
+    const px = sx(p.x), py = sy(p.y);
+    if(px < -140 || px > vw+140 || py < -80 || py > vh+80) continue;
+    contactShade(px, py, p.shade, depthAt(p.y), 0.5);
+  }
+  for(const p of plants){
+    if(p.z === BACK || !p.shade) continue;
+    const px = sx(p.x), py = sy(p.y);
+    if(px < -140 || px > vw+140 || py < -80 || py > vh+80) continue;
+    contactShade(px, py, p.shade, depthAt(p.y), 0.42);
+  }
+
   // salvage, resting on the bottom
   for(const p of salvage){
     const px = sx(p.x), py = sy(p.y);
@@ -580,12 +691,14 @@ function frame(ts){
     p.a.draw(ctx, depthAt(p.y), 'idle', 0, px, py, ZOOM, {anchor:'base', flip:p.flip});
   }
 
-  // flora, planted on its `base` anchor
+  // flora on the play plane and in front of it
   for(const p of plants){
+    if(p.z === BACK) continue;
     const px = sx(p.x), py = sy(p.y);
-    if(px < -140 || px > vw+140 || py < -260 || py > vh+80) continue;
-    p.a.draw(ctx, depthAt(p.y), 'sway', Math.floor(acc*9*p.rate + p.phase*4), px, py, ZOOM,
-             {anchor:'base', flip:p.flip});
+    if(px < -140 || px > vw+140 || py < -260 || py > vh+120) continue;
+    p.a.draw(ctx, depthAt(p.y) + SLICE_DEPTH[p.z], 'sway',
+             Math.floor(acc*9*p.rate + p.phase*4), px, py, ZOOM,
+             {anchor:'base', flip:p.flip, rot:p.rot});
   }
 
   // silt kicked off the bottom

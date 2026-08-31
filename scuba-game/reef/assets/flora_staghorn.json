@@ -5,7 +5,7 @@
   "source": {
     "cfg": {
       "arch": "staghorn",
-      "height": 0.9,
+      "height": 0.96,
       "strands": 2,
       "iter": 4,
       "angle": 24,
@@ -16,7 +16,7 @@
       "taper": 0.93,
       "tipsize": 1,
       "bio": false,
-      "pal": 0,
+      "pal": 10,
       "depth": 0,
       "corrupt": 0,
       "seed": 8951,

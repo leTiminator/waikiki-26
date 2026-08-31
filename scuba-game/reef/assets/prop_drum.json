@@ -10,10 +10,11 @@
       "wear": 0.6,
       "encrust": 0.5,
       "glow": false,
-      "pal": 6,
+      "pal": 10,
       "depth": 0,
       "corrupt": 0,
-      "seed": 32102
+      "seed": 32102,
+      "ramp": null
     }
   },
   "frameSize": {

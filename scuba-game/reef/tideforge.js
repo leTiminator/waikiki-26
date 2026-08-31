@@ -75,7 +75,14 @@ class Asset {
    * `anchor` names a manifest anchor ('base' plants flora on the seafloor); default
    * is the sprite's centre.
    */
-  draw(ctx, depth, clipName, frame, cx, cy, zoom, {flip=false, anchor=null, alpha=1, fog=0}={}){
+  /**
+   * `rot` is a quarter-turn count (0-3) applied about the anchor, so a sprite can attach
+   * along any surface normal — coral growing off a left-facing wall, sponges hanging under
+   * an overhang. Quarter turns of a pixel sprite are exact: no resampling, the grid
+   * survives intact. Any other angle would need filtering and would destroy it, which is
+   * why the placement code snaps surface normals to the four axes.
+   */
+  draw(ctx, depth, clipName, frame, cx, cy, zoom, {flip=false, anchor=null, alpha=1, fog=0, rot=0}={}){
     const clip = this.clip(clipName);
     const row  = clip ? clip.row : 0;
     const F    = Math.max(1, this.frameCount(clipName));
@@ -88,6 +95,7 @@ class Asset {
     if(alpha !== 1) ctx.globalAlpha = alpha;
     ctx.imageSmoothingEnabled = false;
     ctx.translate(Math.round(cx), Math.round(cy));
+    if(rot) ctx.rotate((rot & 3) * Math.PI / 2);
     if(flip) ctx.scale(-1,1);
     ctx.drawImage(this.graded(depth, fog),
       col*this.fw, row*this.fh, this.fw, this.fh,

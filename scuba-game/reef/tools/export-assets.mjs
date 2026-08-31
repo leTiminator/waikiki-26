@@ -28,16 +28,30 @@ const chromium=await (async()=>{
 })();
 
 // palette ramp indices, in TideForge's master order
-const PAL={coral:0,tang:1,sunfish:2,kelp:3,violet:4,silver:5,crimson:6,lime:7,sand:8,basalt:9};
+const PAL={coral:0,tang:1,sunfish:2,kelp:3,violet:4,silver:5,crimson:6,lime:7,sand:8,basalt:9,
+           reefbrown:10,olive:11,duskrose:12};
 
 // what the reef is built from
 const ASSETS=[
   {file:'tile_rock',  module:'tiles',   pal:PAL.basalt, chips:{Material:'rock',  'Edge style':'hard'},   ranges:{Grain:0.3,Contrast:0.45}},
   {file:'tile_sand',  module:'tiles',   pal:PAL.sand,   chips:{Material:'sand',  'Edge style':'rounded'},ranges:{Grain:0.8,Contrast:0.22}},
-  {file:'flora_kelp',    module:'flora',pal:PAL.kelp,   chips:{Archetype:'kelp'},    ranges:{Strands:4,Iterations:4,Height:1.15}},
-  {file:'flora_staghorn',module:'flora',pal:PAL.coral,  chips:{Archetype:'staghorn'},ranges:{Strands:2,Iterations:4,Height:0.9}},
-  {file:'flora_fan',     module:'flora',pal:PAL.violet, chips:{Archetype:'fan'},     ranges:{Strands:1,Iterations:4,Height:0.85}},
-  {file:'flora_grass',   module:'flora',pal:PAL.lime,   chips:{Archetype:'grass'},   ranges:{Strands:6,Iterations:4,Height:0.7}},
+  // Flora is keyed to two muted families — tan structure, olive growth — with rose fans as
+  // the only accent, so the reef reads as one place. Two size classes per type give a
+  // colony internal variety without breaking the pixel grid by scaling sprites.
+  {file:'flora_staghorn',   module:'flora',pal:PAL.reefbrown,chips:{Archetype:'staghorn'},ranges:{Strands:2,Iterations:4,Height:0.95}},
+  {file:'flora_staghorn_lg',module:'flora',pal:PAL.reefbrown,chips:{Archetype:'staghorn'},ranges:{Strands:3,Iterations:5,Height:1.35}},
+  {file:'flora_soft',       module:'flora',pal:PAL.reefbrown,chips:{Archetype:'soft'},    ranges:{Strands:2,Iterations:3,Height:0.8}},
+  {file:'flora_kelp',       module:'flora',pal:PAL.olive,    chips:{Archetype:'kelp'},    ranges:{Strands:4,Iterations:4,Height:1.15}},
+  {file:'flora_grass',      module:'flora',pal:PAL.olive,    chips:{Archetype:'grass'},   ranges:{Strands:6,Iterations:4,Height:0.7}},
+  {file:'flora_grass_lg',   module:'flora',pal:PAL.olive,    chips:{Archetype:'grass'},   ranges:{Strands:5,Iterations:4,Height:1.05}},
+  {file:'flora_fan',        module:'flora',pal:PAL.duskrose, chips:{Archetype:'fan'},     ranges:{Strands:1,Iterations:4,Height:0.85}},
+  // Salvage: the reason you're down here at all (GDD §4). Keyed to the reef's muted
+  // families — a crimson drum in a tan-and-olive scene is the loudest thing in frame.
+  {file:'prop_crate',  module:'props',pal:PAL.reefbrown,chips:{Kind:'crate'}, ranges:{Width:0.8,Height:0.75,Corrosion:0.45,Encrustation:0.4}},
+  {file:'prop_drum',   module:'props',pal:PAL.reefbrown,chips:{Kind:'drum'},  ranges:{Width:0.7,Height:0.9,Corrosion:0.6,Encrustation:0.5}},
+  {file:'prop_hull',   module:'props',pal:PAL.basalt,   chips:{Kind:'hull'},  ranges:{Width:1.2,Height:1.0,Corrosion:0.55,Encrustation:0.6}},
+  {file:'prop_debris', module:'props',pal:PAL.basalt,   chips:{Kind:'debris'},ranges:{Width:1.0,Height:0.8,Corrosion:0.5,Encrustation:0.55}},
+
   // Real species. Sprite length comes from each species' true adult length through
   // TideForge's compression curve, so relative sizes are honest without a 9 cm chromis
   // becoming a 3-pixel dot. Detail stays at 1x: the game has one pixel size.

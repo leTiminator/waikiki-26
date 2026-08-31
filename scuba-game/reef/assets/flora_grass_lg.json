@@ -5,8 +5,8 @@
   "source": {
     "cfg": {
       "arch": "grass",
-      "height": 0.7,
-      "strands": 6,
+      "height": 1.06,
+      "strands": 5,
       "iter": 4,
       "angle": 24,
       "branch": 0.85,
@@ -39,28 +39,24 @@
     ],
     "tips": [
       [
-        32,
-        35
+        36,
+        14
       ],
       [
-        41,
-        36
+        50,
+        16
       ],
       [
-        46,
-        37
+        59,
+        18
       ],
       [
-        57,
-        40
+        76,
+        25
       ],
       [
-        62,
-        42
-      ],
-      [
-        68,
-        44
+        84,
+        30
       ]
     ]
   },
@@ -77,6 +73,6 @@
       "loop": true
     }
   ],
-  "asset": "flora_grass",
-  "sheetFile": "flora_grass.png"
+  "asset": "flora_grass_lg",
+  "sheetFile": "flora_grass_lg.png"
 }
