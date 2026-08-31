@@ -111,8 +111,12 @@ const ZOOM = 2;             // screen pixels per art-pixel (integer: keeps the g
 const WT = 96, WH = 100;    // world size in tiles  (≈ 29 m wide, ≈ 30 m deep) — an
                             // intimate reef rather than an empty plain
 const depthAt = artY => artY / PX_PER_M;
+const clamp = (v,a,b) => v<a?a:v>b?b:v;
 
 const view = document.getElementById('view');
+const post = document.createElement('canvas');
+const pctx = post.getContext('2d');
+let vig = null, vigW = 0, vigH = 0;
 const ctx  = view.getContext('2d');
 const DPR  = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
 function resize(){
@@ -541,8 +545,35 @@ for(let i=0;i<12;i++){
                  phase:R()*Math.PI*2, rate:0.5+R()*0.5, flip:R()<0.5});
 }
 
+// ---------------------------------------------------------------- current
+// ONE surge drives the whole reef. Every plant used to sway on its own random phase, which
+// is the even-sprinkle mistake again — in time instead of space — and reads as noise. A
+// real reef breathes together: a wave passes through, coral bends in sequence behind it,
+// particulate rides it, fish hold their station into it. This returns a 0..1 phase that
+// varies smoothly across x and time, so anything sampling it at the same place agrees.
+const SURGE_LEN = 340;      // art-px wavelength of the travelling surge
+const SURGE_SPD = 0.20;     // wavelengths per second
+function surgePhase(x, y, t){
+  // the travelling wave, plus a slow large-scale wander so it never feels metronomic
+  const wander = Math.sin(t*0.11 + y*0.004)*0.09 + Math.sin(t*0.047 + x*0.0016)*0.07;
+  return (t*SURGE_SPD - x/SURGE_LEN + wander) % 1;
+}
+// horizontal drift the surge imparts, in art-px/sec, strongest up in the water column
+function surgeDrift(x, y, t){
+  const ph = surgePhase(x, y, t) * Math.PI * 2;
+  return Math.sin(ph) * 5.5;
+}
+
 // A sprite sitting exactly on the surface line reads as pasted on. An occlusion pool under
 // its base is most of what makes it look like it grew there.
+// The sway clip's frames ARE the wave: pick the frame from the shared surge phase and a
+// whole colony bends in sequence instead of each plant twitching to its own clock. A
+// little per-plant jitter keeps it organic without breaking the coherence.
+function swayFrame(p, px, py, frames){
+  const ph = surgePhase(p.x, p.y, acc) + p.phase*0.035;
+  return Math.floor(((ph % 1) + 1) % 1 * frames);
+}
+
 function contactShade(px, py, halfW, depth, alpha){
   if(halfW <= 0) return;
   ctx.save();
@@ -606,7 +637,8 @@ for(const a of FISH_ASSETS){
 }
 
 function swimStep(f, dt){
-  f.x += f.dir * f.speed * dt;
+  // fish hold into the current rather than ignoring it
+  f.x += (f.dir * f.speed + surgeDrift(f.x, f.y, acc) * 0.55) * dt;
   if(f.x < -180){ f.x = WT*TILE + 140; }
   if(f.x > WT*TILE + 180){ f.x = -140; }
   const lim = terrainTopArt(f.x) - 22;          // don't swim through the reef
@@ -732,7 +764,7 @@ function drawDiver(sx, sy, d){
   ctx.restore();
 }
 
-let last = 0, acc = 0, pivotX = null, pivotY = null;
+let last = 0, acc = 0, pivotX = null, pivotY = null, camSX = null, camSY = null;
 function frame(ts){
   if(!last) last = ts;
   const dt = Math.min(0.05, (ts-last)/1000); last = ts; acc += dt;
@@ -742,9 +774,18 @@ function frame(ts){
   const d  = depthAt(diver.y);
 
   // camera follows the diver, clamped to the world
-  let camX = diver.x - vw/(2*ZOOM), camY = diver.y - vh*0.38/ZOOM;
-  camX = Math.max(0, Math.min(WT*TILE - vw/ZOOM, camX));
-  camY = Math.max(0, Math.min(WH*TILE - vh/ZOOM, camY));
+  // The camera had no weight: it was locked to the diver at a fixed offset, so the world
+  // slid rather than the diver moving through it. Now it leads the direction of travel and
+  // eases toward that target, which is most of what makes movement feel deliberate.
+  const leadX = clamp(diver.vx * 0.55, -70, 70), leadY = clamp(diver.vy * 0.40, -46, 46);
+  let tX = diver.x + leadX - vw/(2*ZOOM), tY = diver.y + leadY - vh*0.38/ZOOM;
+  tX = Math.max(0, Math.min(WT*TILE - vw/ZOOM, tX));
+  tY = Math.max(0, Math.min(WH*TILE - vh/ZOOM, tY));
+  if(camSX === null){ camSX = tX; camSY = tY; }
+  const ease = 1 - Math.pow(0.0016, dt);
+  camSX += (tX - camSX) * ease;
+  camSY += (tY - camSY) * ease;
+  const camX = camSX, camY = camSY;
   // Parallax is motion relative to a shared reference, not a raw multiple of the camera:
   // every layer lines up at the opening view and diverges from there as you swim.
   if(pivotX === null){ pivotX = camX; pivotY = camY; }
@@ -779,7 +820,7 @@ function frame(ts){
     for(const p of L.plants){
       const px = Math.round((p.x - lc.x)*ZOOM), py = Math.round((p.y - lc.y)*ZOOM);
       if(px < -140 || px > vw+140 || py < -260 || py > vh+80) continue;
-      p.a.draw(ctx, depthAt(p.y), 'sway', Math.floor(acc*7*p.rate + p.phase*4), px, py, ZOOM,
+      p.a.draw(ctx, depthAt(p.y), 'sway', swayFrame(p, px, py, 14), px, py, ZOOM,
                {anchor:'base', flip:p.flip, fog: Math.min(0.88, L.fog + 0.26)});
     }
   }
@@ -807,6 +848,8 @@ function frame(ts){
   const snowA = 0.10 + Math.min(0.30, d/70);
   for(const p of snow){
     p.y += dt * (2.2 + p.z*4);
+    p.x += dt * surgeDrift(p.x, p.y, acc) * (0.4 + p.z*0.8);
+    if(p.x < 0) p.x += WT*TILE; else if(p.x > WT*TILE) p.x -= WT*TILE;
     if(p.y > WH*TILE) p.y = 0;
     const px = sx(p.x), py = sy(p.y);
     if(px<-4||px>vw+4||py<-4||py>vh+4) continue;
@@ -870,7 +913,7 @@ function frame(ts){
     if(p.z !== BACK) continue;
     const px = sx(p.x), py = sy(p.y);
     if(px < -140 || px > vw+140 || py < -260 || py > vh+120) continue;
-    p.a.draw(ctx, depthAt(p.y), 'sway', Math.floor(acc*9*p.rate + p.phase*4), px, py, ZOOM,
+    p.a.draw(ctx, depthAt(p.y), 'sway', swayFrame(p, px, py, 14), px, py, ZOOM,
              {anchor:'base', flip:p.flip, rot:p.rot, fog:SLICE_FOG[BACK]});
   }
 
@@ -894,13 +937,57 @@ function frame(ts){
     p.a.draw(ctx, depthAt(p.y), 'idle', 0, px, py, ZOOM, {anchor:'base', flip:p.flip});
   }
 
+  // --- caustics ---
+  // Light refracted through a moving surface throws a rippling net over whatever faces
+  // upward. It is the most recognisable underwater cue and the scene had none.
+  // First attempt capped each floor TILE with a 6px sliver: it drew (51 quads a frame) and
+  // covered 0.4% of the screen, so it was invisible. Caustics are not a per-tile decal —
+  // they are a continuous sheet lying over the seabed. This walks screen columns instead,
+  // finds the surface in each, and lays a band down it, masked by the SAME light field the
+  // ecology uses so the net dies under overhangs and fades out with depth.
+  {
+    const CAU = 1 - Math.min(1, d/24);
+    if(CAU > 0.03){
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const STEP = 3, BAND = 15, YCELL = 4;
+      const xa0 = Math.floor(camX/STEP)*STEP, xa1 = camX + vw/ZOOM;
+      for(let xa = xa0; xa < xa1; xa += STEP){
+        const gx = Math.max(0, Math.min(WT-1, Math.floor(xa/TILE)));
+        const gy = surfaceY[gx];
+        if(gy >= WH) continue;
+        const lv = light[Math.max(0, gy-1)][gx];
+        if(lv < 0.05) continue;
+        const yTop = gy*TILE;
+        const px = sx(xa);
+        if(px < -8 || px > vw+8) continue;
+        // Sampling the pattern down the band as well as across it is what turns stripes
+        // into a net — caustics are a 2D interference figure, not a vertical curtain.
+        for(let yo = 0; yo < BAND; yo += YCELL){
+          const ya = yTop + yo;
+          const a = Math.sin(xa*0.075 + ya*0.030 + acc*1.6 + Math.sin(xa*0.019 - ya*0.012 + acc*0.55)*2.4);
+          const b = Math.sin(xa*0.041 - ya*0.052 - acc*1.05 + Math.cos(xa*0.011 + acc*0.35)*1.9);
+          const v = a*b;
+          if(v < 0.12) continue;
+          const fade = 1 - yo/BAND*0.55;              // brightest right at the surface
+          const k = Math.min(0.40, (v-0.12)/0.88 * lv * CAU * 0.60 * fade);
+          const py = sy(ya);
+          if(py > vh+8 || py < -8) continue;
+          ctx.fillStyle = `rgba(158,226,242,${k.toFixed(3)})`;
+          ctx.fillRect(px, py, STEP*ZOOM+1, YCELL*ZOOM+1);
+        }
+      }
+      ctx.restore();
+    }
+  }
+
   // flora on the play plane and in front of it
   for(const p of plants){
     if(p.z === BACK) continue;
     const px = sx(p.x), py = sy(p.y);
     if(px < -140 || px > vw+140 || py < -260 || py > vh+120) continue;
     p.a.draw(ctx, depthAt(p.y) + SLICE_DEPTH[p.z], 'sway',
-             Math.floor(acc*9*p.rate + p.phase*4), px, py, ZOOM,
+             swayFrame(p, px, py, 14), px, py, ZOOM,
              {anchor:'base', flip:p.flip, rot:p.rot});
   }
 
@@ -925,7 +1012,7 @@ function frame(ts){
     for(const p of fgPlants){
       const px = Math.round((p.x - fx)*ZOOM), py = Math.round((p.y - fy)*ZOOM);
       if(px < -160 || px > vw+160 || py < -280 || py > vh+120) continue;
-      p.a.draw(ctx, depthAt(p.y) + 24, 'sway', Math.floor(acc*8*p.rate + p.phase*4), px, py, ZOOM,
+      p.a.draw(ctx, depthAt(p.y) + 24, 'sway', swayFrame(p, px, py, 14), px, py, ZOOM,
                {anchor:'base', flip:p.flip});
     }
   }
@@ -939,6 +1026,33 @@ function frame(ts){
     ctx.fillRect(px, py, ZOOM*2, ZOOM*2);
   }
   ctx.restore();
+
+  // --- post ---
+  // Bloom binds a frame together: bright things bleed into their surroundings the way a
+  // lens or an eye actually behaves. Done by downscaling the frame with smoothing OFF and
+  // adding it back, so the bleed stays chunky and in keeping with the pixel grid rather
+  // than turning into a soft gaussian haze over pixel art.
+  if(post.width !== vw || post.height !== vh){ post.width = Math.max(1, vw>>2); post.height = Math.max(1, vh>>2); }
+  pctx.imageSmoothingEnabled = false;
+  pctx.clearRect(0,0,post.width,post.height);
+  pctx.drawImage(view, 0, 0, post.width, post.height);
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = 0.15;
+  ctx.imageSmoothingEnabled = true;                 // the ONE place smoothing helps
+  ctx.drawImage(post, 0, 0, vw, vh);
+  ctx.restore();
+
+  // vignette — pulls the eye off the frame edges and hides the tile grid at the margins
+  if(!vig || vigW !== vw || vigH !== vh){
+    vigW = vw; vigH = vh;
+    vig = ctx.createRadialGradient(vw*0.5, vh*0.46, Math.min(vw,vh)*0.26,
+                                   vw*0.5, vh*0.5,  Math.max(vw,vh)*0.72);
+    vig.addColorStop(0, 'rgba(0,0,0,0)');
+    vig.addColorStop(1, 'rgba(2,6,12,0.55)');
+  }
+  ctx.fillStyle = vig;
+  ctx.fillRect(0,0,vw,vh);
 
   updateHud(d);
   requestAnimationFrame(frame);

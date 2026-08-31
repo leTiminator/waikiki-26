@@ -93,6 +93,29 @@ The same substrate model decides the **tile material**, which matters more than 
 capping every top cell with sand drew a continuous tan band across the whole reef and was
 the single most artificial thing on screen. Sand now appears in basins and flats only.
 
+## Look and feel
+
+Three systems do most of the atmospheric work, and none of them are assets:
+
+**One current, not many.** Every plant used to sway on its own random phase — the
+even-sprinkle mistake again, in time instead of space. A single surge field (a travelling
+wave in x plus a slow wander) now returns a phase that varies smoothly across the reef, and
+flora sway frames, particulate drift and fish station-holding all sample it. A wave visibly
+passes through the coral instead of each plant twitching to its own clock.
+
+**Caustics.** Refracted light throws a rippling net over anything facing upward. Masked by
+the same light field the ecology uses, so it dies under overhangs and fades out with depth.
+The first attempt capped each floor tile with a 6px sliver — it rendered fine and covered
+0.4% of the screen, which is to say it was invisible. Caustics are a continuous sheet lying
+over the seabed, not a per-tile decal, and the pattern has to vary in **both** axes or it
+reads as vertical stripes rather than a net.
+
+**Camera and post.** The camera leads the direction of travel and eases toward that target,
+so the diver moves through the world instead of the world sliding under a locked frame.
+Bloom is done by downscaling the frame with smoothing *off* and adding it back, which keeps
+the bleed chunky and in keeping with the pixel grid rather than smearing a gaussian over
+pixel art. A vignette pulls the eye off the frame edges.
+
 ## Parallax layers
 
 Five layers, back to front (ART_BIBLE §8):
