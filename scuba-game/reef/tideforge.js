@@ -105,6 +105,8 @@ class Tileset extends Asset {
     this.bits       = manifest.bits;
     this.maskToTile = manifest.maskToTile;
     this.tiles      = manifest.tiles;
+    // each sheet row is an interchangeable fill variant for the same 47 keys
+    this.variants   = manifest.variants || 1;
   }
   /**
    * Pick the tile for cell (x,y) of a solidity grid, straight off the manifest's map.
@@ -127,11 +129,12 @@ class Tileset extends Asset {
     if(at(x-1,y-1)) m |= b.nw;
     return this.maskToTile[m];
   }
-  drawTile(ctx, depth, index, dx, dy, zoom, fog){
+  drawTile(ctx, depth, index, dx, dy, zoom, fog, variant){
     const t = this.tiles[index];
     const s = this.tileSize;
+    const row = this.variants > 1 ? (((variant | 0) % this.variants) + this.variants) % this.variants : 0;
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(this.graded(depth, fog), t.col*s, t.row*s, s, s,
+    ctx.drawImage(this.graded(depth, fog), t.col*s, row*s, s, s,
       Math.round(dx), Math.round(dy), s*zoom, s*zoom);
   }
 }

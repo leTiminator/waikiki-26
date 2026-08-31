@@ -186,14 +186,17 @@ document.getElementById('dc').hidden = false;
 document.getElementById('keys').hidden = false;
 
 // pre-resolve the tile index for every solid cell — the autotiler runs once, not per frame
-const tileIdx = [], tileMat = [];
+const tileIdx = [], tileMat = [], tileVar = [];
 for(let y=0;y<WH;y++){
   tileIdx.push(new Uint8Array(WT));
   tileMat.push(new Uint8Array(WT));
+  tileVar.push(new Uint8Array(WT));
   for(let x=0;x<WT;x++){
     if(!solid[y][x]) continue;
     tileIdx[y][x] = A.tile_rock.tileFor(solid, x, y, WT, WH);
     tileMat[y][x] = (y - surfaceY[x]) < 1 ? 1 : 0;      // a single sand course caps the reef, rock beneath
+    // stable per-cell fill variant — this is what stops the 16px fill tiling visibly
+    tileVar[y][x] = ((x*73856093) ^ (y*19349663)) >>> 5 & 255;
   }
 }
 
@@ -505,7 +508,7 @@ function frame(ts){
   for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){
     if(!solid[y][x]) continue;
     const set = tileMat[y][x] ? A.tile_sand : A.tile_rock;
-    set.drawTile(ctx, depthAt(y*TILE), tileIdx[y][x], sx(x*TILE), sy(y*TILE), ZOOM);
+    set.drawTile(ctx, depthAt(y*TILE), tileIdx[y][x], sx(x*TILE), sy(y*TILE), ZOOM, 0, tileVar[y][x]);
   }
 
   // flora, planted on its `base` anchor

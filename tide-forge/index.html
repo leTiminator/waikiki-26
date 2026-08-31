@@ -707,7 +707,17 @@ function renderTile(c,key){
   return m;
 }
 
-function buildTileset(c){const set=[];for(const k of BLOB_KEYS)set.push(renderTile(c,k));return set;}
+// One fill per blob key makes a 16px pattern that repeats across the whole seabed. Cheap
+// fix: render the same 47 keys N times from offset seeds and let the map pick between
+// them per cell. Exported as one row per variant, so the engine picks a row at random.
+function buildTileset(c){
+  const V=Math.max(1,Math.round(c.variants||1)),out=[];
+  for(let v=0;v<V;v++){
+    const cv=Object.assign({},c,{seed:(c.seed>>>0)+v*104729});
+    out.push(BLOB_KEYS.map(k=>renderTile(cv,k)));
+  }
+  return out;                       // [variant][tileIndex]
+}
 
 // the in-context preview: a seabed of this material, autotiled so the seams are visible
 function generateTiles(c,rng){
@@ -718,7 +728,7 @@ function generateTiles(c,rng){
       const n=fbm(gx/2.2,gy/2.0,(c.seed>>>0)+5,2,0.55,0);
       solid[gy][gx]=gy>=GH-2 ? true : n>1-c.coverage;
     }}
-  const set=buildTileset(c),roles=newMat(w,h);
+  const set=buildTileset(c),V=set.length,roles=newMat(w,h);
   const at=(gx,gy)=>(gx<0||gx>=GW||gy>=GH)?(gy>=GH):(gy<0?false:solid[gy][gx]);
   for(let gy=0;gy<GH;gy++)for(let gx=0;gx<GW;gx++){
     if(!solid[gy][gx])continue;
@@ -726,7 +736,8 @@ function generateTiles(c,rng){
     if(at(gx,gy-1))mask|=NB_N; if(at(gx+1,gy-1))mask|=NB_NE; if(at(gx+1,gy))mask|=NB_E;
     if(at(gx+1,gy+1))mask|=NB_SE;if(at(gx,gy+1))mask|=NB_S;  if(at(gx-1,gy+1))mask|=NB_SW;
     if(at(gx-1,gy))mask|=NB_W;   if(at(gx-1,gy-1))mask|=NB_NW;
-    const tile=set[KEY_TO_INDEX[MASK_TO_KEY[mask]]];
+    const variant=Math.min(V-1,(hash2(gx,gy,(c.seed>>>0)+31)*V)|0);
+    const tile=set[variant][KEY_TO_INDEX[MASK_TO_KEY[mask]]];
     for(let y=0;y<TS;y++)for(let x=0;x<TS;x++){const r=tile[y][x];if(r)roles[gy*TS+y][gx*TS+x]=r;}
   }
   return{w,h,roles,meta:{cx:w/2,cy:h/2,tileSize:TS,tileset:set,grid:{cols:GW,rows:GH},anchors:{origin:[0,0]}}};
@@ -740,14 +751,15 @@ defModule({
     {key:'grain',group:'mat',label:'Grain',type:'range',min:0,max:1,step:0.02,fmt:v=>v<0.34?'coarse':v<0.67?'medium':'fine'},
     {key:'contrast',group:'mat',label:'Contrast',type:'range',min:0,max:1,step:0.02,fmt:v=>Math.round(v*100)+'%'},
     {key:'edge',group:'edge',label:'Edge style',type:'chips',options:EDGE_STYLES},
-    {key:'coverage',group:'edge',label:'Preview coverage',type:'range',min:0.25,max:0.9,step:0.02,fmt:v=>Math.round(v*100)+'%'}
+    {key:'coverage',group:'edge',label:'Preview coverage',type:'range',min:0.25,max:0.9,step:0.02,fmt:v=>Math.round(v*100)+'%'},
+    {key:'variants',group:'edge',label:'Fill variants',type:'range',min:1,max:4,step:1,fmt:v=>(v|0)+'×'}
   ],
-  defaults:()=>({material:'rock',grain:0.5,contrast:0.42,edge:'hard',coverage:0.55,pal:9,depth:14,corrupt:0}),
+  defaults:()=>({material:'rock',grain:0.5,contrast:0.42,edge:'hard',coverage:0.55,variants:3,pal:9,depth:14,corrupt:0}),
   generate:generateTiles,
   motions:['none'],
   clips:()=>[{name:'static',motion:'none',amp:0,freq:0,bias:0,frames:1,fps:1}],
-  hint:'The preview is a live autotiled seabed — every tile you see is picked from the 47-tile blob set by its neighbours. “Sheet” exports that whole set plus the 256-entry bitmask→tile map.',
-  hud:c=>[c.material.toUpperCase(),BLOB_KEYS.length+' TILES'],
+  hint:'The preview is a live autotiled seabed — every tile is picked from the 47-tile blob set by its neighbours, then from one of the fill variants, which is what stops the 16px fill repeating across the floor. “Tilesheet” exports every variant plus the 256-entry bitmask→tile map.',
+  hud:c=>[c.material.toUpperCase(),BLOB_KEYS.length+'×'+Math.round(c.variants||1)+' TILES'],
   label2:c=>c.material
 });
 
@@ -1256,13 +1268,13 @@ document.getElementById('bPng').onclick=()=>{
 document.getElementById('bSheet').onclick=()=>{
   const M=mod();
   if(M.exportKind==='tiles'){
-    const set=state.asset.meta.tileset,S=4,cols=12,rows=Math.ceil(set.length/cols);
-    const cv=document.createElement('canvas');cv.width=cols*TS*S;cv.height=rows*TS*S;
+    const set=state.asset.meta.tileset,S=4,V=set.length,cols=set[0].length;
+    const cv=document.createElement('canvas');cv.width=cols*TS*S;cv.height=V*TS*S;
     const x=cv.getContext('2d');x.imageSmoothingEnabled=false;
-    set.forEach((tile,i)=>{const fr=matToCanvas(tile,TS,TS,state.cache);
-      x.drawImage(fr,(i%cols)*TS*S,((i/cols)|0)*TS*S,TS*S,TS*S);});
+    set.forEach((row,v)=>row.forEach((tile,i)=>{
+      const fr=matToCanvas(tile,TS,TS,state.cache);x.drawImage(fr,i*TS*S,v*TS*S,TS*S,TS*S);}));
     download(cv.toDataURL('image/png'),`${stamp()}_tilesheet.png`);
-    toast(`exported ${set.length}-tile blob set`);return;
+    toast(`exported ${cols}-tile blob set × ${V} variant${V>1?'s':''}`);return;
   }
   const cs=clips(),A=state.asset,S=5,maxF=Math.max(...cs.map(c=>c.frames));
   const cv=document.createElement('canvas');cv.width=A.w*S*maxF;cv.height=A.h*S*cs.length;
@@ -1274,14 +1286,14 @@ document.getElementById('bSheet').onclick=()=>{
 document.getElementById('bJson').onclick=()=>{
   const M=mod(),c=cfg(),A=state.asset;let manifest;
   if(M.exportKind==='tiles'){
-    const cols=12,count=BLOB_KEYS.length;
+    const count=BLOB_KEYS.length,V=state.asset.meta.tileset.length;
     manifest={engine:'TideForge',version:'M1',module:'tiles',source:{cfg:{...c}},
-      tileSize:TS,sheet:{cols,rows:Math.ceil(count/cols),scale:4,count},
+      tileSize:TS,variants:V,sheet:{cols:count,rows:V,scale:4,count},
       bits:{n:NB_N,ne:NB_NE,e:NB_E,se:NB_SE,s:NB_S,sw:NB_SW,w:NB_W,nw:NB_NW},
-      tiles:BLOB_KEYS.map((k,i)=>({index:i,key:k,col:i%cols,row:(i/cols)|0,
+      tiles:BLOB_KEYS.map((k,i)=>({index:i,key:k,col:i,
         neighbors:{n:!!(k&NB_N),ne:!!(k&NB_NE),e:!!(k&NB_E),se:!!(k&NB_SE),s:!!(k&NB_S),sw:!!(k&NB_SW),w:!!(k&NB_W),nw:!!(k&NB_NW)}})),
       maskToTile:Array.from(MASK_TO_KEY,k=>KEY_TO_INDEX[k]),
-      note:'OR the bits of every solid neighbour into `mask` (0-255), then maskToTile[mask] is the tile index. Diagonals only count when both of their cardinals are solid.'};
+      note:'OR the bits of every solid neighbour into `mask` (0-255); maskToTile[mask] is the tile COLUMN. Diagonals only count when both of their cardinals are solid. Each sheet ROW is an interchangeable fill variant — pick one per cell to break up the repeat.'};
   }else{
     const cs=clips();
     manifest={engine:'TideForge',version:'M1',module:M.id,source:{cfg:{...c}},

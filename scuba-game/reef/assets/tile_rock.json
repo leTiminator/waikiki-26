@@ -9,6 +9,7 @@
       "contrast": 0.46,
       "edge": "hard",
       "coverage": 0.55,
+      "variants": 3,
       "pal": 9,
       "depth": 0,
       "corrupt": 0,
@@ -16,9 +17,10 @@
     }
   },
   "tileSize": 16,
+  "variants": 3,
   "sheet": {
-    "cols": 12,
-    "rows": 4,
+    "cols": 47,
+    "rows": 3,
     "scale": 4,
     "count": 47
   },
@@ -37,7 +39,6 @@
       "index": 0,
       "key": 0,
       "col": 0,
-      "row": 0,
       "neighbors": {
         "n": false,
         "ne": false,
@@ -53,7 +54,6 @@
       "index": 1,
       "key": 1,
       "col": 1,
-      "row": 0,
       "neighbors": {
         "n": true,
         "ne": false,
@@ -69,7 +69,6 @@
       "index": 2,
       "key": 4,
       "col": 2,
-      "row": 0,
       "neighbors": {
         "n": false,
         "ne": false,
@@ -85,7 +84,6 @@
       "index": 3,
       "key": 5,
       "col": 3,
-      "row": 0,
       "neighbors": {
         "n": true,
         "ne": false,
@@ -101,7 +99,6 @@
       "index": 4,
       "key": 7,
       "col": 4,
-      "row": 0,
       "neighbors": {
         "n": true,
         "ne": true,
@@ -117,7 +114,6 @@
       "index": 5,
       "key": 16,
       "col": 5,
-      "row": 0,
       "neighbors": {
         "n": false,
         "ne": false,
@@ -133,7 +129,6 @@
       "index": 6,
       "key": 17,
       "col": 6,
-      "row": 0,
       "neighbors": {
         "n": true,
         "ne": false,
@@ -149,7 +144,6 @@
       "index": 7,
       "key": 20,
       "col": 7,
-      "row": 0,
       "neighbors": {
         "n": false,
         "ne": false,
@@ -165,7 +159,6 @@
       "index": 8,
       "key": 21,
       "col": 8,
-      "row": 0,
       "neighbors": {
         "n": true,
         "ne": false,
@@ -181,7 +174,6 @@
       "index": 9,
       "key": 23,
       "col": 9,
-      "row": 0,
       "neighbors": {
         "n": true,
         "ne": true,
@@ -197,7 +189,6 @@
       "index": 10,
       "key": 28,
       "col": 10,
-      "row": 0,
       "neighbors": {
         "n": false,
         "ne": false,
@@ -213,7 +204,6 @@
       "index": 11,
       "key": 29,
       "col": 11,
-      "row": 0,
       "neighbors": {
         "n": true,
         "ne": false,
@@ -228,8 +218,7 @@
     {
       "index": 12,
       "key": 31,
-      "col": 0,
-      "row": 1,
+      "col": 12,
       "neighbors": {
         "n": true,
         "ne": true,
@@ -244,8 +233,7 @@
     {
       "index": 13,
       "key": 64,
-      "col": 1,
-      "row": 1,
+      "col": 13,
       "neighbors": {
         "n": false,
         "ne": false,
@@ -260,8 +248,7 @@
     {
       "index": 14,
       "key": 65,
-      "col": 2,
-      "row": 1,
+      "col": 14,
       "neighbors": {
         "n": true,
         "ne": false,
@@ -276,8 +263,7 @@
     {
       "index": 15,
       "key": 68,
-      "col": 3,
-      "row": 1,
+      "col": 15,
       "neighbors": {
         "n": false,
         "ne": false,
@@ -292,8 +278,7 @@
     {
       "index": 16,
       "key": 69,
-      "col": 4,
-      "row": 1,
+      "col": 16,
       "neighbors": {
         "n": true,
         "ne": false,
@@ -308,8 +293,7 @@
     {
       "index": 17,
       "key": 71,
-      "col": 5,
-      "row": 1,
+      "col": 17,
       "neighbors": {
         "n": true,
         "ne": true,
@@ -324,8 +308,7 @@
     {
       "index": 18,
       "key": 80,
-      "col": 6,
-      "row": 1,
+      "col": 18,
       "neighbors": {
         "n": false,
         "ne": false,
@@ -340,8 +323,7 @@
     {
       "index": 19,
       "key": 81,
-      "col": 7,
-      "row": 1,
+      "col": 19,
       "neighbors": {
         "n": true,
         "ne": false,
@@ -356,8 +338,7 @@
     {
       "index": 20,
       "key": 84,
-      "col": 8,
-      "row": 1,
+      "col": 20,
       "neighbors": {
         "n": false,
         "ne": false,
@@ -372,8 +353,7 @@
     {
       "index": 21,
       "key": 85,
-      "col": 9,
-      "row": 1,
+      "col": 21,
       "neighbors": {
         "n": true,
         "ne": false,
@@ -388,8 +368,7 @@
     {
       "index": 22,
       "key": 87,
-      "col": 10,
-      "row": 1,
+      "col": 22,
       "neighbors": {
         "n": true,
         "ne": true,
@@ -404,8 +383,7 @@
     {
       "index": 23,
       "key": 92,
-      "col": 11,
-      "row": 1,
+      "col": 23,
       "neighbors": {
         "n": false,
         "ne": false,
@@ -420,8 +398,7 @@
     {
       "index": 24,
       "key": 93,
-      "col": 0,
-      "row": 2,
+      "col": 24,
       "neighbors": {
         "n": true,
         "ne": false,
@@ -436,8 +413,7 @@
     {
       "index": 25,
       "key": 95,
-      "col": 1,
-      "row": 2,
+      "col": 25,
       "neighbors": {
         "n": true,
         "ne": true,
@@ -452,8 +428,7 @@
     {
       "index": 26,
       "key": 112,
-      "col": 2,
-      "row": 2,
+      "col": 26,
       "neighbors": {
         "n": false,
         "ne": false,
@@ -468,8 +443,7 @@
     {
       "index": 27,
       "key": 113,
-      "col": 3,
-      "row": 2,
+      "col": 27,
       "neighbors": {
         "n": true,
         "ne": false,
@@ -484,8 +458,7 @@
     {
       "index": 28,
       "key": 116,
-      "col": 4,
-      "row": 2,
+      "col": 28,
       "neighbors": {
         "n": false,
         "ne": false,
@@ -500,8 +473,7 @@
     {
       "index": 29,
       "key": 117,
-      "col": 5,
-      "row": 2,
+      "col": 29,
       "neighbors": {
         "n": true,
         "ne": false,
@@ -516,8 +488,7 @@
     {
       "index": 30,
       "key": 119,
-      "col": 6,
-      "row": 2,
+      "col": 30,
       "neighbors": {
         "n": true,
         "ne": true,
@@ -532,8 +503,7 @@
     {
       "index": 31,
       "key": 124,
-      "col": 7,
-      "row": 2,
+      "col": 31,
       "neighbors": {
         "n": false,
         "ne": false,
@@ -548,8 +518,7 @@
     {
       "index": 32,
       "key": 125,
-      "col": 8,
-      "row": 2,
+      "col": 32,
       "neighbors": {
         "n": true,
         "ne": false,
@@ -564,8 +533,7 @@
     {
       "index": 33,
       "key": 127,
-      "col": 9,
-      "row": 2,
+      "col": 33,
       "neighbors": {
         "n": true,
         "ne": true,
@@ -580,8 +548,7 @@
     {
       "index": 34,
       "key": 193,
-      "col": 10,
-      "row": 2,
+      "col": 34,
       "neighbors": {
         "n": true,
         "ne": false,
@@ -596,8 +563,7 @@
     {
       "index": 35,
       "key": 197,
-      "col": 11,
-      "row": 2,
+      "col": 35,
       "neighbors": {
         "n": true,
         "ne": false,
@@ -612,8 +578,7 @@
     {
       "index": 36,
       "key": 199,
-      "col": 0,
-      "row": 3,
+      "col": 36,
       "neighbors": {
         "n": true,
         "ne": true,
@@ -628,8 +593,7 @@
     {
       "index": 37,
       "key": 209,
-      "col": 1,
-      "row": 3,
+      "col": 37,
       "neighbors": {
         "n": true,
         "ne": false,
@@ -644,8 +608,7 @@
     {
       "index": 38,
       "key": 213,
-      "col": 2,
-      "row": 3,
+      "col": 38,
       "neighbors": {
         "n": true,
         "ne": false,
@@ -660,8 +623,7 @@
     {
       "index": 39,
       "key": 215,
-      "col": 3,
-      "row": 3,
+      "col": 39,
       "neighbors": {
         "n": true,
         "ne": true,
@@ -676,8 +638,7 @@
     {
       "index": 40,
       "key": 221,
-      "col": 4,
-      "row": 3,
+      "col": 40,
       "neighbors": {
         "n": true,
         "ne": false,
@@ -692,8 +653,7 @@
     {
       "index": 41,
       "key": 223,
-      "col": 5,
-      "row": 3,
+      "col": 41,
       "neighbors": {
         "n": true,
         "ne": true,
@@ -708,8 +668,7 @@
     {
       "index": 42,
       "key": 241,
-      "col": 6,
-      "row": 3,
+      "col": 42,
       "neighbors": {
         "n": true,
         "ne": false,
@@ -724,8 +683,7 @@
     {
       "index": 43,
       "key": 245,
-      "col": 7,
-      "row": 3,
+      "col": 43,
       "neighbors": {
         "n": true,
         "ne": false,
@@ -740,8 +698,7 @@
     {
       "index": 44,
       "key": 247,
-      "col": 8,
-      "row": 3,
+      "col": 44,
       "neighbors": {
         "n": true,
         "ne": true,
@@ -756,8 +713,7 @@
     {
       "index": 45,
       "key": 253,
-      "col": 9,
-      "row": 3,
+      "col": 45,
       "neighbors": {
         "n": true,
         "ne": false,
@@ -772,8 +728,7 @@
     {
       "index": 46,
       "key": 255,
-      "col": 10,
-      "row": 3,
+      "col": 46,
       "neighbors": {
         "n": true,
         "ne": true,
@@ -1044,7 +999,7 @@
     31,
     46
   ],
-  "note": "OR the bits of every solid neighbour into `mask` (0-255), then maskToTile[mask] is the tile index. Diagonals only count when both of their cardinals are solid.",
+  "note": "OR the bits of every solid neighbour into `mask` (0-255); maskToTile[mask] is the tile COLUMN. Diagonals only count when both of their cardinals are solid. Each sheet ROW is an interchangeable fill variant — pick one per cell to break up the repeat.",
   "asset": "tile_rock",
   "sheetFile": "tile_rock.png"
 }
