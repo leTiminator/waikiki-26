@@ -38,20 +38,21 @@ const ASSETS=[
   {file:'flora_staghorn',module:'flora',pal:PAL.coral,  chips:{Archetype:'staghorn'},ranges:{Strands:2,Iterations:4,Height:0.9}},
   {file:'flora_fan',     module:'flora',pal:PAL.violet, chips:{Archetype:'fan'},     ranges:{Strands:1,Iterations:4,Height:0.85}},
   {file:'flora_grass',   module:'flora',pal:PAL.lime,   chips:{Archetype:'grass'},   ranges:{Strands:6,Iterations:4,Height:0.7}},
-  // Sized in the tool, not in the scene: a smaller Length simply uses less of the frame,
-  // so the sprite is physically smaller in world units.
-  // Resolution is pinned to 1 on purpose. TideForge can render these at 2-3x now, but a
-  // game has ONE pixel size: a 144x84 fish drawn beside a 16px tile either doubles in
-  // world size or drops to half-size pixels, and both look wrong. Raising it here means
-  // raising it for tiles, flora and props together — a deliberate whole-set decision.
-  {file:'fish_reef',    module:'creature',pal:PAL.tang,   chips:{Archetype:'reef',    Pattern:'v-stripes'},ranges:{Length:0.78,'Body depth':0.95,Resolution:1}},
-  {file:'fish_angel',   module:'creature',pal:PAL.sunfish,chips:{Archetype:'angel',   Pattern:'h-stripes'},ranges:{Length:0.72,'Body depth':1.15,Resolution:1}},
-  {file:'fish_predator',module:'creature',pal:PAL.silver, chips:{Archetype:'predator',Pattern:'none'},     ranges:{Length:1.25,'Body depth':0.9,Resolution:1}},
-  // salvage: the reason you're down here at all (GDD §4)
-  {file:'prop_crate',  module:'props',pal:PAL.sand,   chips:{Kind:'crate'}, ranges:{Width:0.8,Height:0.75,Corrosion:0.45,Encrustation:0.4}},
-  {file:'prop_drum',   module:'props',pal:PAL.crimson,chips:{Kind:'drum'},  ranges:{Width:0.7,Height:0.9,Corrosion:0.6,Encrustation:0.5}},
-  {file:'prop_hull',   module:'props',pal:PAL.silver, chips:{Kind:'hull'},  ranges:{Width:1.2,Height:1.0,Corrosion:0.55,Encrustation:0.6}},
-  {file:'prop_debris', module:'props',pal:PAL.basalt, chips:{Kind:'debris'},ranges:{Width:1.0,Height:0.8,Corrosion:0.5,Encrustation:0.55}},
+  // Real species. Sprite length comes from each species' true adult length through
+  // TideForge's compression curve, so relative sizes are honest without a 9 cm chromis
+  // becoming a 3-pixel dot. Detail stays at 1x: the game has one pixel size.
+  {file:'fish_chromis',  module:'creature',chips:{Species:'chromis'},   ranges:{Detail:1}},
+  {file:'fish_anthias',  module:'creature',chips:{Species:'anthias'},   ranges:{Detail:1}},
+  {file:'fish_yellowtang',module:'creature',chips:{Species:'yellowtang'},ranges:{Detail:1}},
+  {file:'fish_raccoon',  module:'creature',chips:{Species:'raccoon'},   ranges:{Detail:1}},
+  {file:'fish_manini',   module:'creature',chips:{Species:'manini'},    ranges:{Detail:1}},
+  {file:'fish_taape',    module:'creature',chips:{Species:'taape'},     ranges:{Detail:1}},
+  {file:'fish_akule',    module:'creature',chips:{Species:'akule'},     ranges:{Detail:1}},
+  {file:'fish_uhu',      module:'creature',chips:{Species:'uhu'},       ranges:{Detail:1}},
+  {file:'fish_omilu',    module:'creature',chips:{Species:'omilu'},     ranges:{Detail:1}},
+  {file:'fish_puhi',     module:'creature',chips:{Species:'puhi'},      ranges:{Detail:1}},
+  {file:'fish_whitetip', module:'creature',chips:{Species:'whitetip'},  ranges:{Detail:1}},
+  {file:'fish_ulua',     module:'creature',chips:{Species:'ulua'},      ranges:{Detail:1}},
   {file:'vfx_bubbles',module:'vfx',pal:PAL.silver,chips:{Effect:'bubbles'},ranges:{Count:14,'Particle size':1.6,Spread:0.4}},
   {file:'vfx_godray', module:'vfx',pal:PAL.silver,chips:{Effect:'godray'}, ranges:{Count:18,'Particle size':2.4,Lifetime:0.8}},
   {file:'vfx_silt',   module:'vfx',pal:PAL.sand,  chips:{Effect:'silt'},   ranges:{Count:30,'Particle size':2.0,Spread:0.7}}
@@ -103,7 +104,8 @@ for(const a of ASSETS){
   await pg.waitForTimeout(450);
   for(const [k,v] of Object.entries(a.chips||{}))await chip(k,v);
   for(const [k,v] of Object.entries(a.ranges||{}))await range(k,v);
-  await swatch(a.pal);
+  // species assets carry their own real colours — clicking a master swatch would clear them
+  if(a.pal!==undefined) await swatch(a.pal);
   await range('Depth',0);          // export ungraded — the runtime grades
   await range('Corruption',0);
   await pg.waitForTimeout(450);
@@ -116,6 +118,10 @@ for(const a of ASSETS){
   fs.writeFileSync(path.join(OUT,a.file+'.png'),Buffer.from(png.href.split(',')[1],'base64'));
   const manifest=JSON.parse(decodeURIComponent(json.href.split(',')[1]));
   manifest.asset=a.file;manifest.sheetFile=a.file+'.png';
+  if(a.chips&&a.chips.Species){
+    const sp=await pg.evaluate(id=>{const f=window.__species&&window.__species(id);return f||null;},a.chips.Species);
+    if(sp)manifest.species=sp;
+  }
   fs.writeFileSync(path.join(OUT,a.file+'.json'),JSON.stringify(manifest,null,2));
   const kb=(fs.statSync(path.join(OUT,a.file+'.png')).size/1024).toFixed(1);
   console.log(`  ${a.file.padEnd(16)} ${String(a.module).padEnd(9)} ${kb.padStart(7)} KB  ${png.name}`);

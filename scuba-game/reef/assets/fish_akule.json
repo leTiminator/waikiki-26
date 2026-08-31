@@ -1,0 +1,91 @@
+{
+  "engine": "TideForge",
+  "version": "M1",
+  "module": "creature",
+  "source": {
+    "cfg": {
+      "len": 1,
+      "dep": 1,
+      "res": 1,
+      "scales": 0.5,
+      "pal": 1,
+      "depth": 0,
+      "corrupt": 0,
+      "species": "akule",
+      "cm": 30,
+      "aspect": 0.3,
+      "arch": "reef",
+      "tail": "fork",
+      "dorsal": "low",
+      "pattern": "none",
+      "ramp": [
+        "#10161d",
+        "#2a3540",
+        "#4c5c6b",
+        "#8298a8",
+        "#d8e4ee"
+      ],
+      "seed": 1234
+    }
+  },
+  "frameSize": {
+    "w": 46,
+    "h": 21
+  },
+  "sheet": {
+    "scale": 5,
+    "cols": 12,
+    "rows": 1
+  },
+  "anchors": {
+    "eye": [
+      33,
+      9
+    ],
+    "mouth": [
+      40,
+      11
+    ]
+  },
+  "clips": [
+    {
+      "name": "swim",
+      "row": 0,
+      "frames": 12,
+      "fps": 12,
+      "motion": "swim",
+      "amp": 2.2,
+      "freq": 0.34,
+      "bias": 0,
+      "loop": true
+    }
+  ],
+  "asset": "fish_akule",
+  "sheetFile": "fish_akule.png",
+  "species": {
+    "id": "akule",
+    "name": "Bigeye scad",
+    "cm": 30,
+    "aspect": 0.3,
+    "arch": "reef",
+    "tail": "fork",
+    "dorsal": "low",
+    "pattern": "none",
+    "ramp": [
+      "#10161d",
+      "#2a3540",
+      "#4c5c6b",
+      "#8298a8",
+      "#d8e4ee"
+    ],
+    "school": "tight",
+    "group": [
+      20,
+      40
+    ],
+    "depth": [
+      6,
+      50
+    ]
+  }
+}

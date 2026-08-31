@@ -1,0 +1,91 @@
+{
+  "engine": "TideForge",
+  "version": "M1",
+  "module": "creature",
+  "source": {
+    "cfg": {
+      "len": 1,
+      "dep": 1,
+      "res": 1,
+      "scales": 0.5,
+      "pal": 1,
+      "depth": 0,
+      "corrupt": 0,
+      "species": "yellowtang",
+      "cm": 20,
+      "aspect": 0.85,
+      "arch": "angel",
+      "tail": "lunate",
+      "dorsal": "sail",
+      "pattern": "none",
+      "ramp": [
+        "#4a3406",
+        "#8a6410",
+        "#d9a015",
+        "#f5cf3a",
+        "#fff3a8"
+      ],
+      "seed": 1234
+    }
+  },
+  "frameSize": {
+    "w": 39,
+    "h": 31
+  },
+  "sheet": {
+    "scale": 5,
+    "cols": 12,
+    "rows": 1
+  },
+  "anchors": {
+    "eye": [
+      26,
+      13
+    ],
+    "mouth": [
+      30,
+      16
+    ]
+  },
+  "clips": [
+    {
+      "name": "swim",
+      "row": 0,
+      "frames": 12,
+      "fps": 12,
+      "motion": "swim",
+      "amp": 2.2,
+      "freq": 0.34,
+      "bias": 0,
+      "loop": true
+    }
+  ],
+  "asset": "fish_yellowtang",
+  "sheetFile": "fish_yellowtang.png",
+  "species": {
+    "id": "yellowtang",
+    "name": "Yellow tang",
+    "cm": 20,
+    "aspect": 0.85,
+    "arch": "angel",
+    "tail": "lunate",
+    "dorsal": "sail",
+    "pattern": "none",
+    "ramp": [
+      "#4a3406",
+      "#8a6410",
+      "#d9a015",
+      "#f5cf3a",
+      "#fff3a8"
+    ],
+    "school": "loose",
+    "group": [
+      3,
+      9
+    ],
+    "depth": [
+      2,
+      30
+    ]
+  }
+}

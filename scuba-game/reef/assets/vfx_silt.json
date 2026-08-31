@@ -13,7 +13,8 @@
       "pal": 8,
       "depth": 0,
       "corrupt": 0,
-      "seed": 24385
+      "seed": 24385,
+      "ramp": null
     }
   },
   "frameSize": {

@@ -1,0 +1,91 @@
+{
+  "engine": "TideForge",
+  "version": "M1",
+  "module": "creature",
+  "source": {
+    "cfg": {
+      "len": 1,
+      "dep": 1,
+      "res": 1,
+      "scales": 0.5,
+      "pal": 1,
+      "depth": 0,
+      "corrupt": 0,
+      "species": "ulua",
+      "cm": 170,
+      "aspect": 0.44,
+      "arch": "predator",
+      "tail": "lunate",
+      "dorsal": "low",
+      "pattern": "none",
+      "ramp": [
+        "#14181e",
+        "#2c343e",
+        "#525f6e",
+        "#8496a6",
+        "#d4e0ea"
+      ],
+      "seed": 1234
+    }
+  },
+  "frameSize": {
+    "w": 110,
+    "h": 56
+  },
+  "sheet": {
+    "scale": 5,
+    "cols": 12,
+    "rows": 1
+  },
+  "anchors": {
+    "eye": [
+      80,
+      23
+    ],
+    "mouth": [
+      96,
+      28
+    ]
+  },
+  "clips": [
+    {
+      "name": "swim",
+      "row": 0,
+      "frames": 12,
+      "fps": 12,
+      "motion": "swim",
+      "amp": 2.2,
+      "freq": 0.34,
+      "bias": 0,
+      "loop": true
+    }
+  ],
+  "asset": "fish_ulua",
+  "sheetFile": "fish_ulua.png",
+  "species": {
+    "id": "ulua",
+    "name": "Giant trevally",
+    "cm": 170,
+    "aspect": 0.44,
+    "arch": "predator",
+    "tail": "lunate",
+    "dorsal": "low",
+    "pattern": "none",
+    "ramp": [
+      "#14181e",
+      "#2c343e",
+      "#525f6e",
+      "#8496a6",
+      "#d4e0ea"
+    ],
+    "school": "none",
+    "group": [
+      1,
+      1
+    ],
+    "depth": [
+      5,
+      50
+    ]
+  }
+}

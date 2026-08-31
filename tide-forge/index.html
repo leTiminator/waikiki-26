@@ -231,6 +231,16 @@ function fbm(x,y,s,oct,gain,P){let amp=1,f=1,sum=0,norm=0;
 // This is the cheapest apparent-colour-depth trick in pixel art, and every generator
 // quantises through it.
 const LIGHT_X=-0.55, LIGHT_Y=-0.83;   // light from upper-left, shared by every generator
+// ---- art scale -------------------------------------------------------------------
+// Real sea life spans 8 cm damselfish to 1.7 m trevally — a 21x range. Drawn strictly to
+// scale the small ones become 3-pixel dots with nowhere to put an eye, so like every
+// commercial game we COMPRESS the range with a square-root curve: 19 px to 106 px, a 5.6x
+// spread that keeps the ordering honest and every fish readable. The true length in cm
+// travels in the manifest, so gameplay (weight, value, what fits in a net) can use the
+// real number even though the sprite is compressed.
+const CM_REF=30, PX_REF=40, SIZE_EXP=0.55;
+const spriteLenPx=cm=>PX_REF*Math.pow(Math.max(1,cm)/CM_REF,SIZE_EXP);
+
 const BAYER4=[[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]];
 function shadeIndex(v,x,y,n,amt,cell){
   const k=cell==null||cell<1?1:cell|0;
@@ -277,8 +287,8 @@ function expandRamp(hex5){
   }
   return out;
 }
-function buildColorCache(palIdx,depth,corrupt){
-  const pal=PALETTES[palIdx]||PALETTES[0];
+function buildColorCache(palIdx,depth,corrupt,rampOverride){
+  const pal=(rampOverride&&rampOverride.length===5)?{name:'species',ramp:rampOverride}:(PALETTES[palIdx]||PALETTES[0]);
   const ramp=pal.ramp.map(hex2rgb), R9=expandRamp(pal.ramp);
   // how far each role sits from neutral: + warms (toward light), - cools (toward shade)
   const TINT={[SPEC]:1.0,[BELLY]:0.62,[HIGH]:0.34,[BASE]:0,[SHADOW]:-0.42,[BACK]:-0.78,
@@ -410,6 +420,58 @@ function defModule(m){MODULES.push(m);return m;}
 function modById(id){return MODULES.find(m=>m.id===id)||MODULES[0];}
 
 // ===================== MODULE: CREATURE =====================
+// ===================== SPECIES CATALOGUE =====================
+// Real Pacific-reef species. `cm` is an approximate adult total length — good enough to
+// order the roster honestly and to drive gameplay weight/value, not a field guide.
+// `aspect` is body depth / body length, which is most of what makes a species read as
+// itself; `school` drives shoaling in the game, `depth` its band in metres.
+const SPECIES=[
+ {id:'chromis',   name:'Blue-green chromis', cm:9,   aspect:0.55, arch:'reef',    tail:'fork',   dorsal:'low',  pattern:'none',
+  ramp:['#062a2e','#0e4a52','#1a7d86','#33b0b8','#a8e8ec'], school:'tight', group:[14,30], depth:[2,18]},
+ {id:'anthias',   name:'Bicolor anthias',    cm:11,  aspect:0.46, arch:'reef',    tail:'lunate', dorsal:'low',  pattern:'none',
+  ramp:['#4a1020','#8a2038','#d1455f','#f07a90','#ffc4cf'], school:'tight', group:[10,22], depth:[8,40]},
+ {id:'millet',    name:'Milletseed butterflyfish', cm:15, aspect:0.80, arch:'angel', tail:'round', dorsal:'sail', pattern:'spots',
+  ramp:['#4a4008','#8a7818','#d4bc3a','#f0e07a','#fffbd0'], school:'loose', group:[2,7],  depth:[3,25]},
+ {id:'raccoon',   name:'Raccoon butterflyfish', cm:20, aspect:0.78, arch:'angel', tail:'round', dorsal:'sail', pattern:'diagonal',
+  ramp:['#3a2a10','#6a5020','#b08840','#e0c080','#fff0d0'], school:'pair',  group:[2,2],  depth:[2,20]},
+ {id:'yellowtang',name:'Yellow tang',        cm:20,  aspect:0.85, arch:'angel',   tail:'lunate', dorsal:'sail', pattern:'none',
+  ramp:['#4a3406','#8a6410','#d9a015','#f5cf3a','#fff3a8'], school:'loose', group:[3,9],  depth:[2,30]},
+ {id:'idol',      name:'Moorish idol',       cm:23,  aspect:0.90, arch:'angel',   tail:'point',  dorsal:'sail', pattern:'v-stripes',
+  ramp:['#1a1a20','#3a3a44','#9a9284','#dcd6c0','#fff6dc'], school:'pair',  group:[2,3],  depth:[3,30]},
+ {id:'wrasse',    name:'Saddle wrasse',      cm:25,  aspect:0.28, arch:'reef',    tail:'fan',    dorsal:'low',  pattern:'none',
+  ramp:['#0a2a3a','#124a62','#1e7d9c','#3aa8c8','#a0dcec'], school:'none',  group:[1,1],  depth:[2,25]},
+ {id:'manini',    name:'Convict tang',       cm:27,  aspect:0.62, arch:'angel',   tail:'lunate', dorsal:'low',  pattern:'v-stripes',
+  ramp:['#2a2e33','#4e555e','#8a939c','#c2ccd4','#f0f6fa'], school:'tight', group:[12,26],depth:[1,20]},
+ {id:'taape',     name:'Bluestripe snapper', cm:30,  aspect:0.36, arch:'reef',    tail:'fork',   dorsal:'low',  pattern:'h-stripes',
+  ramp:['#4a3a06','#8a7010','#d9b41a','#f2d84a','#fff4b0'], school:'tight', group:[14,30],depth:[5,45]},
+ {id:'menpachi',  name:'Hawaiian squirrelfish', cm:30, aspect:0.42, arch:'reef',  tail:'fork',   dorsal:'spiny',pattern:'h-stripes',
+  ramp:['#3a0810','#7a1220','#bd2535','#e85060','#ffa8b0'], school:'loose', group:[3,8],  depth:[5,35]},
+ {id:'akule',     name:'Bigeye scad',        cm:30,  aspect:0.30, arch:'reef',    tail:'fork',   dorsal:'low',  pattern:'none',
+  ramp:['#10161d','#2a3540','#4c5c6b','#8298a8','#d8e4ee'], school:'tight', group:[20,40],depth:[6,50]},
+ {id:'uhu',       name:'Parrotfish',         cm:50,  aspect:0.40, arch:'puffer',  tail:'fan',    dorsal:'low',  pattern:'patches',
+  ramp:['#0a2a30','#14515a','#1f8590','#38b4bc','#a8e4e8'], school:'loose', group:[2,5],  depth:[2,25]},
+ {id:'omilu',     name:'Bluefin trevally',   cm:80,  aspect:0.38, arch:'predator',tail:'lunate', dorsal:'low',  pattern:'none',
+  ramp:['#101c2a','#1e3450','#33587e','#5a86b0','#c0dcf0'], school:'loose', group:[1,4],  depth:[4,45]},
+ {id:'puhi',      name:'Yellowmargin moray', cm:120, aspect:0.11, arch:'eel',     tail:'point',  dorsal:'low',  pattern:'patches',
+  ramp:['#2a2410','#544820','#8a7838','#bfa860','#e8d8a0'], school:'none',  group:[1,1],  depth:[3,35]},
+ {id:'whitetip',  name:'Whitetip reef shark',cm:160, aspect:0.22, arch:'predator',tail:'point',  dorsal:'low',  pattern:'none',
+  ramp:['#1c1a18','#38352f','#605a50','#928a7c','#d8d0c0'], school:'none',  group:[1,1],  depth:[8,55]},
+ {id:'ulua',      name:'Giant trevally',     cm:170, aspect:0.44, arch:'predator',tail:'lunate', dorsal:'low',  pattern:'none',
+  ramp:['#14181e','#2c343e','#525f6e','#8496a6','#d4e0ea'], school:'none',  group:[1,1],  depth:[5,50]}
+];
+const SPECIES_IDS=SPECIES.map(s=>s.id);
+// the asset pipeline reads this so a manifest can carry the species' real traits
+try{window.__species=id=>{const q=SPECIES.find(x=>x.id===id);return q?JSON.parse(JSON.stringify(q)):null;};}catch(e){}
+const speciesById=id=>SPECIES.find(s=>s.id===id)||SPECIES[0];
+// applying a species presets the whole body plan, its real colours and its true length
+function applySpecies(cfg,id){
+  const sp=speciesById(id);
+  cfg.species=sp.id; cfg.cm=sp.cm; cfg.aspect=sp.aspect; cfg.arch=sp.arch;
+  cfg.tail=sp.tail; cfg.dorsal=sp.dorsal; cfg.pattern=sp.pattern;
+  cfg.ramp=sp.ramp.slice(); cfg.len=1; cfg.dep=1;
+  return cfg;
+}
+
 const ARCHES=['reef','angel','eel','puffer','predator'];
 const ARCH_META={reef:{len:0.52,dep:0.52,curve:0},angel:{len:0.40,dep:0.84,curve:0},eel:{len:0.86,dep:0.22,curve:3.2},puffer:{len:0.50,dep:0.70,curve:0},predator:{len:0.80,dep:0.32,curve:0,jaw:1}};
 const TAILS=['fork','fan','lunate','round','point'];
@@ -424,8 +486,17 @@ function generateCreature(c,rng){
   // RS scales the whole frame. Detail is pixel-budget-capped at 72x42 — you cannot draw a
   // gill cover in three pixels — so every absolute measurement below scales with it.
   const RS=Math.max(1,c.res||1);
-  const w=Math.round(72*RS),h=Math.round(42*RS),cy=h/2,A=ARCH_META[c.arch]||ARCH_META.reef;
-  const rx=clamp(A.len*c.len*(w*0.5),8*RS,w*0.5-2),ry=clamp(A.dep*c.dep*(h*0.5),4*RS,h*0.5-3);
+  const A=ARCH_META[c.arch]||ARCH_META.reef;   // now supplies only curve + jaw traits
+  // The frame follows the fish rather than the other way round: sprite length comes from
+  // the species' real length through the compression curve, and body depth/length sets the
+  // height. A moray gets a long thin frame, a tang a tall near-square one.
+  const aspect=clamp((c.aspect==null?0.5:c.aspect)*(c.dep||1),0.05,1.15);
+  const L=Math.max(10,spriteLenPx(c.cm==null?30:c.cm)*(c.len||1)*RS);
+  const rx0=L/(2+1.5*aspect), ry0=rx0*aspect;
+  const w=Math.max(14,Math.ceil(L)+Math.round(6*RS));
+  const h=Math.max(12,Math.ceil(ry0*2.9)+Math.round(6*RS));
+  const cy=h/2;
+  const rx=clamp(rx0,4,w*0.5-2), ry=clamp(ry0,2.2,h*0.5-3);
   const cx=Math.round(w*0.50+rx*0.06);
   const roles=newMat(w,h);
   const topEdge=new Int16Array(w).fill(-1),botEdge=new Int16Array(w).fill(-1);
@@ -592,22 +663,26 @@ defModule({
   id:'creature',label:'Creatures',icon:'\u{1F41F}',size:{w:72,h:42},fit:1.5,
   groups:[{key:'body',title:'Body plan'},{key:'fins',title:'Fins &amp; tail'},{key:'skin',title:'Skin'}],
   paramSchema:[
-    {key:'arch',group:'body',label:'Archetype',type:'chips',options:ARCHES},
+    {key:'species',group:'body',label:'Species',type:'chips',options:SPECIES_IDS},
+    {key:'cm',group:'body',label:'Adult length',type:'range',min:4,max:250,step:1,fmt:v=>(v|0)+' cm · '+Math.round(spriteLenPx(v))+'px'},
+    {key:'aspect',group:'body',label:'Body depth ÷ length',type:'range',min:0.06,max:1.1,step:0.01,fmt:v=>v.toFixed(2)},
+    {key:'arch',group:'body',label:'Body plan',type:'chips',options:ARCHES},
     {key:'len',group:'body',label:'Length',type:'range',min:0.7,max:1.3,step:0.01,fmt:v=>v.toFixed(2)+'×'},
     {key:'dep',group:'body',label:'Body depth',type:'range',min:0.7,max:1.3,step:0.01,fmt:v=>v.toFixed(2)+'×'},
     {key:'tail',group:'fins',label:'Tail',type:'chips',options:TAILS},
     {key:'dorsal',group:'fins',label:'Dorsal',type:'chips',options:DORSALS},
     {key:'pattern',group:'skin',label:'Pattern',type:'chips',options:PATTERNS},
-    {key:'res',group:'body',label:'Resolution',type:'range',min:1,max:3,step:0.5,fmt:v=>Math.round(72*v)+'×'+Math.round(42*v)},
+    {key:'res',group:'body',label:'Detail',type:'range',min:1,max:3,step:0.5,fmt:v=>v.toFixed(1)+'× pixels'},
     {key:'scales',group:'skin',label:'Scales',type:'range',min:0,max:1,step:0.02,fmt:v=>v<0.01?'off':Math.round(v*100)+'%'}
   ],
-  defaults:()=>({arch:'reef',len:1.0,dep:1.0,tail:'fork',dorsal:'low',pattern:'v-stripes',res:2,scales:0.5,pal:1,depth:6,corrupt:0}),
+  defaults:()=>applySpecies({len:1.0,dep:1.0,res:1,scales:0.5,pal:1,depth:6,corrupt:0},'yellowtang'),
   generate:generateCreature,
+  applyPreset:applySpecies,
   motions:['swim','bob','breathe','flutter','sway'],
   clips:()=>[{name:'swim',motion:'swim',amp:2.2,freq:0.34,bias:0,frames:12,fps:12}],
   hint:'Motion is procedural — no drawn frames. Add clips (swim / idle / dart) below the preview; each exports as its own row in the spritesheet.',
-  hud:c=>[c.arch.toUpperCase()],
-  label2:c=>c.arch
+  hud:c=>[c.species?speciesById(c.species).name.toUpperCase():c.arch.toUpperCase(), (c.cm|0)+'CM'],
+  label2:c=>c.species?speciesById(c.species).name:c.arch
 });
 
 // ===================== MODULE: FLORA =====================
@@ -1198,7 +1273,7 @@ function bakeFrames(asset,cache,cl){
 // one asset -> one thumbnail, used by the library without touching live state
 function thumbOf(entry,px){
   const m=modById(entry.module),cl=entry.clips[0];
-  const asset=buildAsset(m,entry.cfg,cl),cache=buildColorCache(entry.cfg.pal,entry.cfg.depth,entry.cfg.corrupt);
+  const asset=buildAsset(m,entry.cfg,cl),cache=buildColorCache(entry.cfg.pal,entry.cfg.depth,entry.cfg.corrupt,entry.cfg.ramp);
   const fr=bakeFrames(asset,cache,cl)[0];
   const cv=document.createElement('canvas'),s=Math.max(1,Math.floor(px/Math.max(asset.w,asset.h)));
   cv.width=asset.w*s;cv.height=asset.h*s;const x=cv.getContext('2d');x.imageSmoothingEnabled=false;
@@ -1255,7 +1330,7 @@ function loop(ts){
 
 // ===================== BUILD PIPELINE =====================
 function rebuildAsset(){state.asset=buildAsset(mod(),cfg(),clip());}
-function rebuildCache(){const c=cfg();state.cache=buildColorCache(c.pal,c.depth,c.corrupt);}
+function rebuildCache(){const c=cfg();state.cache=buildColorCache(c.pal,c.depth,c.corrupt,c.ramp);}
 function rebakeClip(){
   if(mod().baked)rebuildAsset();                        // baked modules regenerate per clip
   state.frames=bakeFrames(state.asset,state.cache,clip());
@@ -1271,8 +1346,9 @@ function updateHud(){
     (c.corrupt>0.01?`<div class="chip warn">CORRUPT <b>${Math.round(c.corrupt*100)}%</b></div>`:'');
 }
 function updateInfo(){const c=cfg(),cl=clip(),M=mod();
+  const palName=c.ramp?(c.species||'species'):PALETTES[c.pal].name;
   const anim=M.static?`${state.asset?state.asset.w+'×'+state.asset.h:''} static`:`${cl.name} clip · ${cl.frames}f @ ${cl.fps}fps`;
-  document.getElementById('specInfo').textContent=`${M.label2?M.label2(c):M.label} · ${anim} · ${PALETTES[c.pal].name}`;}
+  document.getElementById('specInfo').textContent=`${M.label2?M.label2(c):M.label} · ${anim} · ${palName}`;}
 function drawRamp(){const el=document.getElementById('ramp');el.innerHTML='';
   const cache=state.cache,order=[OUTLINE,BACK,SHADOW,BASE,HIGH,SPEC,BELLY,FIN,PATTERN,EYEW];
   for(const r of order){const c=cache[r];const i=document.createElement('i');i.style.background=`rgb(${c[0]},${c[1]},${c[2]})`;el.appendChild(i);}}
@@ -1357,7 +1433,12 @@ function buildRail(){
     if(!items.length)return;
     const p=panelGroup(g.title);
     items.forEach(s=>{
-      if(s.type==='chips')fieldChips(p,s.label,s.options,()=>c[s.key],v=>{c[s.key]=v;markAsset();});
+      if(s.type==='chips')fieldChips(p,s.label,s.options,()=>c[s.key],v=>{
+        if(s.key==='species'&&M.applyPreset){
+          // a preset rewrites the palette as well as the body, and markAsset() alone
+          // never refreshes the colour cache — so rebuild the lot
+          M.applyPreset(c,v);buildRail();fullRebuild();return;}
+        c[s.key]=v;markAsset();});
       else if(s.type==='range')fieldRange(p,s.label,s.min,s.max,s.step,()=>c[s.key],v=>{c[s.key]=v;markAsset();},s.fmt||(v=>v));
       else if(s.type==='toggle')fieldToggle(p,s.label,()=>c[s.key],v=>{c[s.key]=v;markAsset();});
     });
@@ -1369,7 +1450,7 @@ function buildRail(){
   const sw=elm('div','swatches');
   const paintSwatches=()=>{sw.innerHTML='';PALETTES.forEach((p,i)=>{const b=elm('button');b.title=p.name;
     b.style.background=`linear-gradient(135deg,${p.ramp[1]},${p.ramp[3]})`;b.setAttribute('aria-pressed',c.pal===i);
-    b.onclick=()=>{c.pal=i;[...sw.children].forEach((q,j)=>q.setAttribute('aria-pressed',j===i));paintEditor();markColor();};sw.appendChild(b);});};
+    b.onclick=()=>{c.pal=i;c.ramp=null;[...sw.children].forEach((q,j)=>q.setAttribute('aria-pressed',j===i));paintEditor();markColor();};sw.appendChild(b);});};
   const f=elm('div','field');f.appendChild(elm('div','lab','<span>Master ramp</span>'));f.appendChild(sw);pg.appendChild(f);
   rail.appendChild(pg);
 

@@ -13,7 +13,8 @@
       "pal": 9,
       "depth": 0,
       "corrupt": 0,
-      "seed": 16668
+      "seed": 16668,
+      "ramp": null
     }
   },
   "tileSize": 16,

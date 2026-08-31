@@ -1,0 +1,91 @@
+{
+  "engine": "TideForge",
+  "version": "M1",
+  "module": "creature",
+  "source": {
+    "cfg": {
+      "len": 1,
+      "dep": 1,
+      "res": 1,
+      "scales": 0.5,
+      "pal": 1,
+      "depth": 0,
+      "corrupt": 0,
+      "species": "taape",
+      "cm": 30,
+      "aspect": 0.36,
+      "arch": "reef",
+      "tail": "fork",
+      "dorsal": "low",
+      "pattern": "h-stripes",
+      "ramp": [
+        "#4a3a06",
+        "#8a7010",
+        "#d9b41a",
+        "#f2d84a",
+        "#fff4b0"
+      ],
+      "seed": 1234
+    }
+  },
+  "frameSize": {
+    "w": 46,
+    "h": 23
+  },
+  "sheet": {
+    "scale": 5,
+    "cols": 12,
+    "rows": 1
+  },
+  "anchors": {
+    "eye": [
+      33,
+      10
+    ],
+    "mouth": [
+      40,
+      12
+    ]
+  },
+  "clips": [
+    {
+      "name": "swim",
+      "row": 0,
+      "frames": 12,
+      "fps": 12,
+      "motion": "swim",
+      "amp": 2.2,
+      "freq": 0.34,
+      "bias": 0,
+      "loop": true
+    }
+  ],
+  "asset": "fish_taape",
+  "sheetFile": "fish_taape.png",
+  "species": {
+    "id": "taape",
+    "name": "Bluestripe snapper",
+    "cm": 30,
+    "aspect": 0.36,
+    "arch": "reef",
+    "tail": "fork",
+    "dorsal": "low",
+    "pattern": "h-stripes",
+    "ramp": [
+      "#4a3a06",
+      "#8a7010",
+      "#d9b41a",
+      "#f2d84a",
+      "#fff4b0"
+    ],
+    "school": "tight",
+    "group": [
+      14,
+      30
+    ],
+    "depth": [
+      5,
+      45
+    ]
+  }
+}

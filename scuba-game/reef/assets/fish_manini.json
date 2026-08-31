@@ -1,0 +1,91 @@
+{
+  "engine": "TideForge",
+  "version": "M1",
+  "module": "creature",
+  "source": {
+    "cfg": {
+      "len": 1,
+      "dep": 1,
+      "res": 1,
+      "scales": 0.5,
+      "pal": 1,
+      "depth": 0,
+      "corrupt": 0,
+      "species": "manini",
+      "cm": 27,
+      "aspect": 0.62,
+      "arch": "angel",
+      "tail": "lunate",
+      "dorsal": "low",
+      "pattern": "v-stripes",
+      "ramp": [
+        "#2a2e33",
+        "#4e555e",
+        "#8a939c",
+        "#c2ccd4",
+        "#f0f6fa"
+      ],
+      "seed": 1234
+    }
+  },
+  "frameSize": {
+    "w": 44,
+    "h": 30
+  },
+  "sheet": {
+    "scale": 5,
+    "cols": 12,
+    "rows": 1
+  },
+  "anchors": {
+    "eye": [
+      30,
+      13
+    ],
+    "mouth": [
+      36,
+      15
+    ]
+  },
+  "clips": [
+    {
+      "name": "swim",
+      "row": 0,
+      "frames": 12,
+      "fps": 12,
+      "motion": "swim",
+      "amp": 2.2,
+      "freq": 0.34,
+      "bias": 0,
+      "loop": true
+    }
+  ],
+  "asset": "fish_manini",
+  "sheetFile": "fish_manini.png",
+  "species": {
+    "id": "manini",
+    "name": "Convict tang",
+    "cm": 27,
+    "aspect": 0.62,
+    "arch": "angel",
+    "tail": "lunate",
+    "dorsal": "low",
+    "pattern": "v-stripes",
+    "ramp": [
+      "#2a2e33",
+      "#4e555e",
+      "#8a939c",
+      "#c2ccd4",
+      "#f0f6fa"
+    ],
+    "school": "tight",
+    "group": [
+      12,
+      26
+    ],
+    "depth": [
+      1,
+      20
+    ]
+  }
+}

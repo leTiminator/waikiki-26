@@ -45,6 +45,30 @@ real rule, and GDD §6.15 calls it the best tension-per-line-of-code in the game
 | `tools/export-assets.mjs` | regenerates `assets/` by driving TideForge headlessly |
 | `tools/verify-grade.mjs` | asserts the tool and the runtime grade colour identically |
 
+## Sea life
+
+Fish are real Pacific-reef species, not archetypes. Each carries its traits in its own
+manifest — approximate adult length in cm, body depth/length aspect, real colours, the
+depth band it lives in, and whether it shoals — and the scene reads those to place it.
+
+Sprite size comes from the species' true length through a square-root compression curve
+(TideForge's art scale): 19 px for a 9 cm chromis up to 106 px for a 1.7 m giant trevally.
+Strictly to scale the chromis would be a 3-pixel dot with nowhere to put an eye, so the
+range is compressed the way every commercial game compresses it — the ordering stays
+honest and the true cm travels in the manifest for gameplay to use.
+
+Tight schoolers (chromis, anthias, convict tang, bluestripe snapper, bigeye scad) spawn as
+shoals: one moving centre with members holding station around it. That is cheaper and
+steadier than per-fish boids and reads correctly at these sizes. Pairs (butterflyfish,
+moorish idol), loose aggregations (tangs, parrotfish) and solitary hunters (trevally,
+whitetip, moray) each spawn to their own rule.
+
+Placement intersects a species' true depth band with the water actually above the reef. If
+they don't overlap, the species isn't found at that depth and simply doesn't spawn — which
+is why the reef sits at ~12 m, the shallow-reef zone this roster actually lives in. An
+earlier build put the seabed at 22.6 m and almost nothing spawned; the level was wrong,
+not the ecology.
+
 ## Parallax layers
 
 Five layers, back to front (ART_BIBLE §8):

@@ -70,6 +70,15 @@ repeat is gone). **PropForge** landed early (crates, drums, tanks, hull plate, d
 kit shaded by one convex form model, then corroded and encrusted). The game's reef scene grew
 **five parallax layers**.
 
+**Species (M1.6).** CreatureForge now carries a catalogue of 16 real Pacific-reef species —
+chromis, anthias, butterflyfishes, yellow tang, moorish idol, wrasse, convict tang, taape,
+menpachi, akule, parrotfish, bluefin and giant trevally, moray, whitetip reef shark — each with
+an approximate adult length in cm, a body depth/length aspect, real colour ramps, a depth band
+and schooling behaviour. **The frame follows the fish**: sprite length comes from the real length
+through a square-root compression curve (`spriteLenPx`), so a 9 cm chromis is 19 px and a 1.7 m
+trevally 106 px — honest ordering without the small ones becoming 3-pixel dots. A species preset
+rewrites the body plan *and* the palette, so it must trigger a full rebuild, not just `markAsset`.
+
 **Also in M1** — an **asset library** (localStorage; seed+cfg means entries are tiny; thumbnails,
 reload, delete) and a **lite palette editor** (tweak any ramp's 5 stops, add/delete custom ramps,
 everything downstream recolors live; persisted).

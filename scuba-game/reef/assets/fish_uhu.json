@@ -1,0 +1,91 @@
+{
+  "engine": "TideForge",
+  "version": "M1",
+  "module": "creature",
+  "source": {
+    "cfg": {
+      "len": 1,
+      "dep": 1,
+      "res": 1,
+      "scales": 0.5,
+      "pal": 1,
+      "depth": 0,
+      "corrupt": 0,
+      "species": "uhu",
+      "cm": 50,
+      "aspect": 0.4,
+      "arch": "puffer",
+      "tail": "fan",
+      "dorsal": "low",
+      "pattern": "patches",
+      "ramp": [
+        "#0a2a30",
+        "#14515a",
+        "#1f8590",
+        "#38b4bc",
+        "#a8e4e8"
+      ],
+      "seed": 1234
+    }
+  },
+  "frameSize": {
+    "w": 59,
+    "h": 30
+  },
+  "sheet": {
+    "scale": 5,
+    "cols": 12,
+    "rows": 1
+  },
+  "anchors": {
+    "eye": [
+      43,
+      13
+    ],
+    "mouth": [
+      51,
+      15
+    ]
+  },
+  "clips": [
+    {
+      "name": "swim",
+      "row": 0,
+      "frames": 12,
+      "fps": 12,
+      "motion": "swim",
+      "amp": 2.2,
+      "freq": 0.34,
+      "bias": 0,
+      "loop": true
+    }
+  ],
+  "asset": "fish_uhu",
+  "sheetFile": "fish_uhu.png",
+  "species": {
+    "id": "uhu",
+    "name": "Parrotfish",
+    "cm": 50,
+    "aspect": 0.4,
+    "arch": "puffer",
+    "tail": "fan",
+    "dorsal": "low",
+    "pattern": "patches",
+    "ramp": [
+      "#0a2a30",
+      "#14515a",
+      "#1f8590",
+      "#38b4bc",
+      "#a8e4e8"
+    ],
+    "school": "loose",
+    "group": [
+      2,
+      5
+    ],
+    "depth": [
+      2,
+      25
+    ]
+  }
+}

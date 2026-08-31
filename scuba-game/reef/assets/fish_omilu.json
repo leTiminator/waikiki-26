@@ -1,0 +1,91 @@
+{
+  "engine": "TideForge",
+  "version": "M1",
+  "module": "creature",
+  "source": {
+    "cfg": {
+      "len": 1,
+      "dep": 1,
+      "res": 1,
+      "scales": 0.5,
+      "pal": 1,
+      "depth": 0,
+      "corrupt": 0,
+      "species": "omilu",
+      "cm": 80,
+      "aspect": 0.38,
+      "arch": "predator",
+      "tail": "lunate",
+      "dorsal": "low",
+      "pattern": "none",
+      "ramp": [
+        "#101c2a",
+        "#1e3450",
+        "#33587e",
+        "#5a86b0",
+        "#c0dcf0"
+      ],
+      "seed": 1234
+    }
+  },
+  "frameSize": {
+    "w": 75,
+    "h": 36
+  },
+  "sheet": {
+    "scale": 5,
+    "cols": 12,
+    "rows": 1
+  },
+  "anchors": {
+    "eye": [
+      54,
+      15
+    ],
+    "mouth": [
+      66,
+      18
+    ]
+  },
+  "clips": [
+    {
+      "name": "swim",
+      "row": 0,
+      "frames": 12,
+      "fps": 12,
+      "motion": "swim",
+      "amp": 2.2,
+      "freq": 0.34,
+      "bias": 0,
+      "loop": true
+    }
+  ],
+  "asset": "fish_omilu",
+  "sheetFile": "fish_omilu.png",
+  "species": {
+    "id": "omilu",
+    "name": "Bluefin trevally",
+    "cm": 80,
+    "aspect": 0.38,
+    "arch": "predator",
+    "tail": "lunate",
+    "dorsal": "low",
+    "pattern": "none",
+    "ramp": [
+      "#101c2a",
+      "#1e3450",
+      "#33587e",
+      "#5a86b0",
+      "#c0dcf0"
+    ],
+    "school": "loose",
+    "group": [
+      1,
+      4
+    ],
+    "depth": [
+      4,
+      45
+    ]
+  }
+}

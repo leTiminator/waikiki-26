@@ -108,7 +108,8 @@ if(location.protocol === 'file:'){
 const TILE = 16;            // art-pixels per tile, straight from the tileset manifest
 const PX_PER_M = 34;        // art-pixels per metre  ->  one tile ≈ 0.47 m
 const ZOOM = 2;             // screen pixels per art-pixel (integer: keeps the grid honest)
-const WT = 160, WH = 100;   // world size in tiles  (≈ 49 m wide, ≈ 30.8 m deep)
+const WT = 96, WH = 100;    // world size in tiles  (≈ 29 m wide, ≈ 30 m deep) — an
+                            // intimate reef rather than an empty plain
 const depthAt = artY => artY / PX_PER_M;
 
 const view = document.getElementById('view');
@@ -126,11 +127,11 @@ function rng(seed){ return () => (seed = (seed*1664525 + 1013904223) >>> 0) / 42
 const R = rng(20260623);
 const surfaceY = new Int16Array(WT);       // terrain top, in tiles, per column
 {
-  let base = 48;
+  let base = 26;                       // ~12 m: the 'postcard' reef zone (ART_BIBLE §5)
   const a=R()*6.28, b=R()*6.28, c=R()*6.28;
   for(let x=0;x<WT;x++){
     const n = Math.sin(x*0.055+a)*3.2 + Math.sin(x*0.017+b)*4.5 + Math.sin(x*0.13+c)*1.4;
-    surfaceY[x] = Math.round(Math.max(36, Math.min(WH-8, base + n)));
+    surfaceY[x] = Math.round(Math.max(16, Math.min(WH-8, base + n)));
   }
   // a couple of outcrops so the autotiler has real corners and overhangs to solve
   for(let k=0;k<5;k++){
@@ -175,7 +176,8 @@ let A;
 try{
   A = await loadAll('./assets', ['tile_rock','tile_sand',
     'flora_kelp','flora_staghorn','flora_fan','flora_grass',
-    'fish_reef','fish_angel','fish_predator',
+    'fish_chromis','fish_anthias','fish_yellowtang','fish_raccoon','fish_manini',
+    'fish_taape','fish_akule','fish_uhu','fish_omilu','fish_puhi','fish_whitetip','fish_ulua',
     'prop_crate','prop_drum','prop_hull','prop_debris',
     'vfx_bubbles','vfx_godray','vfx_silt']);
 }catch(e){
@@ -225,8 +227,8 @@ function makeRidge(seed, baseTiles, ampTiles){
 // all. Vertical parallax is therefore kept gentle (the scene reads mostly horizontally)
 // and the tiers are spaced by only a few metres.
 const LAYERS = [
-  {ridge: makeRidge(9917, 43.0, 2.2), px:0.30, py:0.92, fog:0.48, plants:[]},  // far drop-off
-  {ridge: makeRidge(4421, 45.5, 1.8), px:0.58, py:0.96, fog:0.28, plants:[]}   // background reef
+  {ridge: makeRidge(9917, 21.0, 2.0), px:0.30, py:0.92, fog:0.48, plants:[]},  // far drop-off
+  {ridge: makeRidge(4421, 23.5, 1.6), px:0.58, py:0.96, fog:0.28, plants:[]}   // background reef
 ];
 const mixc = (a,b,t) => [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t];
 
@@ -284,17 +286,60 @@ for(let i=0;i<14;i++){
                  phase:R()*Math.PI*2, rate:0.5+R()*0.5, flip:R()<0.5});
 }
 
-const fish = [];
-for(let i=0;i<34;i++){
-  const kind = R();
-  const a = kind<0.52 ? A.fish_reef : kind<0.86 ? A.fish_angel : A.fish_predator;
-  const fx = R()*WT*TILE;
-  const ceilArt = 2.2*PX_PER_M, floorArt = terrainTopArt(fx) - 26;
-  fish.push({
-    a, x: fx, y: ceilArt + R()*Math.max(20, floorArt-ceilArt),
-    dir: R()<0.5?-1:1, speed: (a===A.fish_predator?9:14) + R()*11,
-    phase: R()*Math.PI*2, rate: 0.7 + R()*0.7, bobA: 1.5+R()*3, bobR: 0.4+R()*0.7
-  });
+// ---------------------------------------------------------------- sea life
+// Every fish carries its species traits in its own manifest: real adult length, the depth
+// band it lives in, and whether it shoals. Tight schoolers spawn as a shoal — one moving
+// centre with members holding station around it — which is both cheaper and steadier than
+// per-fish boids, and reads correctly at these sizes.
+const FISH_ASSETS = ['fish_chromis','fish_anthias','fish_yellowtang','fish_raccoon','fish_manini',
+  'fish_taape','fish_akule','fish_uhu','fish_omilu','fish_puhi','fish_whitetip','fish_ulua'].map(k=>A[k]);
+
+const loners = [], shoals = [];
+function depthBandArt(sp){
+  const lo = (sp.depth ? sp.depth[0] : 2) * PX_PER_M;
+  const hi = (sp.depth ? sp.depth[1] : 25) * PX_PER_M;
+  return [lo, hi];
+}
+for(const a of FISH_ASSETS){
+  const sp = a.manifest.species || {cm:30, school:'none', group:[1,1], depth:[3,25]};
+  const [lo, hi] = depthBandArt(sp);
+  const tight = sp.school === 'tight';
+  const packs = tight ? 2 : sp.school === 'loose' ? 3 : sp.school === 'pair' ? 4 : 6;
+  for(let p=0; p<packs; p++){
+    const n = tight || sp.school === 'loose' || sp.school === 'pair'
+      ? Math.round(sp.group[0] + R()*(sp.group[1]-sp.group[0])) : 1;
+    const fx = R()*WT*TILE;
+    const floorArt = terrainTopArt(fx);
+    // Reef fish hold station over the structure. Intersect the species' true depth band
+    // with the water actually above this reef; if they don't overlap, this species simply
+    // isn't found at this depth and we skip it rather than teleporting it here.
+    const hoverLo = floorArt - 8*PX_PER_M, hoverHi = floorArt - 0.7*PX_PER_M;
+    const lo2 = Math.max(lo, hoverLo, 0.8*PX_PER_M), hi2 = Math.min(hi, hoverHi);
+    if(hi2 - lo2 < 8) continue;
+    const fy = lo2 + R()*(hi2 - lo2);
+    const dir = R()<0.5 ? -1 : 1;
+    // big fish cruise, small fish dart
+    const base = 26 - Math.min(18, sp.cm/12);
+    if(n > 1){
+      const members = [];
+      for(let i=0;i<n;i++)members.push({
+        ox:(R()-0.5)*(tight?46:90), oy:(R()-0.5)*(tight?26:44),
+        ph:R()*Math.PI*2, rate:0.8+R()*0.6});
+      shoals.push({a, sp, x:fx, y:fy, dir, speed:base*(tight?0.85:1)+R()*6,
+                   members, wob:tight?2.2:5.0, phase:R()*Math.PI*2});
+    } else {
+      loners.push({a, sp, x:fx, y:fy, dir, speed:base+R()*8,
+                   ph:R()*Math.PI*2, rate:0.6+R()*0.6, bobA:1.2+R()*2.6, bobR:0.35+R()*0.6});
+    }
+  }
+}
+
+function swimStep(f, dt){
+  f.x += f.dir * f.speed * dt;
+  if(f.x < -180){ f.x = WT*TILE + 140; }
+  if(f.x > WT*TILE + 180){ f.x = -140; }
+  const lim = terrainTopArt(f.x) - 22;          // don't swim through the reef
+  if(f.y > lim) f.y += (lim - f.y) * Math.min(1, dt*2.5);
 }
 
 // ---------------------------------------------------------------- diver
@@ -499,18 +544,24 @@ function frame(ts){
   }
   ctx.restore();
 
-  // fish behind the reef read as background; keep them all on the gameplay layer for now
-  for(const f of fish){
-    f.x += f.dir * f.speed * dt;
-    if(f.x < -80) f.x = WT*TILE + 60;
-    if(f.x > WT*TILE + 80) f.x = -60;
-    const lim = terrainTopArt(f.x) - 24;          // don't swim through the reef
-    if(f.y > lim) f.y += (lim - f.y) * Math.min(1, dt*2.5);
-    const fy = f.y + Math.sin(acc*f.bobR + f.phase) * f.bobA;
+  // --- sea life ---
+  for(const sh of shoals){
+    swimStep(sh, dt);
+    const flip = sh.dir > 0;
+    for(const m of sh.members){
+      const mx = sh.x + m.ox + Math.sin(acc*m.rate + m.ph)*sh.wob;
+      const my = sh.y + m.oy + Math.cos(acc*m.rate*0.8 + m.ph)*sh.wob*0.7;
+      const px = sx(mx), py = sy(my);
+      if(px < -140 || px > vw+140 || py < -110 || py > vh+110) continue;
+      sh.a.draw(ctx, depthAt(my), 'swim', Math.floor(acc*11*m.rate + m.ph*3), px, py, ZOOM, {flip});
+    }
+  }
+  for(const f of loners){
+    swimStep(f, dt);
+    const fy = f.y + Math.sin(acc*f.bobR + f.ph) * f.bobA;
     const px = sx(f.x), py = sy(fy);
-    if(px < -160 || px > vw+160 || py < -120 || py > vh+120) continue;
-    f.a.draw(ctx, depthAt(fy), 'swim', Math.floor(acc*10*f.rate + f.phase*3), px, py, ZOOM,
-             {flip: f.dir > 0});
+    if(px < -180 || px > vw+180 || py < -140 || py > vh+140) continue;
+    f.a.draw(ctx, depthAt(fy), 'swim', Math.floor(acc*10*f.rate + f.ph*3), px, py, ZOOM, {flip: f.dir > 0});
   }
 
   // terrain — only the cells on screen

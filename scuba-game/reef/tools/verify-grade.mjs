@@ -43,7 +43,7 @@ const chromium = await (async()=>{
 })();
 
 const CASES = [
-  {name:'creature · reef fish', module:'creature', chips:{Archetype:'reef', Pattern:'v-stripes'}, depth:24},
+  {name:'creature · yellow tang', module:'creature', chips:{Species:'yellowtang'}, depth:24},
   {name:'flora · staghorn',     module:'flora',    chips:{Archetype:'staghorn'},                  depth:31},
   {name:'tiles · rock',         module:'tiles',    chips:{Material:'rock'},                       depth:44}
 ];
@@ -110,13 +110,15 @@ for(const c of CASES){
     if(A.data.length !== B.data.length) return {error:'size mismatch'};
     const G = new Uint8ClampedArray(A.data.length);
     gradeImageData(A.data, G, depth);            // runtime grade, applied to the flat export
-    // Split by alpha. Fully opaque pixels must match exactly. Semi-transparent ones are
-    // compared loosely because canvas stores premultiplied alpha: reading a translucent
-    // PNG back through getImageData can shift a channel by 1 before any grading happens,
-    // in the tool and in the game alike. That's a pixel-transport limit, not a disagreement
-    // about the curve.
+    // Split by alpha. Fully opaque pixels must match exactly. Semi-transparent ones get a
+    // tolerance derived from the format rather than a fudge factor: canvas stores
+    // premultiplied alpha, so un-premultiplying divides by a/255 and a half-unit
+    // quantisation becomes +-0.5*255/a. Rounding happens on both the tool and the runtime
+    // side, so the bound is ceil(255/a) per channel — 2 units at alpha 168, 3 at the
+    // half-transparent alpha 124 the anti-aliasing pass uses. Anything beyond that is a
+    // real disagreement about the curve.
     let opaque=0, opaqueBad=0, opaqueWorst=0, sample=null;
-    let trans=0, transBad=0, transWorst=0;
+    let trans=0, transBad=0, transWorst=0, transTol=1;
     for(let i=0;i<G.length;i+=4){
       const a = B.data[i+3];
       if(a < 8) continue;
@@ -129,23 +131,24 @@ for(const c of CASES){
         if(d > 0) opaqueBad++;
       } else {
         trans++;
-        if(d > transWorst) transWorst = d;
-        if(d > 1) transBad++;
+        const tol = Math.ceil(255 / a);
+        if(d - tol > transWorst - transTol){ transWorst = d; transTol = tol; }
+        if(d > tol) transBad++;
       }
     }
-    return {opaque, opaqueBad, opaqueWorst, trans, transBad, transWorst, sample};
+    return {opaque, opaqueBad, opaqueWorst, trans, transBad, transWorst, transTol, sample};
   }, {flat, baked, depth:c.depth});
 
   const ok = r.opaqueBad === 0 && r.transBad === 0;
   if(!ok) failed++;
   console.log(`  ${ok?'PASS':'FAIL'}  ${c.name.padEnd(20)} @ ${String(c.depth).padStart(2)} m  ` +
               `opaque ${r.opaque}px/${r.opaqueBad} differ (Δ${r.opaqueWorst})  ` +
-              `translucent ${r.trans}px/${r.transBad} over Δ1 (Δ${r.transWorst})`);
+              `translucent ${r.trans}px/${r.transBad} over budget (Δ${r.transWorst} vs Δ${r.transTol} allowed)`);
   if(!ok && r.sample) console.log(`        flat ${JSON.stringify(r.sample.flat)}  ` +
                       `runtime ${JSON.stringify(r.sample.runtime)}  tool ${JSON.stringify(r.sample.tool)}`);
 }
 console.log(failed ? `\n${failed} case(s) disagree — the tool is previewing something the game won't draw.\n`
-                   : `\nopaque pixels identical; translucent within the 1-unit premultiply limit.\n`);
+                   : `\nopaque pixels identical; translucent within the premultiplied-alpha bound.\n`);
 if(errs.length) console.error('page errors:', errs);
 await b.close();
 server.close();
