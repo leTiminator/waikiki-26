@@ -18,7 +18,7 @@ staged in the `waikiki-26` repo under `scuba-game/`).
 - `M1_SPEC.md` — the M1 build spec, now **delivered**; keep it as the record of what shipped.
 - `START_HERE.md` — this handoff.
 
-## Current status: **M1 complete**
+## Current status: **M1 complete**, plus an **M1.5 depth-of-image pass**
 **M0 (core + creatures + animation)** and **M1 (environment & VFX)** are both built and working.
 
 **Core** — palette system (10 master ramps, editable), role-based pixel-matrix, depth-grade (light
@@ -59,6 +59,17 @@ that contract — a new module needs zero bespoke UI. Add one and it appears ful
 multi-clip timeline, scrub + play + onion-skin, live frame strip. `sway` scales amplitude by height
 above the holdfast when the module supplies one, and takes a **current** bias.
 
+**M1.5 — depth of image.** The generators were producing flat art, so the *core* gained a shared
+shading vocabulary that every module inherits: **ordered Bayer dithering** (a 5-step ramp now
+implies far more than five tones), a **luminance-preserving hue shift** (warm highlights, cool
+shadows), **selective outlines** (the lit edge takes a warm `RIM`), a screen-space **AO** pass, and
+a translucent `TRANS` role. Creatures got real form lighting — countershading with a cylindrical
+falloff, a dithered dorsal-ridge highlight, fin membranes with rays, and markings that shade the
+body rather than stamping a flat colour. TileForge grew **fill variants per blob key** (the 16px
+repeat is gone). **PropForge** landed early (crates, drums, tanks, hull plate, debris — a modular
+kit shaded by one convex form model, then corroded and encrusted). The game's reef scene grew
+**five parallax layers**.
+
 **Also in M1** — an **asset library** (localStorage; seed+cfg means entries are tiny; thumbnails,
 reload, delete) and a **lite palette editor** (tweak any ramp's 5 stops, add/delete custom ramps,
 everything downstream recolors live; persisted).
@@ -70,7 +81,11 @@ manifests (clips/frames/fps/anchors; VFX also carries its emitter params; tiles 
 1. **CharacterForge** — modular humanoid + skeleton/rig, procedural gaits.
 2. **Keyframe timeline** — authored cycles on matrices *or* rig poses, onion-skin, ease.
 3. **Pixel-paint layer** — draw/erase/fill over any generated asset. Non-negotiable for hero art.
-4. **PropForge** — gear, wrecks, debris, UI icons.
+4. *(PropForge already landed — see M1.5 above.)*
+
+**Known limitation worth fixing in M2:** every module has a fixed frame size, so a creature is
+always 72×42. That is why the reef's fish all read as roughly a metre long — small schooling fish
+need a per-config frame size.
 
 ## Conventions
 - The app stays single-file while it's this size. Follow the existing `core / modules / anim / ui / io`

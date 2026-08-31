@@ -43,6 +43,11 @@ const ASSETS=[
   {file:'fish_reef',    module:'creature',pal:PAL.tang,   chips:{Archetype:'reef',    Pattern:'v-stripes'},ranges:{Length:0.78,'Body depth':0.95}},
   {file:'fish_angel',   module:'creature',pal:PAL.sunfish,chips:{Archetype:'angel',   Pattern:'h-stripes'},ranges:{Length:0.72,'Body depth':1.15}},
   {file:'fish_predator',module:'creature',pal:PAL.silver, chips:{Archetype:'predator',Pattern:'none'},     ranges:{Length:1.25,'Body depth':0.9}},
+  // salvage: the reason you're down here at all (GDD §4)
+  {file:'prop_crate',  module:'props',pal:PAL.sand,   chips:{Kind:'crate'}, ranges:{Width:0.8,Height:0.75,Corrosion:0.45,Encrustation:0.4}},
+  {file:'prop_drum',   module:'props',pal:PAL.crimson,chips:{Kind:'drum'},  ranges:{Width:0.7,Height:0.9,Corrosion:0.6,Encrustation:0.5}},
+  {file:'prop_hull',   module:'props',pal:PAL.silver, chips:{Kind:'hull'},  ranges:{Width:1.2,Height:1.0,Corrosion:0.55,Encrustation:0.6}},
+  {file:'prop_debris', module:'props',pal:PAL.basalt, chips:{Kind:'debris'},ranges:{Width:1.0,Height:0.8,Corrosion:0.5,Encrustation:0.55}},
   {file:'vfx_bubbles',module:'vfx',pal:PAL.silver,chips:{Effect:'bubbles'},ranges:{Count:14,'Particle size':1.6,Spread:0.4}},
   {file:'vfx_godray', module:'vfx',pal:PAL.silver,chips:{Effect:'godray'}, ranges:{Count:18,'Particle size':2.4,Lifetime:0.8}},
   {file:'vfx_silt',   module:'vfx',pal:PAL.sand,  chips:{Effect:'silt'},   ranges:{Count:30,'Particle size':2.0,Spread:0.7}}

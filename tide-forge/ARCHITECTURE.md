@@ -87,7 +87,7 @@ Module = {
 | FloraForge | coral, kelp, weeds | L-systems / growth rules | **M1 (built)** |
 | TileForge | rock/sand/reef tiles | noise + edge/autotile masks | **M1 (built)** |
 | VFXForge | bubbles, silt, godrays, glow | particle/shader bakes | **M1 (built)** |
-| PropForge | gear, wrecks, debris, UI icons | modular kit + symmetry | M2 |
+| PropForge | gear, wrecks, debris, UI icons | modular kit + convex shading + ageing | **M1.5 (built)** |
 | CharacterForge | diver + NPCs (rigged) | modular humanoid + skeleton | M2 |
 
 ## 4. Animation system (procedural + keyframe)
@@ -125,7 +125,11 @@ Two complementary paths, unified by **Clips**:
 - **M0 — Core + Creatures + procedural animation** *(built).* PaletteSystem, PixelMatrix,
   DepthGrade, Corruption, CreatureForge, motion models, clip timeline, spritesheet+JSON export.
 - **M1 — Environment & VFX** *(built).* An explicit Module contract with a schema-generated control
-  rail; FloraForge, TileForge (47-tile blob autotiling), VFXForge; asset library; palette editor.
+  rail; FloraForge, TileForge (47-tile blob autotiling + fill variants), VFXForge; asset library;
+  palette editor.
+- **M1.5 — Depth of image** *(built).* A shared shading vocabulary (dithering, hue-shifted ramps,
+  rim light, ambient occlusion, membranes); form lighting for creatures; PropForge; and five
+  parallax layers in the game's reef scene.
 - **M2 — Characters & authoring.** CharacterForge + rig, keyframe timeline, the pixel-editor paint
   layer, PropForge.
 - **M3 — Pipeline.** Godot/Aseprite export polish, project files, batch generation, palette editor,

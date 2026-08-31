@@ -1,0 +1,53 @@
+{
+  "engine": "TideForge",
+  "version": "M1",
+  "module": "props",
+  "source": {
+    "cfg": {
+      "kind": "drum",
+      "width": 0.7,
+      "height": 0.9,
+      "wear": 0.6,
+      "encrust": 0.5,
+      "glow": false,
+      "pal": 6,
+      "depth": 0,
+      "corrupt": 0,
+      "seed": 32102
+    }
+  },
+  "frameSize": {
+    "w": 48,
+    "h": 48
+  },
+  "sheet": {
+    "scale": 5,
+    "cols": 1,
+    "rows": 1
+  },
+  "anchors": {
+    "base": [
+      24,
+      42
+    ],
+    "centre": [
+      24,
+      24
+    ]
+  },
+  "clips": [
+    {
+      "name": "idle",
+      "row": 0,
+      "frames": 1,
+      "fps": 1,
+      "motion": "none",
+      "amp": 0,
+      "freq": 0,
+      "bias": 0,
+      "loop": true
+    }
+  ],
+  "asset": "prop_drum",
+  "sheetFile": "prop_drum.png"
+}

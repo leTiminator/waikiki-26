@@ -176,6 +176,7 @@ try{
   A = await loadAll('./assets', ['tile_rock','tile_sand',
     'flora_kelp','flora_staghorn','flora_fan','flora_grass',
     'fish_reef','fish_angel','fish_predator',
+    'prop_crate','prop_drum','prop_hull','prop_debris',
     'vfx_bubbles','vfx_godray','vfx_silt']);
 }catch(e){
   boot.textContent = 'failed to load assets: ' + e.message;
@@ -265,6 +266,16 @@ plants.sort((p,q)=>p.y-q.y);
                       phase:R()*Math.PI*2, rate:0.4+R()*0.4, flip:R()<0.5});
   }
 }
+// Salvage on the bottom — the reason for the dive (GDD §4). Props sit on their `base`
+// anchor like flora, so the same placement rule works for both.
+const PROPS = [A.prop_crate, A.prop_drum, A.prop_hull, A.prop_debris];
+const salvage = [];
+for(let i=0;i<32;i++){
+  const x = 4*TILE + R()*(WT-8)*TILE;
+  salvage.push({a: PROPS[(R()*PROPS.length)|0], x, y: terrainTopArt(x) + 1, flip: R()<0.5});
+}
+salvage.sort((a,b)=>a.y-b.y);
+
 const fgPlants = [];
 for(let i=0;i<14;i++){
   const pick = FLORA[(R()*FLORA.length)|0];
@@ -509,6 +520,13 @@ function frame(ts){
     if(!solid[y][x]) continue;
     const set = tileMat[y][x] ? A.tile_sand : A.tile_rock;
     set.drawTile(ctx, depthAt(y*TILE), tileIdx[y][x], sx(x*TILE), sy(y*TILE), ZOOM, 0, tileVar[y][x]);
+  }
+
+  // salvage, resting on the bottom
+  for(const p of salvage){
+    const px = sx(p.x), py = sy(p.y);
+    if(px < -120 || px > vw+120 || py < -160 || py > vh+80) continue;
+    p.a.draw(ctx, depthAt(p.y), 'idle', 0, px, py, ZOOM, {anchor:'base', flip:p.flip});
   }
 
   // flora, planted on its `base` anchor

@@ -1,0 +1,53 @@
+{
+  "engine": "TideForge",
+  "version": "M1",
+  "module": "props",
+  "source": {
+    "cfg": {
+      "kind": "debris",
+      "width": 1,
+      "height": 0.8,
+      "wear": 0.5,
+      "encrust": 0.56,
+      "glow": false,
+      "pal": 9,
+      "depth": 0,
+      "corrupt": 0,
+      "seed": 32102
+    }
+  },
+  "frameSize": {
+    "w": 48,
+    "h": 48
+  },
+  "sheet": {
+    "scale": 5,
+    "cols": 1,
+    "rows": 1
+  },
+  "anchors": {
+    "base": [
+      24,
+      40
+    ],
+    "centre": [
+      24,
+      24
+    ]
+  },
+  "clips": [
+    {
+      "name": "idle",
+      "row": 0,
+      "frames": 1,
+      "fps": 1,
+      "motion": "none",
+      "amp": 0,
+      "freq": 0,
+      "bias": 0,
+      "loop": true
+    }
+  ],
+  "asset": "prop_debris",
+  "sheetFile": "prop_debris.png"
+}

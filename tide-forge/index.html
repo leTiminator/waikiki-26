@@ -892,6 +892,124 @@ defModule({
   label2:c=>c.effect
 });
 
+// ===================== MODULE: PROPS =====================
+// Salvage is the point of the game (GDD §4), so props are wrecks, drums, gear and debris.
+// Technique: a small modular kit shaded by one convex form model, then aged — corrosion
+// eats the silhouette, and coral encrusts whatever faces the light. Everything reuses the
+// shared stamping/dither/AO vocabulary, so props sit in the same world as the reef.
+const PROP_KINDS=['crate','drum','tank','hull','debris'];
+const PROP_RAMP=[BACK,SHADOW,BASE,HIGH,BELLY];
+
+function generateProp(c,rng){
+  const w=48,h=48,roles=newMat(w,h);
+  const cx=w/2, cy=h/2;
+  const bw=Math.max(6,c.width*w*0.42), bh=Math.max(6,c.height*h*0.42);
+  const s=c.seed>>>0;
+
+  // convex form: the surface normal of a rounded body at (u,v) is roughly (u,v)
+  const lit=(u,v)=>u*LIGHT_X+v*LIGHT_Y;
+  const shade=(u,v,x,y,bias)=>shadeRole(PROP_RAMP,clamp(0.58+lit(u,v)*0.36+(bias||0),0.14,0.99),x,y,0.7);
+
+  const inShape=(x,y)=>{
+    const u=(x-cx)/bw, v=(y-cy)/bh;
+    switch(c.kind){
+      case'crate':  return Math.abs(u)<=1&&Math.abs(v)<=1;
+      case'drum':   return Math.abs(u)<=1&&Math.abs(v)<=1&&!(Math.abs(v)>0.86&&Math.abs(u)>0.82);
+      case'tank':   return Math.abs(u)<=0.62&&Math.abs(v)<=1&&!(Math.abs(v)>0.80&&Math.abs(u)>0.44);
+      case'hull':{  const d=Math.hypot(u*0.9,v*1.25); return d<=1&&d>=0.46&&v<0.55; }
+      default:      return Math.hypot(u,v)<=1;
+    }
+  };
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    if(!inShape(x,y))continue;
+    let u=(x-cx)/bw, v=(y-cy)/bh;
+    if(c.kind==='drum'||c.kind==='tank')v*=0.25;          // cylinders shade across, not down
+    roles[y][x]=shade(u,v,x,y);
+  }
+
+  // --- kit details -------------------------------------------------------------
+  const band=(vv,role)=>{const y=Math.round(cy+vv*bh);
+    for(let x=0;x<w;x++)if(roles[y]&&roles[y][x])roles[y][x]=role;};
+  if(c.kind==='crate'){
+    band(-0.55,SHADOW);band(0.55,SHADOW);band(-0.54,BACK);band(0.54,BACK);
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++){                 // plank seams
+      if(!roles[y][x])continue;
+      if(((x-Math.round(cx-bw))%7)===0)roles[y][x]=SHADOW;}
+  } else if(c.kind==='drum'){
+    band(-0.52,BACK);band(-0.48,SHADOW);band(0.48,SHADOW);band(0.52,BACK);
+  } else if(c.kind==='tank'){
+    const vy=Math.round(cy-bh)-1;                            // valve + regulator stub
+    for(let x=Math.round(cx-2);x<=Math.round(cx+2);x++)for(let y=vy-3;y<=vy;y++)put(roles,w,h,x,y,SHADOW);
+    put(roles,w,h,Math.round(cx+3),vy-2,HIGH);put(roles,w,h,Math.round(cx+4),vy-2,HIGH);
+    band(0.30,SHADOW);band(-0.30,SHADOW);
+  } else if(c.kind==='hull'){
+    for(let a=-1.3;a<=1.3;a+=0.16){                           // rivet line along the plate
+      const rx=Math.round(cx+Math.sin(a)*bw*0.72), ry=Math.round(cy+Math.cos(a)*bh*0.72-bh*0.1);
+      if(roles[ry]&&roles[ry][rx])roles[ry][rx]=hash2(rx,ry,s)>0.4?SPEC:HIGH;
+    }
+  } else {
+    for(let y=0;y<h;y++)roles[y].fill(EMPTY);                 // debris = angular broken plate
+    const n=3+Math.floor(rng()*3);
+    for(let i=0;i<n;i++){
+      const ox=(rng()-0.5)*bw*1.3, oy=(rng()-0.5)*bh*1.1;
+      const rw=bh*(0.28+rng()*0.42), rh=bh*(0.16+rng()*0.34), ang=(rng()-0.5)*1.4;
+      const ca=Math.cos(ang), sa=Math.sin(ang);
+      for(let dy=-rh;dy<=rh;dy+=0.5)for(let dx=-rw;dx<=rw;dx+=0.5){
+        const px=Math.round(cx+ox+dx*ca-dy*sa), py=Math.round(cy+oy+dx*sa+dy*ca);
+        put(roles,w,h,px,py,shade(dx/rw,dy/rh,px,py));
+      }
+    }
+  }
+
+  // --- wear: corrosion eats the edges and blotches the plate --------------------
+  if(c.wear>0.01){
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+      if(!roles[y][x])continue;
+      const n=fbm(x/5,y/5,s+77,3,0.55,0);
+      const edge=!(roles[y][x-1]&&roles[y][x+1]&&roles[y-1]&&roles[y-1][x]&&roles[y+1]&&roles[y+1][x]);
+      if(edge&&n<c.wear*0.42)roles[y][x]=EMPTY;              // bitten away
+      else if(n<0.30+c.wear*0.22&&hash2(x,y,s+5)<c.wear)roles[y][x]=BACK;   // rust
+    }
+  }
+
+  // --- encrustation: the reef grows on whatever faces the light ----------------
+  if(c.encrust>0.01){
+    for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
+      if(!roles[y][x])continue;
+      const open=!roles[y-1][x]||!roles[y][x-1];             // an upward/left-facing surface
+      if(!open)continue;
+      if(hash2(x,y,s+911)>c.encrust*0.55)continue;
+      const r=0.7+hash2(x,y,s+13)*1.0;
+      stampDisc(roles,w,h,x,y-1,r,(d,dx,dy,px,py)=>
+        c.glow?(d<0.5?GLOW:GLOWDIM):shadeRole([BASE,HIGH,BELLY],clamp(0.55+lit(dx,dy)*0.5,0,1),px,py,0.6));
+    }
+  }
+
+  aoPass(roles,w,h,3,3);
+  outlinePass(roles,w,h);
+  return{w,h,roles,meta:{cx,cy,anchors:{base:[Math.round(cx),Math.round(cy+bh)],centre:[Math.round(cx),Math.round(cy)]}}};
+}
+
+defModule({
+  id:'props',label:'Props',icon:'\u{1F5FF}',size:{w:48,h:48},fit:1.7,
+  groups:[{key:'kit',title:'Kit'},{key:'age',title:'Age &amp; growth'}],
+  paramSchema:[
+    {key:'kind',group:'kit',label:'Kind',type:'chips',options:PROP_KINDS},
+    {key:'width',group:'kit',label:'Width',type:'range',min:0.4,max:1.3,step:0.02,fmt:v=>v.toFixed(2)+'×'},
+    {key:'height',group:'kit',label:'Height',type:'range',min:0.4,max:1.3,step:0.02,fmt:v=>v.toFixed(2)+'×'},
+    {key:'wear',group:'age',label:'Corrosion',type:'range',min:0,max:1,step:0.02,fmt:v=>Math.round(v*100)+'%'},
+    {key:'encrust',group:'age',label:'Encrustation',type:'range',min:0,max:1,step:0.02,fmt:v=>Math.round(v*100)+'%'},
+    {key:'glow',group:'age',label:'Bioluminescent growth',type:'toggle'}
+  ],
+  defaults:()=>({kind:'crate',width:0.85,height:0.85,wear:0.35,encrust:0.45,glow:false,pal:5,depth:16,corrupt:0}),
+  generate:generateProp,
+  motions:['none','bob','sway','breathe'],
+  clips:()=>[{name:'idle',motion:'none',amp:0,freq:0,bias:0,frames:1,fps:1}],
+  hint:'Salvage, gear and wreckage. Corrosion eats the silhouette from its edges; encrustation grows coral on whatever surface faces the light, which is what ties a hundred-year-old drum to the reef around it.',
+  hud:c=>[c.kind.toUpperCase(),c.wear>0.5?'CORRODED':null],
+  label2:c=>c.kind
+});
+
 // ===================== ANIMATION =====================
 // Procedural motion models: pure (x,y,role,phase,meta,params) -> {dx,dy}, applied at
 // bake time. No frames are ever drawn by hand.
@@ -1231,7 +1349,6 @@ function syncModuleButtons(){[...document.getElementById('modules').children].fo
     b.setAttribute('aria-pressed',m.id===state.modId);
     b.onclick=()=>{if(state.modId===m.id)return;state.modId=m.id;state.frame=0;syncModuleButtons();buildRail();buildClips();fullRebuild();};
     el.appendChild(b);});
-  const soon=elm('button',null,'Props<span class="soon">M2</span>');soon.disabled=true;el.appendChild(soon);
   const soon2=elm('button',null,'Characters<span class="soon">M2</span>');soon2.disabled=true;el.appendChild(soon2);
 })();
 function setPlayIcon(){document.getElementById('play').textContent=state.playing?'❚❚':'▶';}
