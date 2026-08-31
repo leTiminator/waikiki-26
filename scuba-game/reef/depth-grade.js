@@ -25,6 +25,13 @@
 
 export const MAX_GRADE_DEPTH = 60;   // metres at which absorption saturates
 
+/**
+ * The ambient colour of the water itself. Distant layers are mixed toward this to fake
+ * atmospheric perspective — contrast drops with distance, which is what separates a
+ * background reef from the one you can actually touch (ART_BIBLE §8 readability rule).
+ */
+export const WATER = [26, 74, 96];
+
 export function clamp(v,a,b){return v<a?a:v>b?b:v;}
 
 /** @param {[number,number,number]} c 0-255 RGB @param {number} depth metres */
@@ -58,16 +65,21 @@ export const zoneAt = d => ZONES.find(z => d < z.max) || ZONES[ZONES.length-1];
  * per-pixel colour computation into a per-pixel map lookup. This is the "palette-swap
  * driven by the player's depth" the art bible asks for.
  */
-export function gradeImageData(src, dst, depth){
+export function gradeImageData(src, dst, depth, fog){
   const lut = new Map();
+  // `fog` 0..1 pushes the result toward the ambient water at this depth, for layers
+  // that are far away rather than deep.
+  const f = fog || 0;
+  const fc = f > 0 ? gradeColor(WATER, depth) : null;
   for(let i=0;i<src.length;i+=4){
     const a = src[i+3];
     if(!a){ dst[i]=dst[i+1]=dst[i+2]=dst[i+3]=0; continue; }
     const key = (src[i]<<16)|(src[i+1]<<8)|src[i+2];
     let g = lut.get(key);
     if(g===undefined){
-      const c = gradeColor([src[i],src[i+1],src[i+2]], depth);
-      g = (c[0]<<16)|(c[1]<<8)|c[2];
+      let c = gradeColor([src[i],src[i+1],src[i+2]], depth);
+      if(fc) c = [c[0]+(fc[0]-c[0])*f, c[1]+(fc[1]-c[1])*f, c[2]+(fc[2]-c[2])*f];
+      g = ((c[0]|0)<<16)|((c[1]|0)<<8)|(c[2]|0);
       lut.set(key,g);
     }
     dst[i]=(g>>16)&255; dst[i+1]=(g>>8)&255; dst[i+2]=g&255; dst[i+3]=a;

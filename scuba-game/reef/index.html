@@ -90,7 +90,7 @@
 </div>
 
 <script type="module">
-import { gradeColor, css, zoneAt } from './depth-grade.js';
+import { gradeColor, css, zoneAt, WATER } from './depth-grade.js';
 import { loadAll } from './tideforge.js';
 
 const boot = document.getElementById('boot');
@@ -197,6 +197,35 @@ for(let y=0;y<WH;y++){
   }
 }
 
+// ---------------------------------------------------------------- parallax layers
+// ART_BIBLE §8: far haze -> mid structures (reef, drop-off) -> gameplay layer ->
+// foreground. Distant layers are drawn as *silhouettes*, not tiles: at distance you read
+// a shape and a value, never a texture, and reusing the detailed tile kit out there just
+// smears its 16px repeat across half the screen. Haze — mixing toward the ambient water —
+// does the separating, which is also what keeps the gameplay layer legible (§8).
+const RIDGE_STEP = 4;                                     // art-px per silhouette sample
+function makeRidge(seed, baseTiles, ampTiles){
+  const r = rng(seed), a=r()*6.28, b=r()*6.28, c=r()*6.28, d=r()*6.28;
+  const n = Math.ceil(WT*TILE/RIDGE_STEP), out = new Float32Array(n);
+  for(let i=0;i<n;i++){
+    const x = i*RIDGE_STEP/TILE;
+    const v = Math.sin(x*0.041+a)*ampTiles + Math.sin(x*0.013+b)*ampTiles*1.35
+            + Math.sin(x*0.101+c)*ampTiles*0.55 + Math.sin(x*0.31+d)*ampTiles*0.22;
+    out[i] = Math.max(6, Math.min(WH-3, baseTiles + v)) * TILE;
+  }
+  return out;
+}
+// A background ridge fills downward from its crest, so its crest has to stay *inside*
+// the frame — above the near seabed but below the open water. A crest that drifts above
+// the viewport floods the whole screen with one flat colour, which reads as no layers at
+// all. Vertical parallax is therefore kept gentle (the scene reads mostly horizontally)
+// and the tiers are spaced by only a few metres.
+const LAYERS = [
+  {ridge: makeRidge(9917, 43.0, 2.2), px:0.30, py:0.92, fog:0.48, plants:[]},  // far drop-off
+  {ridge: makeRidge(4421, 45.5, 1.8), px:0.58, py:0.96, fog:0.28, plants:[]}   // background reef
+];
+const mixc = (a,b,t) => [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t];
+
 // ---------------------------------------------------------------- scatter
 const FLORA = [
   {a:A.flora_kelp,     w:0.30, minD:4,  maxD:24},
@@ -204,6 +233,7 @@ const FLORA = [
   {a:A.flora_fan,      w:0.17, minD:8,  maxD:28},
   {a:A.flora_grass,    w:0.25, minD:3,  maxD:25}
 ];
+const BG_FLORA = FLORA.filter(f => f.a === A.flora_grass || f.a === A.flora_fan);
 const plants = [];
 for(let x=2;x<WT-2;x++){
   if(R() > 0.44) continue;
@@ -220,6 +250,25 @@ for(let x=2;x<WT-2;x++){
   });
 }
 plants.sort((p,q)=>p.y-q.y);
+
+// flora on the background reef, and a few near silhouettes in the foreground
+{
+  const back = LAYERS[1];
+  for(let x=3;x<WT-3;x++){
+    if(R() > 0.26) continue;
+    const pick = BG_FLORA[(R()*BG_FLORA.length)|0];
+    const wx = x*TILE + TILE/2;
+    back.plants.push({a:pick.a, x:wx, y:back.ridge[Math.min(back.ridge.length-1,Math.floor(wx/RIDGE_STEP))]+1,
+                      phase:R()*Math.PI*2, rate:0.4+R()*0.4, flip:R()<0.5});
+  }
+}
+const fgPlants = [];
+for(let i=0;i<14;i++){
+  const pick = FLORA[(R()*FLORA.length)|0];
+  const fx = R()*WT*TILE;
+  fgPlants.push({a:pick.a, x:fx, y:terrainTopArt(fx)+1,
+                 phase:R()*Math.PI*2, rate:0.5+R()*0.5, flip:R()<0.5});
+}
 
 const fish = [];
 for(let i=0;i<34;i++){
@@ -353,7 +402,7 @@ function drawDiver(sx, sy, d){
   ctx.restore();
 }
 
-let last = 0, acc = 0;
+let last = 0, acc = 0, pivotX = null, pivotY = null;
 function frame(ts){
   if(!last) last = ts;
   const dt = Math.min(0.05, (ts-last)/1000); last = ts; acc += dt;
@@ -366,10 +415,44 @@ function frame(ts){
   let camX = diver.x - vw/(2*ZOOM), camY = diver.y - vh*0.38/ZOOM;
   camX = Math.max(0, Math.min(WT*TILE - vw/ZOOM, camX));
   camY = Math.max(0, Math.min(WH*TILE - vh/ZOOM, camY));
+  // Parallax is motion relative to a shared reference, not a raw multiple of the camera:
+  // every layer lines up at the opening view and diverges from there as you swim.
+  if(pivotX === null){ pivotX = camX; pivotY = camY; }
+  const lcam = (fx, fy) => ({x: pivotX + (camX-pivotX)*fx, y: pivotY + (camY-pivotY)*fy});
   const sx = ax => Math.round((ax - camX) * ZOOM);
   const sy = ay => Math.round((ay - camY) * ZOOM);
 
   drawWater(camY, vw, vh);
+
+  // --- background layers, farthest first: silhouette + a lit top rim ---
+  for(const L of LAYERS){
+    const lc = lcam(L.px, L.py);
+    const dMid = depthAt(lc.y + vh/(2*ZOOM));
+    const water = gradeColor(WATER, Math.max(0, dMid - 3));
+    const body  = mixc(gradeColor([20,36,48], dMid), water, L.fog);
+    const rim   = mixc(body, [206,230,242], 0.17 * (1 - L.fog*0.5));
+    const i0 = Math.max(0, Math.floor(lc.x/RIDGE_STEP));
+    const i1 = Math.min(L.ridge.length-1, Math.ceil((lc.x + vw/ZOOM)/RIDGE_STEP));
+    const w  = RIDGE_STEP*ZOOM + 1;
+    ctx.fillStyle = css(body);
+    for(let i=i0;i<=i1;i++){
+      const px = Math.round((i*RIDGE_STEP - lc.x)*ZOOM), py = Math.round((L.ridge[i] - lc.y)*ZOOM);
+      if(py > vh) continue;
+      ctx.fillRect(px, py, w, vh - py);
+    }
+    ctx.fillStyle = css(rim);
+    for(let i=i0;i<=i1;i++){
+      const px = Math.round((i*RIDGE_STEP - lc.x)*ZOOM), py = Math.round((L.ridge[i] - lc.y)*ZOOM);
+      if(py > vh || py < -4) continue;
+      ctx.fillRect(px, py, w, ZOOM*2);
+    }
+    for(const p of L.plants){
+      const px = Math.round((p.x - lc.x)*ZOOM), py = Math.round((p.y - lc.y)*ZOOM);
+      if(px < -140 || px > vw+140 || py < -260 || py > vh+80) continue;
+      p.a.draw(ctx, depthAt(p.y), 'sway', Math.floor(acc*7*p.rate + p.phase*4), px, py, ZOOM,
+               {anchor:'base', flip:p.flip, fog: Math.min(0.88, L.fog + 0.26)});
+    }
+  }
 
   // godrays — tiled down the top of the water column, strongest shallow (ART_BIBLE §9.2)
   {
@@ -446,6 +529,28 @@ function frame(ts){
     A.vfx_bubbles.draw(ctx, d, 'loop', Math.floor(acc*14), sx(diver.x)+diver.face*8*ZOOM,
                        sy(diver.y)-34*ZOOM, ZOOM, {alpha:0.85});
   }
+
+  // --- foreground: near silhouettes, parallaxed past the gameplay layer and pushed
+  // deep into the grade so they read as unlit shapes between you and the reef ---
+  {
+    const fc = lcam(1.34, 1.22), fx = fc.x, fy = fc.y;
+    for(const p of fgPlants){
+      const px = Math.round((p.x - fx)*ZOOM), py = Math.round((p.y - fy)*ZOOM);
+      if(px < -160 || px > vw+160 || py < -280 || py > vh+120) continue;
+      p.a.draw(ctx, depthAt(p.y) + 24, 'sway', Math.floor(acc*8*p.rate + p.phase*4), px, py, ZOOM,
+               {anchor:'base', flip:p.flip});
+    }
+  }
+  // near particulate drifts faster and brighter than the haze behind it
+  ctx.save();
+  for(let i=0;i<snow.length;i+=3){
+    const nc = lcam(1.30, 1.18), p = snow[i];
+    const px = Math.round((p.x - nc.x)*ZOOM), py = Math.round((p.y - nc.y)*ZOOM);
+    if(px<-6||px>vw+6||py<-6||py>vh+6) continue;
+    ctx.fillStyle = `rgba(196,222,236,${0.16+p.z*0.16})`;
+    ctx.fillRect(px, py, ZOOM*2, ZOOM*2);
+  }
+  ctx.restore();
 
   updateHud(d);
   requestAnimationFrame(frame);

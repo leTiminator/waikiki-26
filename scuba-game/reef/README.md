@@ -45,6 +45,32 @@ real rule, and GDD §6.15 calls it the best tension-per-line-of-code in the game
 | `tools/export-assets.mjs` | regenerates `assets/` by driving TideForge headlessly |
 | `tools/verify-grade.mjs` | asserts the tool and the runtime grade colour identically |
 
+## Parallax layers
+
+Five layers, back to front (ART_BIBLE §8):
+
+1. **Water** — the depth-graded gradient.
+2. **Far drop-off** — a silhouette ridge, heavily hazed, slow horizontal parallax.
+3. **Background reef** — a nearer ridge with small flora on it, moderately hazed.
+4. **Gameplay layer** — the autotiled seabed, flora, fish, diver, bubbles, silt.
+5. **Foreground** — near flora silhouettes and coarse particulate, parallaxed *past* the
+   camera and pushed deep into the grade so they read as unlit shapes.
+
+Two things make this work, and both were wrong on the first attempt:
+
+**Distant layers are silhouettes, not tiles.** Reusing the detailed tile kit for the
+background smears its 16px repeat across half the screen and reads as wallpaper. At
+distance you read a shape and a value, never a texture. Distance is sold by *contrast
+loss* — mixing toward the ambient water — which is also exactly what keeps the gameplay
+layer legible (§8's readability rule).
+
+**Parallax is motion relative to a shared pivot**, not a raw multiple of the camera
+position. `worldY - camY * f` is meaningless in absolute terms; every layer is placed as
+`pivot + (cam - pivot) * f`, so all layers align at the opening view and diverge as you
+swim. And because a ridge fills downward from its crest, that crest must stay inside the
+frame: one that drifts above the viewport floods the screen with a single flat colour,
+which looks exactly like having no layers at all.
+
 ## How the pipeline fits together
 
 TideForge exports **ungraded** art (depth 0, raw palette colours). The runtime applies the

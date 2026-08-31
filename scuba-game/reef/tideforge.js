@@ -48,19 +48,24 @@ class Asset {
   clip(name){ return this.clips.find(c => c.name === name) || this.clips[0]; }
   frameCount(name){ const c = this.clip(name); return c ? c.frames : 1; }
 
-  /** The atlas graded for this depth, cached in 2 m buckets. */
-  graded(depth){
+  /**
+   * The atlas graded for this depth, cached in 2 m depth buckets and 0.1 fog steps.
+   * `fog` fades the layer toward the ambient water — distance, as opposed to depth.
+   */
+  graded(depth, fog){
     const b = Math.round(depth / 2) * 2;
-    let g = this._graded.get(b);
+    const f = Math.round((fog || 0) * 10) / 10;
+    const key = b + '|' + f;
+    let g = this._graded.get(key);
     if(!g){
       const {c,x} = canvasOf(this.native.c.width, this.native.c.height);
       const src = this.native.x.getImageData(0,0,c.width,c.height);
       const dst = x.createImageData(c.width, c.height);
-      gradeImageData(src.data, dst.data, b);
+      gradeImageData(src.data, dst.data, b, f);
       x.putImageData(dst,0,0);
       g = c;
-      this._graded.set(b,g); this._order.push(b);
-      while(this._order.length > 24) this._graded.delete(this._order.shift());
+      this._graded.set(key,g); this._order.push(key);
+      while(this._order.length > 40) this._graded.delete(this._order.shift());
     }
     return g;
   }
@@ -70,7 +75,7 @@ class Asset {
    * `anchor` names a manifest anchor ('base' plants flora on the seafloor); default
    * is the sprite's centre.
    */
-  draw(ctx, depth, clipName, frame, cx, cy, zoom, {flip=false, anchor=null, alpha=1}={}){
+  draw(ctx, depth, clipName, frame, cx, cy, zoom, {flip=false, anchor=null, alpha=1, fog=0}={}){
     const clip = this.clip(clipName);
     const row  = clip ? clip.row : 0;
     const F    = Math.max(1, this.frameCount(clipName));
@@ -84,7 +89,7 @@ class Asset {
     ctx.imageSmoothingEnabled = false;
     ctx.translate(Math.round(cx), Math.round(cy));
     if(flip) ctx.scale(-1,1);
-    ctx.drawImage(this.graded(depth),
+    ctx.drawImage(this.graded(depth, fog),
       col*this.fw, row*this.fh, this.fw, this.fh,
       Math.round(-ox*zoom), Math.round(-oy*zoom), w, h);
     ctx.restore();
@@ -122,11 +127,11 @@ class Tileset extends Asset {
     if(at(x-1,y-1)) m |= b.nw;
     return this.maskToTile[m];
   }
-  drawTile(ctx, depth, index, dx, dy, zoom){
+  drawTile(ctx, depth, index, dx, dy, zoom, fog){
     const t = this.tiles[index];
     const s = this.tileSize;
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(this.graded(depth), t.col*s, t.row*s, s, s,
+    ctx.drawImage(this.graded(depth, fog), t.col*s, t.row*s, s, s,
       Math.round(dx), Math.round(dy), s*zoom, s*zoom);
   }
 }
