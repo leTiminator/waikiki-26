@@ -10,6 +10,8 @@
       "tail": "fork",
       "dorsal": "low",
       "pattern": "none",
+      "res": 1,
+      "scales": 0.5,
       "pal": 5,
       "depth": 0,
       "corrupt": 0,

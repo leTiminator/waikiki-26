@@ -10,6 +10,8 @@
       "tail": "fork",
       "dorsal": "low",
       "pattern": "h-stripes",
+      "res": 1,
+      "scales": 0.5,
       "pal": 2,
       "depth": 0,
       "corrupt": 0,
@@ -28,7 +30,7 @@
   "anchors": {
     "eye": [
       43,
-      15
+      16
     ],
     "mouth": [
       47,

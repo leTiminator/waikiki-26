@@ -38,11 +38,15 @@ const ASSETS=[
   {file:'flora_staghorn',module:'flora',pal:PAL.coral,  chips:{Archetype:'staghorn'},ranges:{Strands:2,Iterations:4,Height:0.9}},
   {file:'flora_fan',     module:'flora',pal:PAL.violet, chips:{Archetype:'fan'},     ranges:{Strands:1,Iterations:4,Height:0.85}},
   {file:'flora_grass',   module:'flora',pal:PAL.lime,   chips:{Archetype:'grass'},   ranges:{Strands:6,Iterations:4,Height:0.7}},
-  // sized in the tool, not in the scene: a smaller Length simply uses less of the
-  // 72x42 frame, so the sprite is physically smaller in world units
-  {file:'fish_reef',    module:'creature',pal:PAL.tang,   chips:{Archetype:'reef',    Pattern:'v-stripes'},ranges:{Length:0.78,'Body depth':0.95}},
-  {file:'fish_angel',   module:'creature',pal:PAL.sunfish,chips:{Archetype:'angel',   Pattern:'h-stripes'},ranges:{Length:0.72,'Body depth':1.15}},
-  {file:'fish_predator',module:'creature',pal:PAL.silver, chips:{Archetype:'predator',Pattern:'none'},     ranges:{Length:1.25,'Body depth':0.9}},
+  // Sized in the tool, not in the scene: a smaller Length simply uses less of the frame,
+  // so the sprite is physically smaller in world units.
+  // Resolution is pinned to 1 on purpose. TideForge can render these at 2-3x now, but a
+  // game has ONE pixel size: a 144x84 fish drawn beside a 16px tile either doubles in
+  // world size or drops to half-size pixels, and both look wrong. Raising it here means
+  // raising it for tiles, flora and props together — a deliberate whole-set decision.
+  {file:'fish_reef',    module:'creature',pal:PAL.tang,   chips:{Archetype:'reef',    Pattern:'v-stripes'},ranges:{Length:0.78,'Body depth':0.95,Resolution:1}},
+  {file:'fish_angel',   module:'creature',pal:PAL.sunfish,chips:{Archetype:'angel',   Pattern:'h-stripes'},ranges:{Length:0.72,'Body depth':1.15,Resolution:1}},
+  {file:'fish_predator',module:'creature',pal:PAL.silver, chips:{Archetype:'predator',Pattern:'none'},     ranges:{Length:1.25,'Body depth':0.9,Resolution:1}},
   // salvage: the reason you're down here at all (GDD §4)
   {file:'prop_crate',  module:'props',pal:PAL.sand,   chips:{Kind:'crate'}, ranges:{Width:0.8,Height:0.75,Corrosion:0.45,Encrustation:0.4}},
   {file:'prop_drum',   module:'props',pal:PAL.crimson,chips:{Kind:'drum'},  ranges:{Width:0.7,Height:0.9,Corrosion:0.6,Encrustation:0.5}},
