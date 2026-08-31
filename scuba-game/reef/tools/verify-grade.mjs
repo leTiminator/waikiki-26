@@ -110,28 +110,42 @@ for(const c of CASES){
     if(A.data.length !== B.data.length) return {error:'size mismatch'};
     const G = new Uint8ClampedArray(A.data.length);
     gradeImageData(A.data, G, depth);            // runtime grade, applied to the flat export
-    let bad=0, worst=0, sample=null, opaque=0;
+    // Split by alpha. Fully opaque pixels must match exactly. Semi-transparent ones are
+    // compared loosely because canvas stores premultiplied alpha: reading a translucent
+    // PNG back through getImageData can shift a channel by 1 before any grading happens,
+    // in the tool and in the game alike. That's a pixel-transport limit, not a disagreement
+    // about the curve.
+    let opaque=0, opaqueBad=0, opaqueWorst=0, sample=null;
+    let trans=0, transBad=0, transWorst=0;
     for(let i=0;i<G.length;i+=4){
-      if(B.data[i+3] < 8) continue;
-      opaque++;
+      const a = B.data[i+3];
+      if(a < 8) continue;
       const d = Math.max(Math.abs(G[i]-B.data[i]), Math.abs(G[i+1]-B.data[i+1]), Math.abs(G[i+2]-B.data[i+2]));
-      if(d > worst){ worst = d;
-        sample = {runtime:[G[i],G[i+1],G[i+2]], tool:[B.data[i],B.data[i+1],B.data[i+2]],
-                  flat:[A.data[i],A.data[i+1],A.data[i+2]]}; }
-      if(d > 0) bad++;
+      if(a === 255){
+        opaque++;
+        if(d > opaqueWorst){ opaqueWorst = d;
+          sample = {alpha:a, runtime:[G[i],G[i+1],G[i+2]], tool:[B.data[i],B.data[i+1],B.data[i+2]],
+                    flat:[A.data[i],A.data[i+1],A.data[i+2]]}; }
+        if(d > 0) opaqueBad++;
+      } else {
+        trans++;
+        if(d > transWorst) transWorst = d;
+        if(d > 1) transBad++;
+      }
     }
-    return {opaque, bad, worst, sample};
+    return {opaque, opaqueBad, opaqueWorst, trans, transBad, transWorst, sample};
   }, {flat, baked, depth:c.depth});
 
-  const ok = r.bad === 0;
+  const ok = r.opaqueBad === 0 && r.transBad === 0;
   if(!ok) failed++;
   console.log(`  ${ok?'PASS':'FAIL'}  ${c.name.padEnd(20)} @ ${String(c.depth).padStart(2)} m  ` +
-              `${r.opaque} opaque px, ${r.bad} differ, worst Δ${r.worst}`);
-  if(!ok) console.log(`        flat ${JSON.stringify(r.sample.flat)}  ` +
+              `opaque ${r.opaque}px/${r.opaqueBad} differ (Δ${r.opaqueWorst})  ` +
+              `translucent ${r.trans}px/${r.transBad} over Δ1 (Δ${r.transWorst})`);
+  if(!ok && r.sample) console.log(`        flat ${JSON.stringify(r.sample.flat)}  ` +
                       `runtime ${JSON.stringify(r.sample.runtime)}  tool ${JSON.stringify(r.sample.tool)}`);
 }
 console.log(failed ? `\n${failed} case(s) disagree — the tool is previewing something the game won't draw.\n`
-                   : `\nall cases identical — the preview and the runtime agree exactly.\n`);
+                   : `\nopaque pixels identical; translucent within the 1-unit premultiply limit.\n`);
 if(errs.length) console.error('page errors:', errs);
 await b.close();
 server.close();

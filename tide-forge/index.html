@@ -187,7 +187,8 @@
 // Role ids. A generated asset is a matrix of ROLES, never colors — one matrix
 // recolors into any palette / depth / corruption state. Shared by every module.
 const EMPTY=0,OUTLINE=1,SPEC=2,BACK=3,SHADOW=4,BASE=5,HIGH=6,BELLY=7,FIN=8,FINEDGE=9,
-      PATTERN=10,EYEW=11,EYEP=12,EYEH=13,GLOW=14,MOUTH=15,HAZE=16,HAZE2=17,GLOWDIM=18;
+      PATTERN=10,EYEW=11,EYEP=12,EYEH=13,GLOW=14,MOUTH=15,HAZE=16,HAZE2=17,GLOWDIM=18,
+      RIM=19,TRANS=20;
 
 const BASE_PALETTES=[
   {name:'coral',ramp:['#3a1410','#7a2d15','#c25a25','#e8873c','#f6c169']},
@@ -219,11 +220,37 @@ function fbm(x,y,s,oct,gain,P){let amp=1,f=1,sum=0,norm=0;
   for(let i=0;i<oct;i++){sum+=amp*vnoise(x*f,y*f,s+i*7919,P?P*f:0);norm+=amp;amp*=gain;f*=2;}
   return sum/norm;}
 
+// --- shading: ordered dithering ---
+// A 4x4 Bayer matrix lets a 5-step ramp imply far more than 5 tones: values that fall
+// between two steps alternate between them in a stable pattern instead of snapping.
+// This is the cheapest apparent-colour-depth trick in pixel art, and every generator
+// quantises through it.
+const LIGHT_X=-0.55, LIGHT_Y=-0.83;   // light from upper-left, shared by every generator
+const BAYER4=[[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]];
+function shadeIndex(v,x,y,n,amt){
+  const b=(BAYER4[y&3][x&3]+0.5)/16-0.5;
+  return clamp(Math.floor(v*n+b*(amt==null?0.9:amt)),0,n-1);
+}
+// pick a role from a ramp of roles by a 0..1 lightness, dithered
+function shadeRole(ramp,v,x,y,amt){return ramp[shadeIndex(v,x,y,ramp.length,amt)];}
+
 // --- color ---
 function hex2rgb(h){return[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
 function mix(a,b,t){return[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];}
 function darken(c,t){return mix(c,[3,6,10],t);}function lighten(c,t){return mix(c,[255,255,255],t);}
 function clamp(v,a,b){return v<a?a:v>b?b:v;}
+// Warm the highlights, cool the shadows — hue movement, not just value movement, is
+// most of what makes a ramp read as lit rather than as grey-scaled paint. Luminance is
+// restored afterwards so the ramp's value structure (and the depth grade) is untouched.
+const WARM=[255,186,96], COOL=[62,104,186];
+const luma=c=>0.299*c[0]+0.587*c[1]+0.114*c[2];
+function tintStep(c,t,strength){
+  if(!t)return c;
+  const k=Math.abs(t)*(strength==null?0.30:strength);
+  const m=mix(c,t>0?WARM:COOL,k);
+  const l0=luma(c),l1=Math.max(1,luma(m));
+  return[clamp(m[0]*l0/l1,0,255),clamp(m[1]*l0/l1,0,255),clamp(m[2]*l0/l1,0,255)];
+}
 function corruptColor(c,a){if(a<=0)return c;const l=0.3*c[0]+0.59*c[1]+0.11*c[2];let d=mix(c,[l,l,l],0.62*a);d=mix(d,[201,206,188],0.55*a);return mix(d,[150,172,132],0.18*a);}
 // the signature light-absorption curve — red dies first, then green. Shared with the game runtime.
 function gradeColor(c,depth){const t=clamp(depth/60,0,1);let r=c[0]*(1-0.88*t),g=c[1]*(1-0.42*t),b=c[2]*(1-0.10*t);r+=(9-r)*0.30*t;g+=(22-g)*0.28*t;b+=(46-b)*0.26*t;const dk=1-0.28*t;return[clamp(r*dk,0,255)|0,clamp(g*dk,0,255)|0,clamp(b*dk,0,255)|0];}
@@ -235,12 +262,20 @@ function gradeColor(c,depth){const t=clamp(depth/60,0,1);let r=c[0]*(1-0.88*t),g
 function q8(c){return[Math.round(c[0]),Math.round(c[1]),Math.round(c[2])];}
 function buildColorCache(palIdx,depth,corrupt){
   const pal=PALETTES[palIdx]||PALETTES[0];
-  const ramp=pal.ramp.map(hex2rgb),OL=q8(darken(ramp[0],0.55));
+  const ramp=pal.ramp.map(hex2rgb);
+  // how far each role sits from neutral: + warms (toward light), - cools (toward shade)
+  const TINT={[SPEC]:1.0,[BELLY]:0.62,[HIGH]:0.34,[BASE]:0,[SHADOW]:-0.42,[BACK]:-0.78,
+              [PATTERN]:-0.62,[FIN]:-0.30,[TRANS]:0.30,[RIM]:0.40};
+  const OL=q8(tintStep(darken(ramp[0],0.55),-0.9));
   const body={[SPEC]:lighten(ramp[4],0.22),[BACK]:ramp[0],[SHADOW]:ramp[1],[BASE]:ramp[2],[HIGH]:ramp[3],
-              [BELLY]:mix(ramp[4],[224,236,240],0.5),[FIN]:mix(ramp[1],OL,0.30),[PATTERN]:darken(ramp[0],0.45)};
+              [BELLY]:mix(ramp[4],[224,236,240],0.5),[FIN]:mix(ramp[1],OL,0.30),[PATTERN]:darken(ramp[0],0.45),
+              [TRANS]:mix(ramp[1],[178,210,228],0.24),[RIM]:mix(ramp[3],[255,244,214],0.20)};
   const c={};c[EMPTY]=[0,0,0,0];c[OUTLINE]=[...gradeColor(OL,depth),255];c[FINEDGE]=c[OUTLINE];
-  for(const r of[SPEC,BACK,SHADOW,BASE,HIGH,BELLY,PATTERN])c[r]=[...gradeColor(q8(corruptColor(body[r],corrupt)),depth),255];
-  c[FIN]=[...gradeColor(q8(corruptColor(body[FIN],corrupt)),depth),232];
+  for(const r of[SPEC,BACK,SHADOW,BASE,HIGH,BELLY,PATTERN,RIM])
+    c[r]=[...gradeColor(q8(corruptColor(tintStep(body[r],TINT[r],TINT[r]>0?0.30:0.20),corrupt)),depth),255];
+  c[FIN]=[...gradeColor(q8(corruptColor(tintStep(body[FIN],TINT[FIN]),corrupt)),depth),232];
+  // a membrane: fin webbing, sea-fan lattice, soft-coral edges — light passes through it
+  c[TRANS]=[...gradeColor(q8(corruptColor(tintStep(body[TRANS],TINT[TRANS]),corrupt)),depth),168];
   c[EYEW]=[...gradeColor([228,236,240],depth),255];
   c[EYEP]=[...gradeColor([10,12,16],depth),255];   // the pupil absorbs light like everything else
   c[EYEH]=[...gradeColor([255,255,255],depth),255];c[MOUTH]=c[OUTLINE];
@@ -255,27 +290,61 @@ function buildColorCache(palIdx,depth,corrupt){
 // --- pixel-matrix helpers (shared stamping vocabulary for every generator) ---
 function newMat(w,h){const m=new Array(h);for(let y=0;y<h;y++)m[y]=new Uint8Array(w);return m;}
 function put(m,w,h,x,y,role,onlyEmpty){x|=0;y|=0;if(x<0||x>=w||y<0||y>=h)return;if(onlyEmpty&&m[y][x])return;m[y][x]=role;}
-// thick tapered segment. roleFn(u,t) — u = -1..1 across the width (lit side positive), t = 0..1 along it.
+// thick tapered segment. roleFn(u,t,x,y) — u = -1..1 across the width (lit side positive),
+// t = 0..1 along it, x/y the plot coords so the callee can dither.
 function stampSeg(m,w,h,x0,y0,x1,y1,w0,w1,roleFn,onlyEmpty){
   const dx=x1-x0,dy=y1-y0,len=Math.hypot(dx,dy)||1,steps=Math.max(2,Math.ceil(len*2));
   const nx=-dy/len,ny=dx/len;
   for(let i=0;i<=steps;i++){const t=i/steps,px=x0+dx*t,py=y0+dy*t,hw=(w0+(w1-w0)*t)/2;
-    for(let o=-hw;o<=hw;o+=0.5){const u=hw>0.01?o/hw:0;put(m,w,h,Math.round(px+nx*o),Math.round(py+ny*o),roleFn(u,t),onlyEmpty);}}
+    for(let o=-hw;o<=hw;o+=0.5){const u=hw>0.01?o/hw:0;
+      const X=Math.round(px+nx*o),Y=Math.round(py+ny*o);
+      put(m,w,h,X,Y,roleFn(u,t,X,Y),onlyEmpty);}}
 }
 function stampDisc(m,w,h,cx,cy,r,roleFn,onlyEmpty){
   const ri=Math.ceil(r);
   for(let dy=-ri;dy<=ri;dy++)for(let dx=-ri;dx<=ri;dx++){const d=Math.hypot(dx,dy);if(d>r)continue;
-    put(m,w,h,Math.round(cx+dx),Math.round(cy+dy),roleFn(d/(r||1),dx,dy),onlyEmpty);}
+    const X=Math.round(cx+dx),Y=Math.round(cy+dy);
+    put(m,w,h,X,Y,roleFn(d/(r||1),dx,dy,X,Y),onlyEmpty);}
 }
-// wrap every solid pixel in OUTLINE. `soft` roles (haze/glow) neither outline nor block one.
+// Wrap every solid pixel in OUTLINE — but the edge facing the light gets RIM instead.
+// A single flat outline all the way round is what flattens pixel art; letting the lit
+// side catch a warm rim is most of the difference between a sticker and a solid object.
+// `soft` roles (haze/glow) neither outline nor block one.
 const SOFT_ROLES=new Set([HAZE,HAZE2,GLOW,GLOWDIM]);
-function outlinePass(m,w,h){
+function outlinePass(m,w,h,rimStrength){
+  const rim=rimStrength==null?0.55:rimStrength;
   const add=[];
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){
     if(m[y][x])continue;
     const n=(xx,yy)=>xx>=0&&xx<w&&yy>=0&&yy<h&&m[yy][xx]&&!SOFT_ROLES.has(m[yy][xx]);
-    if(n(x-1,y)||n(x+1,y)||n(x,y-1)||n(x,y+1))add.push(y*w+x);}
-  for(const p of add)m[(p/w)|0][p%w]=OUTLINE;
+    const l=n(x-1,y),r=n(x+1,y),u=n(x,y-1),d=n(x,y+1);
+    if(!(l||r||u||d))continue;
+    // the outward normal of this edge pixel: it points away from whatever solid it touches
+    const nx=(l?1:0)-(r?1:0), ny=(u?1:0)-(d?1:0);
+    const lit=(nx*LIGHT_X+ny*LIGHT_Y);
+    add.push([y*w+x, (rim>0 && lit>0.62) ? RIM : OUTLINE]);
+  }
+  for(const [p,role] of add)m[(p/w)|0][p%w]=role;
+}
+// Darken pixels tucked under other geometry. Cheap screen-space AO: count solid
+// neighbours on the light side; the more there are, the more occluded the pixel is.
+const AO_DOWN={[SPEC]:HIGH,[BELLY]:HIGH,[HIGH]:BASE,[BASE]:SHADOW,[SHADOW]:BACK,[RIM]:HIGH,[TRANS]:FIN};
+function aoPass(m,w,h,radius,strength){
+  const R=radius==null?3:radius, k=strength==null?3:strength;
+  const src=m.map(r=>r.slice());
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const role=src[y][x];
+    const to=AO_DOWN[role];
+    if(to===undefined)continue;
+    let occ=0;
+    for(let i=1;i<=R;i++){
+      const sx=Math.round(x+LIGHT_X*i), sy=Math.round(y+LIGHT_Y*i);
+      if(sx<0||sx>=w||sy<0||sy>=h)continue;
+      const q=src[sy][sx];
+      if(q&&!SOFT_ROLES.has(q)&&q!==OUTLINE&&q!==RIM)occ++;
+    }
+    if(occ>=k)m[y][x]=to;
+  }
 }
 
 // ===================== MODULE REGISTRY =====================
@@ -303,6 +372,7 @@ const TAILS=['fork','fan','lunate','round','point'];
 const DORSALS=['none','low','sail','spiny'];
 const PATTERNS=['none','v-stripes','h-stripes','spots','diagonal','patches'];
 
+const BODY_RAMP=[BACK,SHADOW,BASE,HIGH,BELLY];
 function generateCreature(c,rng){
   const w=72,h=42,cy=h/2,A=ARCH_META[c.arch]||ARCH_META.reef;
   const rx=clamp(A.len*c.len*(w*0.5),8,w*0.5-2),ry=clamp(A.dep*c.dep*(h*0.5),4,h*0.5-3);
@@ -323,21 +393,54 @@ function generateCreature(c,rng){
   for(let x=Math.round(cx-rx);x<=Math.round(cx+rx);x++){const dx=(x-cx)/rx;if(Math.abs(dx)>1)continue;
     const hh=ry*Math.sqrt(Math.max(0,1-dx*dx)),yc=cy+curveAt(x),topH=hh*0.92,botH=hh*1.08;
     const yTop=Math.round(yc-topH),yBot=Math.round(yc+botH);topEdge[x]=yTop;botEdge[x]=yBot;const span=Math.max(1,yBot-yTop);
-    for(let y=yTop;y<=yBot;y++){const f=(y-yTop)/span;let role;
-      if(f<0.07)role=SPEC;else if(f<0.30)role=BACK;else if(f<0.55)role=SHADOW;else if(f<0.72)role=BASE;else if(f<0.87)role=HIGH;else role=BELLY;set(x,y,role);}}
+    for(let y=yTop;y<=yBot;y++){
+      const f=(y-yTop)/span;                                  // 0 = dorsal, 1 = ventral
+      // countershading is the fish's own pigment: dark back grading to a pale belly
+      let v=0.05+0.90*f;                                       // linear: dark cap, broad mid-tones, pale belly
+      // and the body is a cylinder — both ends turn away from the viewer and fall off
+      v-=0.22*Math.pow(Math.abs(dx),2.4);
+      set(x,y,shadeRole(BODY_RAMP,clamp(v,0,1),x,y,0.55));}}
   if(c.dorsal!=='none'){const x0=Math.round(cx-rx*0.42),x1=Math.round(cx+rx*0.26);for(let x=x0;x<=x1;x++){if(topEdge[x]<0)continue;let hgt;
     if(c.dorsal==='low')hgt=ry*0.34;else if(c.dorsal==='sail')hgt=ry*(0.55+0.45*Math.sin(Math.PI*(x-x0)/Math.max(1,x1-x0)));else hgt=ry*(0.30+0.42*Math.abs(Math.sin(x*0.95)));
     hgt=Math.round(hgt);for(let k=1;k<=hgt;k++)set(x,topEdge[x]-k,FIN,true);}}
   if(c.arch!=='eel'){const x0=Math.round(cx-rx*0.15),x1=Math.round(cx+rx*0.12);for(let x=x0;x<=x1;x++){if(botEdge[x]<0)continue;const hgt=Math.round(ry*0.22);for(let k=1;k<=hgt;k++)set(x,botEdge[x]+k,FIN,true);}}
   const spots=[];if(c.pattern==='spots'){const n=4+Math.floor(rng()*5);for(let i=0;i<n;i++)spots.push([cx-rx*0.4+rng()*rx*1.2,cy-ry*0.5+rng()*ry,1.4+rng()*1.6]);}
   const sw=5,ph=Math.floor(rng()*4);
-  const patHit=(x,y)=>{switch(c.pattern){case'v-stripes':return((x-ph)%sw+sw)%sw<sw*0.5;case'h-stripes':return(y%sw)<sw*0.5;case'diagonal':return((x+y)%sw)<sw*0.5;case'spots':return spots.some(s=>((x-s[0])**2+(y-s[1])**2)<s[2]*s[2]);case'patches':return hash2(x>>1,y>>1,c.seed)>0.58;default:return false;}};
-  if(c.pattern!=='none')for(let y=0;y<h;y++)for(let x=0;x<w;x++){const r=roles[y][x];if(r===SHADOW||r===BASE||r===HIGH||r===BACK){if(patHit(x,y))roles[y][x]=PATTERN;}}
+  const patHit=(x,y)=>{switch(c.pattern){case'v-stripes':return((x-ph)%sw+sw)%sw<sw*0.38;case'h-stripes':return(y%sw)<sw*0.4;case'diagonal':return((x+y)%sw)<sw*0.5;case'spots':return spots.some(s=>((x-s[0])**2+(y-s[1])**2)<s[2]*s[2]);case'patches':return hash2(x>>1,y>>1,c.seed)>0.58;default:return false;}};
+  // Markings shade the body two ramp steps darker rather than stamping one flat colour,
+  // so a stripe still reads as wrapping around a round, lit fish.
+  const MARK={[BELLY]:BASE,[HIGH]:SHADOW,[BASE]:BACK,[SHADOW]:BACK,[BACK]:PATTERN,[SPEC]:HIGH};
+  if(c.pattern!=='none')for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const r=roles[y][x];
+    if(MARK[r]!==undefined&&patHit(x,y))roles[y][x]=MARK[r];}
+  // A wet fish catches light along its dorsal ridge — a thin highlight that follows the
+  // back and fades out at both ends, dithered so it dissolves rather than stickers on.
+  {const x0=Math.round(cx-rx*0.18),x1=Math.round(cx+rx*0.64);
+   for(let x=x0;x<=x1;x++){
+     if(x<0||x>=w||topEdge[x]<0)continue;
+     const t=(x-x0)/Math.max(1,x1-x0),strength=Math.sin(Math.PI*t);
+     for(let k=0;k<2;k++){
+       const y=topEdge[x]+k;
+       if(y<0||y>=h)continue;
+       const r=roles[y][x];
+       if(r!==BACK&&r!==SHADOW&&r!==BASE&&r!==PATTERN)continue;
+       if(shadeIndex(strength*(1-k*0.5),x,y,2,1.25))roles[y][x]=SPEC;}}}
+
+  // Fins are membrane, not slab: they thin toward the edge and the light comes through.
+  // Every third column stays opaque, which reads as fin rays.
+  {const isSolid=(xx,yy)=>xx>=0&&xx<w&&yy>=0&&yy<h&&roles[yy][xx];
+   for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+     if(roles[y][x]!==FIN)continue;
+     let open=0;
+     for(const o of[[-1,0],[1,0],[0,-1],[0,1],[-2,0],[2,0],[0,-2],[0,2]])if(!isSolid(x+o[0],y+o[1]))open++;
+     if(open>=4&&x%3!==0)roles[y][x]=TRANS;}}
+
   if(A.jaw){const nx=Math.round(cx+rx);for(let i=0;i<Math.round(rx*0.28);i++)set(nx-i,Math.round(cy+curveAt(nx)+ry*0.10),MOUTH,false);}
   const ex=Math.round(cx+rx*0.60),ey=Math.round(cy+curveAt(ex)-ry*0.34),er=ry>9?2:1;
   const drawEye=(exx,eyy,rr)=>{for(let dy=-rr;dy<=rr;dy++)for(let dx=-rr;dx<=rr;dx++)if(dx*dx+dy*dy<=rr*rr)set(exx+dx,eyy+dy,EYEW,false);set(exx,eyy,EYEP,false);if(rr>1){set(exx-1,eyy,EYEP,false);set(exx,eyy+1,EYEP,false);}set(exx+1,eyy-1,EYEH,false);};
   drawEye(ex,ey,er);if(c.corrupt>0.6)drawEye(ex-Math.round(rx*0.22),ey+1,Math.max(1,er-1));
   if(c.corrupt>0.4){const gr=er+2;for(let dy=-gr;dy<=gr;dy++)for(let dx=-gr;dx<=gr;dx++){const d=dx*dx+dy*dy;if(d<=gr*gr&&d>er*er)set(ex+dx,ey+dy,GLOW,true);}}
+  aoPass(roles,w,h,3,3);
   outlinePass(roles,w,h);
   return{w,h,roles,meta:{cx,cy,headX:cx+rx,tailX:bx-tailLen,ry,anchors:{eye:[ex,ey],mouth:[Math.round(cx+rx),Math.round(cy+curveAt(cx+rx))]}}};
 }
@@ -374,7 +477,7 @@ const FLORA_ARCH={
   grass:   {rules:{X:['FX']},                                         angle:20,iterMul:4.0,len:1.00,wid:0.80,tipR:0.5,curlMul:2.2,strandSpread:11,leaf:[0.7,0.5]}
 };
 const FLORA_KEYS=Object.keys(FLORA_ARCH);
-const LIGHT=[-0.55,-0.83]; // light from upper-left, shared by every stamped form
+const LIGHT=[LIGHT_X,LIGHT_Y];
 
 function lsysExpand(axiom,rules,iter,rng){
   let s=axiom;
@@ -405,12 +508,14 @@ function generateFlora(c,rng){
   const taperStep=Math.pow(clamp(c.taper,0.5,1),6/iter);
   let minY=baseY;
 
-  // role across a segment: u = -1..1 across width, lit side positive; lower parts sit in shade
-  const segRole=(u,litSign,y)=>{
-    const s=u*litSign, deep=clamp((y-h*0.45)/(h*0.55),0,1);
-    let step = s>0.58?4 : s>0.12?3 : s>-0.34?2 : 1;      // 4=HIGH 3=BASE 2=SHADOW 1=BACK
-    if(deep>0.55&&step>1)step--;
-    return [BACK,BACK,SHADOW,BASE,HIGH][step];
+  // Lightness across a segment: the lit side is bright, the shaded side dark, and the
+  // whole plant sits deeper in shade toward its base. Quantised through the dither so a
+  // 3px stem can still imply a round surface.
+  const FLORA_RAMP=[BACK,SHADOW,BASE,HIGH,BELLY];
+  const segRole=(u,litSign,py,px)=>{
+    const sgn=u*litSign, deep=clamp((py-h*0.42)/(h*0.58),0,1);
+    let v=0.50+sgn*0.44-deep*0.17;
+    return shadeRole(FLORA_RAMP,clamp(v,0,1),px,py,0.7);
   };
 
   for(let sIdx=0;sIdx<strands;sIdx++){
@@ -437,7 +542,7 @@ function generateFlora(c,rng){
         const dx=nx0-t.x,dy=ny0-t.y,L=Math.hypot(dx,dy)||1;
         const litSign=Math.sign((-dy/L)*LIGHT[0]+(dx/L)*LIGHT[1])||1;
         const w1=Math.max(0.9,wd*taperStep);
-        stampSeg(roles,w,h,t.x,t.y,nx0,ny0,wd,w1,(u)=>segRole(u,litSign,ny0));
+        stampSeg(roles,w,h,t.x,t.y,nx0,ny0,wd,w1,(u,tt,px,py)=>segRole(u,litSign,py,px));
         t.x=nx0;t.y=ny0;t.wid=leaf?t.wid:w1;t.len=Math.max(1.2,t.len*(0.965+taperStep*0.035));
         if(ny0<minY)minY=ny0;
         segs++;
@@ -454,7 +559,7 @@ function generateFlora(c,rng){
     const step=Math.max(1,Math.ceil(tips.length/700)),pool=tips.filter((_,i)=>i%step===0);
     for(let a=0;a<pool.length;a++)for(let b=a+1;b<pool.length;b++){
       const d=Math.hypot(pool[a][0]-pool[b][0],pool[a][1]-pool[b][1]);
-      if(d>0.8&&d<lim)stampSeg(roles,w,h,pool[a][0],pool[a][1],pool[b][0],pool[b][1],1,1,()=>SHADOW,true);
+      if(d>0.8&&d<lim)stampSeg(roles,w,h,pool[a][0],pool[a][1],pool[b][0],pool[b][1],1,1,()=>TRANS,true);
     }
   }
 
@@ -466,7 +571,7 @@ function generateFlora(c,rng){
       if(c.bio)return d<0.5?GLOW:GLOWDIM;
       const len=Math.max(0.7,Math.hypot(dx,dy)),lit=(dx*LIGHT[0]+dy*LIGHT[1])/len;
       if(d<0.4&&lit>0.1)return SPEC;
-      return lit>0.34?BELLY:lit>-0.32?HIGH:BASE;});
+      return shadeRole([BASE,HIGH,BELLY],clamp(0.5+lit*0.55,0,1),Math.round(tp[0]+dx),Math.round(tp[1]+dy),0.6);});
   }
   if(c.bio)for(const tp of tips)stampDisc(roles,w,h,tp[0],tp[1],A.tipR*c.tipsize+2.4,()=>GLOWDIM,true);
 
@@ -475,6 +580,7 @@ function generateFlora(c,rng){
   for(let x=-hw;x<=hw;x++){const hgt=Math.round(2.4*Math.cos(x/hw*1.3));
     for(let y=0;y<=hgt+1;y++)put(roles,w,h,Math.round(w/2+x),baseY+1-y,y>hgt-1?SHADOW:BACK,true);}
 
+  aoPass(roles,w,h,3,3);
   outlinePass(roles,w,h);
   const height=Math.max(6,baseY-minY);
   return{w,h,roles,meta:{cx:w/2,cy:h/2,baseY,height,
@@ -540,8 +646,8 @@ function tileFill(c,x,y){
   const band=(xx,yy,bands,scale,off)=>Math.min(bands-1,(clamp(0.5+(nz(xx,yy,scale,off)-0.5)*k,0,0.9999)*bands)|0);
 
   if(c.material==='sand'){
-    const n=band(x,y,3,Math.max(2,sc/2),0),g=hash2(x,y,s+11);
-    let r=[BASE,HIGH,BELLY][n];
+    const fine=Math.max(2,sc/2),g=hash2(x,y,s+11);
+    let r=shadeRole([BASE,HIGH,BELLY],clamp(0.5+(nz(x,y,fine,0)-0.5)*k,0,1),x,y,0.25);
     if(g>0.945)r=SPEC;else if(g<0.055)r=SHADOW;
     return r;
   }
@@ -558,11 +664,11 @@ function tileFill(c,x,y){
     const g=hash2(x,y,s+7);
     if(g>0.94)return ramp[Math.min(ramp.length-1,me+1)];
     if(g<0.06)return me?ramp[me-1]:BACK;
-    return ramp[me];
+    return shadeRole(ramp,clamp(0.5+(nz(x,y,scale,0)-0.5)*k,0,1),x,y,0.25);
   }
   // coral crust — mottled, with polyp specks and the odd bioluminescent pinprick
-  const n=band(x,y,3,sc,0),m2=band(x,y,4,Math.max(2,sc/2),977),g=hash2(x,y,s+29);
-  let r=[SHADOW,BASE,HIGH][n];
+  const m2=band(x,y,4,Math.max(2,sc/2),977),g=hash2(x,y,s+29);
+  let r=shadeRole([SHADOW,BASE,HIGH],clamp(0.5+(nz(x,y,sc,0)-0.5)*k,0,1),x,y,0.25);
   if(m2===3)r=PATTERN;
   if(g>0.965)r=SPEC;else if(g>0.945)r=BELLY;else if(g<0.012)r=GLOW;
   return r;

@@ -54,7 +54,15 @@ never fully auto-generated. Procedural earns its keep on **high-variety, structu
 - **DepthGrade** — the signature light-absorption transform (red dies first → blue-black) applied at
   colorize time, driven by a depth value. Shared by tool preview *and* game runtime (same math).
 - **Corruption** — the "wrongness" transform (bleach + desaturate + sickly tint + glow/extra-eye).
-- **Colorizer** — `(role, palette, depth, corruption) → RGBA`, cached per asset/state.
+- **Colorizer** — `(role, palette, depth, corruption) → RGBA`, cached per asset/state. Ramps are
+  **hue-shifted** on the way through — highlights warm, shadows cool, luminance preserved — because
+  hue movement, not just value movement, is what makes a ramp read as lit.
+- **Shading vocabulary** (shared by every generator, so form reads consistently across modules):
+  **ordered dithering** (a 4×4 Bayer matrix, so a 5-step ramp implies far more than 5 tones),
+  a **selective outline** (the lit edge takes a warm `RIM` instead of the flat dark `OUTLINE`),
+  a screen-space **ambient-occlusion** pass that darkens pixels tucked away from the light, and a
+  translucent `TRANS` role for membranes — fin webbing, sea-fan lattice. One light direction
+  (`LIGHT_X/LIGHT_Y`, upper-left) drives all of it.
 - **RNG** — seeded (mulberry32) so every asset is reproducible from `(module, cfg, seed)`.
 
 ## 3. Module interface (how "all art" stays sane)
