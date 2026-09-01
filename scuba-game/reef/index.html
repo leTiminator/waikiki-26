@@ -150,14 +150,24 @@ function vn(x, y, s){                       // smooth 2D value noise
 }
 const fbm2 = (x,y,s) => vn(x,y,s)*0.55 + vn(x*2.1,y*2.1,s+91)*0.28 + vn(x*4.3,y*4.3,s+577)*0.17;
 
-const REEF_TOP = 22;                        // tiles: the crest of the reef
+const REEF_TOP = 22;                        // tiles: the mean crest of the reef
+// A crest that sits at one height right across the map is the flattest composition there
+// is, whatever you light it with — the eye reads a floor and a sky and nothing else. This
+// modulates where the reef begins at a much lower frequency than the body noise, so the
+// mass climbs into pinnacles and drops away into sand channels, and the horizon line the
+// player follows actually goes somewhere.
+const crestAt = x => REEF_TOP
+  + Math.sin(x*0.0210 + 0.4)*6.4
+  + Math.sin(x*0.0550 + 1.7)*3.9
+  + Math.sin(x*0.1310 + 2.9)*1.8;
 const solid = [];
 for(let y=0;y<WH;y++){
   const row = new Uint8Array(WT);
   for(let x=0;x<WT;x++){
-    if(y < REEF_TOP - 7){ row[x] = 0; continue; }
+    const top = crestAt(x);
+    if(y < top - 7){ row[x] = 0; continue; }
     // solidity rises with depth below the crest, so the reef fades in from open water
-    const t = Math.max(0, Math.min(1, (y - (REEF_TOP - 7)) / 15));
+    const t = Math.max(0, Math.min(1, (y - (top - 7)) / 15));
     const n = fbm2(x*0.13, y*0.17, 4409);
     row[x] = n < (0.06 + t*0.92) ? 1 : 0;
   }
@@ -355,6 +365,42 @@ for(let y=0;y<WH;y++) exposure.push(new Float32Array(WT));
   }
 }
 
+// --- terrain shading: how lit each cell's visible face is ---------------------------
+// Tiles were drawn at one brightness per depth, so a cave floor and a sunlit crest came
+// out the same colour and the whole seabed read as wallpaper with a rock texture on it.
+// Rock has a light side because light comes from somewhere. Three things decide it:
+//   sky      how OPEN the cell's neighbourhood is — its ambient occlusion. The ecology
+//            light field is the wrong term here: it is a downward column march, so it
+//            dies to nothing one cell below the seabed, and using it blacked out every
+//            rock face that was not the literal top row.
+//   shadow   a march TOWARD the light. If rock stands between this cell and the surface
+//            along the light's direction the cell is in cast shadow, which is what puts a
+//            hard dark band under every overhang and down the lee side of every spur.
+//   interior how deep inside the mass the cell sits, so cores go to black.
+const LDX = -0.55, LDY = -0.83;                   // toward the light, matching TideForge
+const terrLit = [];
+for(let y=0;y<WH;y++) terrLit.push(new Float32Array(WT));
+for(let y=0;y<WH;y++)for(let x=0;x<WT;x++){
+  if(!solid[y][x]) continue;
+  let sh = 1;
+  for(let k=1;k<=8;k++){
+    const xx = Math.round(x + LDX*k), yy = Math.round(y + LDY*k);
+    if(yy < 0) break;
+    if(xx < 0 || xx >= WT || yy >= WH) continue;
+    if(solid[yy][xx]) sh *= (k <= 2 ? 0.46 : k <= 4 ? 0.66 : 0.82);
+  }
+  // The three terms answer different questions and must not simply multiply: openness and
+  // interior depth are both low in the same places, so multiplying them charges a cell
+  // twice for one fact and blacks out the entire front wall of the reef. `face` decides
+  // how far in from the surface this cell lies, `amb` how open the spot is, and the cast
+  // shadow only ever takes a bounded bite out of the result.
+  const sky  = Math.min(1, exposure[y][x] / 0.40);
+  const inn  = 1 - Math.min(1, interior[y][x] / 3.0);
+  const face = 0.34 + 0.66 * inn;
+  const amb  = 0.55 + 0.45 * Math.pow(sky, 0.70);
+  terrLit[y][x] = clamp(0.10 + 0.90 * face * amb * (0.62 + 0.38*sh), 0, 1);
+}
+
 // --- substrate: where sediment settles
 function substrateAt(gx, gy, rot){
   if(rot !== 0) return ROCK;                        // nothing settles on a wall or ceiling
@@ -462,8 +508,17 @@ seedable.sort((a,b) => b.score - a.score);
 // stop when it doesn't. Colony size therefore comes out of the habitat — big stands where
 // conditions are good, scattered individuals at the margins — instead of a tuned constant.
 const BACK=0, MID=1, NEAR=2;
-const SLICE_FOG  = [0.46, 0, 0];
-const SLICE_DEPTH= [2,    0, 11];
+// NEAR sat at +11 depth, i.e. further into the grade than the play plane — the layer
+// closest to the camera was being rendered as the most distant one, which flattened the
+// three planes into one. Near things have LESS water in front of them, so they grade less
+// and read sharper; far things grade more and haze toward the ambient.
+const SLICE_FOG  = [0.44, 0, 0];
+const SLICE_DEPTH= [3,    0, -2.5];
+// Every fish drew at the same scale whatever plane it was on, so the only thing telling
+// the three planes apart was colour — and colour is the weakest of the depth cues. Size
+// is the strongest. Integer zooms per plane keep every sprite on the pixel grid, which a
+// fractional scale would not.
+const SLICE_ZOOM = [ZOOM-1, ZOOM, ZOOM+1];
 const pickSlice = () => { const r=R(); return r<0.30 ? BACK : r<0.90 ? MID : NEAR; };
 
 const plants = [];
@@ -496,7 +551,9 @@ const plants = [];
       plants.push({a, x:f.x+dx, y:f.y+dy, rot:f.rot, guild:g.name,
                    z: f.surf===FLOOR ? pickSlice() : (R()<0.4 ? BACK : MID),
                    phase:R()*Math.PI*2, rate:0.55+R()*0.5, flip:R()<0.5,
-                   shade: f.surf===FLOOR ? 3.5+R()*4.5 : 0});
+                   // a shadow belongs to its object: take its size from the sprite that
+                   // casts it, so a tall staghorn throws a long one and a low crust does not
+                   shade: f.surf===FLOOR ? a.fw*0.30 : 0, tall: a.fh*0.62});
     }
   }
 }
@@ -531,8 +588,9 @@ for(let k=0;k<7;k++){
   const seed = (R()*list.length)|0, n = 1 + Math.round(R()*3);
   for(let i=0;i<n;i++){
     const f = list[Math.max(0, Math.min(list.length-1, seed + Math.round((R()+R()-1)*4)))];
-    salvage.push({a: PROPS[(R()*PROPS.length)|0], x:f.x+(R()-0.5)*TILE, y:f.y+2+R()*2,
-                  flip: R()<0.5, shade: 4+R()*4});
+    const pa = PROPS[(R()*PROPS.length)|0];
+    salvage.push({a: pa, x:f.x+(R()-0.5)*TILE, y:f.y+2+R()*2,
+                  flip: R()<0.5, shade: pa.fw*0.34, tall: pa.fh*0.55});
   }
 }
 salvage.sort((a,b)=>a.y-b.y);
@@ -574,13 +632,26 @@ function swayFrame(p, px, py, frames){
   return Math.floor(((ph % 1) + 1) % 1 * frames);
 }
 
-function contactShade(px, py, halfW, depth, alpha){
+// A cast shadow is the strongest single cue that an object is standing ON something
+// rather than pasted in front of it, and the scene had none — only a symmetrical smudge
+// directly underneath, which reads as a decal. Light comes from the upper left, so the
+// shadow lies down and to the RIGHT and lengthens with the object's height. The tight
+// dark core at the contact point is a separate thing: that is ambient occlusion, and it
+// is what actually welds the object to the ground.
+function contactShade(px, py, halfW, depth, alpha, height){
   if(halfW <= 0) return;
+  const hgt = height || halfW * 1.7;
+  const off = hgt * 0.40;
   ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.fillStyle = css(gradeColor([5,11,17], depth));
+  ctx.fillStyle = css(gradeColor([4,10,16], depth));
+  ctx.globalAlpha = alpha * 0.55;                      // the throw: long, soft, offset
   ctx.beginPath();
-  ctx.ellipse(px, py, halfW*ZOOM, Math.max(1.4, halfW*0.34*ZOOM), 0, 0, Math.PI*2);
+  ctx.ellipse(px + off*ZOOM, py + halfW*0.12*ZOOM, (halfW*0.85 + off*0.75)*ZOOM,
+              Math.max(1.4, halfW*0.30*ZOOM), 0.09, 0, Math.PI*2);
+  ctx.fill();
+  ctx.globalAlpha = alpha;                             // the contact: tight and dark
+  ctx.beginPath();
+  ctx.ellipse(px, py, halfW*0.72*ZOOM, Math.max(1.2, halfW*0.24*ZOOM), 0, 0, Math.PI*2);
   ctx.fill();
   ctx.restore();
 }
@@ -730,37 +801,52 @@ function stepDiver(dt){
 const snow = [];
 for(let i=0;i<230;i++) snow.push({x:R()*WT*TILE, y:R()*WH*TILE, z:0.35+R()*0.9, s:R()});
 
+// Water is not one colour, it is a COLUMN of it, and it is dramatically brighter looking
+// up than looking down. Absorption alone barely varies over a single screen height, so the
+// open water came out as a flat wash and gave the frame no vertical structure at all. The
+// exponential term is the light's own falloff, laid over the absorption curve.
 function drawWater(camY, vw, vh){
   const dTop = depthAt(camY), dBot = depthAt(camY + vh/ZOOM);
   const g = ctx.createLinearGradient(0,0,0,vh);
-  for(let i=0;i<=4;i++){
-    const dd = dTop + (dBot-dTop)*(i/4);
-    g.addColorStop(i/4, css(gradeColor([26,74,96], Math.max(0, dd-3))));
+  for(let i=0;i<=6;i++){
+    const dd = dTop + (dBot-dTop)*(i/6);
+    const k  = Math.exp(-Math.max(0,dd)/10);
+    let c = gradeColor([26,74,96], Math.max(0, dd-3));
+    c = [c[0]+(92-c[0])*k*0.62, c[1]+(170-c[1])*k*0.62, c[2]+(198-c[2])*k*0.62];
+    g.addColorStop(i/6, css(c));
   }
   ctx.fillStyle = g; ctx.fillRect(0,0,vw,vh);
 }
 
 function drawDiver(sx, sy, d){
-  // placeholder — the hero diver sprite is the M2 asset. Still graded like everything else.
+  // Placeholder until the hero sprite lands in M2 — but it sits dead centre of every
+  // frame, so flat rectangles here flatten the whole composition. Each slab is shaded as
+  // the cylinder it represents: a dark edge away from the light, the body tone, and a lit
+  // edge toward it. Three values across a shape is the minimum that reads as round.
   const C = c => css(gradeColor(c, d));
   const z = ZOOM, kick = diver.holding ? 0 : Math.sin(diver.breath*Math.PI*2)*1.4;
+  // a slab lit from the upper left: shadow edge, body, lit edge, and a wet top highlight
+  const slab = (x, y, w2, h2, base) => {
+    const dk = base.map(v => v*0.52), lt = base.map(v => Math.min(255, v*1.42+16));
+    ctx.fillStyle = C(dk); ctx.fillRect(x, y, w2, h2);
+    ctx.fillStyle = C(base); ctx.fillRect(x, y, w2 - z, h2);
+    ctx.fillStyle = C(lt); ctx.fillRect(x, y, Math.max(z, w2*0.22), h2);
+    ctx.fillRect(x, y, w2 - z, Math.max(z, h2*0.10));
+  };
   ctx.save();
   ctx.translate(Math.round(sx), Math.round(sy));
   ctx.scale(diver.face, 1);
-  ctx.fillStyle = C([22,30,40]);                       // tank
-  ctx.fillRect(-13*z, -20*z, 8*z, 26*z);
-  ctx.fillStyle = C([34,52,70]);                       // body
-  ctx.fillRect(-8*z, -22*z, 16*z, 34*z);
-  ctx.fillStyle = C([58,84,108]);                      // hood + shoulders
-  ctx.fillRect(-8*z, -22*z, 16*z, 7*z);
+  slab(-13*z, -20*z, 8*z, 26*z, [24,33,44]);           // tank
+  slab(-8*z,  -22*z, 16*z, 34*z, [36,55,74]);          // body
+  slab(-8*z,  -22*z, 16*z, 7*z,  [62,90,116]);         // hood + shoulders
   ctx.fillStyle = C([150,205,225]);                    // mask
   ctx.fillRect(2*z, -20*z, 7*z, 5*z);
-  ctx.fillStyle = C([26,38,50]);                       // legs
-  ctx.fillRect(-6*z, 12*z, 5*z, 16*z);
-  ctx.fillRect(1*z, 12*z, 5*z, 16*z);
-  ctx.fillStyle = C([40,60,78]);                       // fins
-  ctx.fillRect(-8*z, (28+kick)*z, 9*z, 5*z);
-  ctx.fillRect(0*z, (28-kick)*z, 9*z, 5*z);
+  ctx.fillStyle = C([228,248,255]);                    // and the glint off its glass
+  ctx.fillRect(2*z, -20*z, 3*z, 2*z);
+  slab(-6*z, 12*z, 5*z, 16*z, [28,41,54]);             // legs
+  slab( 1*z, 12*z, 5*z, 16*z, [28,41,54]);
+  slab(-8*z, (28+kick)*z, 9*z, 5*z, [43,64,84]);       // fins
+  slab( 0*z, (28-kick)*z, 9*z, 5*z, [43,64,84]);
   ctx.restore();
 }
 
@@ -825,17 +911,23 @@ function frame(ts){
     }
   }
 
-  // godrays — tiled down the top of the water column, strongest shallow (ART_BIBLE §9.2)
+  // godrays — tiled down the top of the water column, strongest shallow (ART_BIBLE §9.2).
+  // These are the visible SHAPE of the light in the scene, so they carry the atmosphere
+  // and, once they overlap, most of the frame's brightest pixels. They were fading to
+  // nothing by 24 m and rendered dead vertical, which left the whole water column as an
+  // untextured wash: sun shafts refract, so they lean, and they reach well past the reef.
   {
     const RZ = ZOOM*3, span = 48*RZ/ZOOM, g = A.vfx_godray, f = Math.floor(acc*10);
-    for(let row=0; row<4; row++){
+    for(let row=0; row<5; row++){
       const wy = row*span*0.92, dd = depthAt(wy);
-      const a  = Math.max(0, 1 - dd/24) * 0.34;
+      const a  = Math.max(0, 1 - dd/34) * 0.52;
       if(a < 0.02) continue;
       const py = sy(wy);
       if(py > vh + span*ZOOM || py < -span*ZOOM*2) continue;
       for(let col=-1; col<10; col++){
-        const wx = col*span*1.25 + Math.sin(acc*0.12 + row*1.3 + col)*14;
+        // the lean accumulates down the column, so a shaft stays a continuous slanted
+        // beam across rows instead of a stack of independent vertical tiles
+        const wx = col*span*1.25 + wy*0.20 + Math.sin(acc*0.12 + row*1.3 + col)*14;
         const px = sx(wx);
         if(px < -span*ZOOM || px > vw + span*ZOOM) continue;
         g.draw(ctx, Math.max(0, dd-6), 'loop', f + col*3 + row*5, px, py, RZ, {alpha:a});
@@ -868,7 +960,7 @@ function frame(ts){
       const px = sx(mx), py = sy(my);
       if(px < -140 || px > vw+140 || py < -110 || py > vh+110) continue;
       sh.a.draw(ctx, depthAt(my) + SLICE_DEPTH[sh.z], 'swim',
-        Math.floor(acc*11*m.rate + m.ph*3), px, py, ZOOM, {flip, fog:SLICE_FOG[sh.z]});
+        Math.floor(acc*11*m.rate + m.ph*3), px, py, SLICE_ZOOM[sh.z], {flip, fog:SLICE_FOG[sh.z]});
     }
   }
   for(const f of loners){
@@ -877,7 +969,7 @@ function frame(ts){
     const px = sx(f.x), py = sy(fy);
     if(px < -180 || px > vw+180 || py < -140 || py > vh+140) continue;
     f.a.draw(ctx, depthAt(fy) + SLICE_DEPTH[f.z], 'swim',
-      Math.floor(acc*10*f.rate + f.ph*3), px, py, ZOOM, {flip: f.dir > 0, fog:SLICE_FOG[f.z]});
+      Math.floor(acc*10*f.rate + f.ph*3), px, py, SLICE_ZOOM[f.z], {flip: f.dir > 0, fog:SLICE_FOG[f.z]});
   }
 
   const x0 = Math.max(0, Math.floor(camX/TILE)), x1 = Math.min(WT-1, Math.ceil((camX + vw/ZOOM)/TILE));
@@ -896,13 +988,38 @@ function frame(ts){
     if(!solid[y][x]) continue;
     const set = tileMat[y][x] ? A.tile_sand : A.tile_rock;
     const px = sx(x*TILE), py = sy(y*TILE);
-    set.drawTile(ctx, depthAt(y*TILE), tileIdx[y][x], px, py, ZOOM, 0, tileVar[y][x]);
-    const occ = interior[y][x];
-    if(occ > 0){
+    const dep = depthAt(y*TILE), lv = terrLit[y][x];
+    set.drawTile(ctx, dep, tileIdx[y][x], px, py, ZOOM, 0, tileVar[y][x]);
+    const dk = 1 - lv;
+    if(dk > 0.02){
       ctx.save();
-      ctx.globalAlpha = Math.min(0.80, occ * 0.27);
+      ctx.globalAlpha = Math.min(0.70, dk * 0.82);
       ctx.fillStyle = OCCLUDE;
       ctx.fillRect(px, py, TS_PX + 1, TS_PX + 1);
+      ctx.restore();
+    }
+    // The lit lip. Light arrives from above and slightly to the left, so every up-facing
+    // and left-facing edge of the mass catches it. Without this the seabed has no TOP —
+    // it reads as a wall someone papered with a rock texture — and nothing in the lower
+    // two thirds of the frame ever reaches the bright end of the ramp.
+    // Sand already sits at the top of its ramp, so a lip on it blows out under the bloom;
+    // this is for rock, where the mass needs an edge that catches the light.
+    if(lv > 0.16 && !tileMat[y][x]){
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const lipC = gradeColor([104,150,172], dep);
+      if(y > 0 && !solid[y-1][x]){
+        ctx.globalAlpha = Math.min(0.30, lv * 0.30);
+        ctx.fillStyle = css(lipC);
+        ctx.fillRect(px, py, TS_PX + 1, ZOOM);
+        ctx.globalAlpha = Math.min(0.13, lv * 0.13);
+        ctx.fillRect(px, py + ZOOM, TS_PX + 1, ZOOM * 2);
+      }
+      if(x > 0 && !solid[y][x-1]){
+        ctx.globalAlpha = Math.min(0.15, lv * 0.15);
+        ctx.fillStyle = css(lipC);
+        ctx.fillRect(px, py, ZOOM, TS_PX + 1);
+      }
       ctx.restore();
     }
   }
@@ -921,13 +1038,13 @@ function frame(ts){
   for(const p of salvage){
     const px = sx(p.x), py = sy(p.y);
     if(px < -140 || px > vw+140 || py < -80 || py > vh+80) continue;
-    contactShade(px, py, p.shade, depthAt(p.y), 0.5);
+    contactShade(px, py, p.shade, depthAt(p.y), 0.52, p.tall);
   }
   for(const p of plants){
     if(p.z === BACK || !p.shade) continue;
     const px = sx(p.x), py = sy(p.y);
     if(px < -140 || px > vw+140 || py < -80 || py > vh+80) continue;
-    contactShade(px, py, p.shade, depthAt(p.y), 0.42);
+    contactShade(px, py, p.shade, depthAt(p.y), 0.44, p.tall);
   }
 
   // salvage, resting on the bottom
@@ -970,10 +1087,10 @@ function frame(ts){
           const v = a*b;
           if(v < 0.12) continue;
           const fade = 1 - yo/BAND*0.55;              // brightest right at the surface
-          const k = Math.min(0.40, (v-0.12)/0.88 * lv * CAU * 0.60 * fade);
+          const k = Math.min(0.24, (v-0.12)/0.88 * lv * CAU * 0.42 * fade);
           const py = sy(ya);
           if(py > vh+8 || py < -8) continue;
-          ctx.fillStyle = `rgba(158,226,242,${k.toFixed(3)})`;
+          ctx.fillStyle = `rgba(126,196,220,${k.toFixed(3)})`;
           ctx.fillRect(px, py, STEP*ZOOM+1, YCELL*ZOOM+1);
         }
       }
@@ -1032,13 +1149,22 @@ function frame(ts){
   // lens or an eye actually behaves. Done by downscaling the frame with smoothing OFF and
   // adding it back, so the bleed stays chunky and in keeping with the pixel grid rather
   // than turning into a soft gaussian haze over pixel art.
-  if(post.width !== vw || post.height !== vh){ post.width = Math.max(1, vw>>2); post.height = Math.max(1, vh>>2); }
+  if(post.width !== vw>>2 || post.height !== vh>>2){ post.width = Math.max(1, vw>>2); post.height = Math.max(1, vh>>2); }
   pctx.imageSmoothingEnabled = false;
+  pctx.globalCompositeOperation = 'source-over';
   pctx.clearRect(0,0,post.width,post.height);
+  pctx.drawImage(view, 0, 0, post.width, post.height);
+  // THRESHOLD. Adding back a scaled copy of the whole frame is not bloom — it lifts the
+  // shadows uniformly, which is a contrast-REDUCTION operator, and measurably flattened
+  // the image. Multiplying the frame by itself twice cubes every value: a pixel at 0.2
+  // contributes 0.008 (nothing) while one at 0.9 contributes 0.73, so only genuinely
+  // bright things bleed.
+  pctx.globalCompositeOperation = 'multiply';
+  pctx.drawImage(view, 0, 0, post.width, post.height);
   pctx.drawImage(view, 0, 0, post.width, post.height);
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
-  ctx.globalAlpha = 0.15;
+  ctx.globalAlpha = 0.85;
   ctx.imageSmoothingEnabled = true;                 // the ONE place smoothing helps
   ctx.drawImage(post, 0, 0, vw, vh);
   ctx.restore();
@@ -1049,7 +1175,8 @@ function frame(ts){
     vig = ctx.createRadialGradient(vw*0.5, vh*0.46, Math.min(vw,vh)*0.26,
                                    vw*0.5, vh*0.5,  Math.max(vw,vh)*0.72);
     vig.addColorStop(0, 'rgba(0,0,0,0)');
-    vig.addColorStop(1, 'rgba(2,6,12,0.55)');
+    vig.addColorStop(0.55, 'rgba(2,6,12,0.10)');
+    vig.addColorStop(1, 'rgba(2,6,12,0.42)');
   }
   ctx.fillStyle = vig;
   ctx.fillRect(0,0,vw,vh);

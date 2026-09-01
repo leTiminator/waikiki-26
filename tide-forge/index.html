@@ -237,6 +237,71 @@ function fbm(x,y,s,oct,gain,P){let amp=1,f=1,sum=0,norm=0;
 // This is the cheapest apparent-colour-depth trick in pixel art, and every generator
 // quantises through it.
 const LIGHT_X=-0.55, LIGHT_Y=-0.83;   // light from upper-left, shared by every generator
+
+// ---- form lighting -------------------------------------------------------------------
+// ONE light model for every solid form in the engine. Lambert on its own produces a
+// smooth ball, which is exactly what a flat painted egg looks like. A surface reads as a
+// volume only when four things happen at once:
+//
+//   key      N.L with the terminator TIGHTENED. A real dielectric does not blend from lit
+//            to unlit across the whole hemisphere; it turns over a narrow band, and that
+//            band is the single strongest cue that a shape has a facing direction.
+//   bounce   the seabed throws light back UP. With no fill from below, the shadow side
+//            crushes to one value and the form dies there — half the object goes missing.
+//   spec     a narrow wet highlight. Everything down here is wet, and this is the only
+//            term in the whole engine that ever reaches the top of a ramp, so it is also
+//            the only source of actual highlights in a rendered frame.
+//   rim      light wrapping the silhouette, which separates a form from what is behind it
+//            without spending an outline on it.
+//
+// LIGHT_X/LIGHT_Y point TOWARD the light (upper-left). The old 3-vector negated them, so
+// every boulder, sponge and plate in the game was lit from the lower right — against the
+// sun, against the godrays, and against every other generator.
+const LIGHT3=(()=>{const v=[LIGHT_X,LIGHT_Y,0.62],m=Math.hypot(v[0],v[1],v[2]);
+  return [v[0]/m,v[1]/m,v[2]/m];})();
+// halfway between the light and the viewer (who sits at +z) — the Blinn-Phong half vector
+const HALF3=(()=>{const v=[LIGHT3[0],LIGHT3[1],LIGHT3[2]+1],m=Math.hypot(v[0],v[1],v[2]);
+  return [v[0]/m,v[1]/m,v[2]/m];})();
+
+// Illumination and specular, kept APART. Reflected light is albedo x illumination, plus a
+// specular that does not take the albedo's colour at all. Averaging the two instead is a
+// real and very visible mistake: on a countershaded fish the back is pigmented dark and
+// lit bright by very nearly the same amount, so averaging cancels them and the animal
+// renders as one flat grey. Multiplying keeps the pigment pattern intact under the light.
+function litParts(nx,ny,nz,o){
+  o=o||{};
+  const nd  = nx*LIGHT3[0]+ny*LIGHT3[1]+nz*LIGHT3[2];
+  const key = nd<=0 ? 0 : Math.pow(nd, o.tight==null?0.70:o.tight);
+  // +y is DOWN, so a normal with ny>0 faces the sand and catches the bounce
+  const bnc = Math.max(0, ny*0.90+nz*0.42) * (o.bounce==null?0.22:o.bounce);
+  const nh  = nx*HALF3[0]+ny*HALF3[1]+nz*HALF3[2];
+  const spc = nh<=0 ? 0 : Math.pow(nh, o.gloss==null?24:o.gloss)*(o.spec==null?0.55:o.spec);
+  const rim = (o.rim||0) * Math.pow(1-Math.abs(nz),3) * Math.max(0, 0.30+nd);
+  return {ill:(o.amb==null?0.10:o.amb) + key*(o.key==null?0.74:o.key) + bnc + rim, spec:spc};
+}
+// For surfaces whose pigment is uniform, where there is nothing to multiply.
+function litValue(nx,ny,nz,o){
+  const L=litParts(nx,ny,nz,o);
+  return clamp(L.ill+L.spec,0,1);
+}
+// For surfaces that carry their own pigment. `alb` is this pixel's 0..1 albedo.
+function litShade(alb,nx,ny,nz,o){
+  const L=litParts(nx,ny,nz,o);
+  return clamp(alb*(0.62+0.44*L.ill)+L.spec, 0, 1);
+}
+
+// Bend a normal by the gradient of a noise field. Painting noise onto a smooth surface
+// reads as dirt; bending the NORMAL reads as relief, because it moves the highlight and
+// the terminator too — the bumps light themselves.
+function bumpNormal(nx,ny,nz,x,y,seed,scale,amp,oct){
+  const o=oct||3;
+  const h0=fbm(x/scale,y/scale,seed,o,0.55,0);
+  const gx=fbm((x+1)/scale,y/scale,seed,o,0.55,0)-h0;
+  const gy=fbm(x/scale,(y+1)/scale,seed,o,0.55,0)-h0;
+  let vx=nx-gx*amp, vy=ny-gy*amp, vz=nz;
+  const m=Math.hypot(vx,vy,vz)||1;
+  return [vx/m,vy/m,vz/m];
+}
 // ---- art scale -------------------------------------------------------------------
 // Real sea life spans 8 cm damselfish to 1.7 m trevally — a 21x range. Drawn strictly to
 // scale the small ones become 3-pixel dots with nowhere to put an eye, so like every
@@ -556,11 +621,28 @@ function generateCreature(c,rng){
     const yc=cy+curveAt(x),topH=hh*0.92,botH=hh*1.08;
     const yTop=Math.round(yc-topH),yBot=Math.round(yc+botH);
     topEdge[x]=yTop;botEdge[x]=yBot;const span=Math.max(1,yBot-yTop);
+    // A flank is a flattened cylinder, and the two things that make it read as one are
+    // kept SEPARATE here. Countershading is pigment: the animal is genuinely dark-backed
+    // and pale-bellied, which is camouflage, not shading. Light is geometry: derived from
+    // the body section, so the wet highlight lands where the body actually turns over —
+    // on the upper flank, on top of the dark back — and the belly picks up bounce off the
+    // sand. Ramping value top to bottom does both jobs at once and therefore neither, and
+    // is why every fish read as a sticker.
     for(let y=yTop;y<=yBot;y++){
       const f=(y-yTop)/span;                                  // 0 dorsal, 1 ventral
-      let v=0.05+0.90*f;                                      // countershading
-      v-=0.22*Math.pow(Math.abs(dx),2.4);                     // cylindrical falloff
-      set(x,y,shadeRole(BODY_RAMP,clamp(v,0,1),x,y,0.55,DC));
+      let ny=clamp(f*2-1,-1,1), nx=dx*0.62;
+      let nz=Math.sqrt(Math.max(0.02,1-ny*ny-Math.min(0.9,nx*nx)));
+      const m1=Math.hypot(nx,ny,nz); nx/=m1; ny/=m1; nz/=m1;
+      // Pigment carries the vertical read, because that IS what countershading looks like
+      // in a photograph: a near-black back and a near-white belly across the full ramp.
+      // Light then supplies only the two things pigment cannot — a wet specular band along
+      // the shoulder where the flank turns over, and a lift under the belly off the sand.
+      // Letting illumination drive the vertical read instead cancels the pigment almost
+      // exactly (dark back, brightly lit; pale belly, unlit) and renders the fish grey.
+      const pig=0.04+0.91*Math.pow(f,0.90);
+      const v=litShade(pig,nx,ny,nz,
+        {amb:0.55,key:0.30,bounce:0.26,spec:0.46,gloss:12,tight:0.60,rim:0.22});
+      set(x,y,shadeRole(BODY_RAMP,v,x,y,0.55,DC));
     }
   }
 
@@ -700,82 +782,132 @@ defModule({
 // are the forms that actually dominate a reef, and they are surfaces rather than skeletons:
 // each shades from a real 3D normal (nz = sqrt(1 - nx^2 - ny^2)) against a light vector,
 // which is what makes a boulder read as a dome instead of a flat disc with a gradient.
-const LIGHT3 = (()=>{const v=[LIGHT_X,LIGHT_Y,-0.62],m=Math.hypot(v[0],v[1],v[2]);
-  return [v[0]/m, v[1]/m, v[2]/m];})();
-
 function domeShade(nx,ny,px,py,DC,lift){
-  const r2 = nx*nx + ny*ny;
-  const nz = Math.sqrt(Math.max(0, 1 - r2));
-  const lit = -(nx*LIGHT3[0] + ny*LIGHT3[1]) + nz*(-LIGHT3[2]);
-  return shadeRole(SHADES, clamp(0.30 + lit*0.62 + (lift||0), 0, 1), px, py, 0.6, DC);
+  const nz = Math.sqrt(Math.max(0, 1 - nx*nx - ny*ny));
+  return shadeRole(SHADES, clamp(litValue(nx,ny,nz,{rim:0.30}) + (lift||0), 0, 1), px, py, 0.5, DC);
 }
 
-// Brain / boulder coral: a hemisphere with meandering surface grooves.
+// Brain / boulder coral: a hemisphere carrying meandering surface grooves.
+// The grooves are cut into the NORMAL, not painted on as darker pixels, so each ridge
+// gets a lit crest and a shadowed trough and the head reads as convoluted stone rather
+// than as a ball with a pattern on it.
 function formBoulder(c,rng,roles,w,h,baseY,DC){
   const R = Math.max(5, Math.min(w*0.44, h*0.62*c.height));
   const cx = w/2, cy = baseY - R*0.72;
   const s = c.seed>>>0;
-  for(let y=Math.round(cy-R); y<=baseY; y++)for(let x=Math.round(cx-R); x<=Math.round(cx+R); x++){
-    const nx=(x-cx)/R, ny=(y-cy)/(R*0.94);
-    if(nx*nx+ny*ny > 1) continue;
-    // the meandering grooves that give brain coral its name
-    const warp = fbm(x/7.5, y/7.5, s+31, 3, 0.55, 0);
-    const g = Math.sin((x*0.55 + y*0.30 + warp*11) * (0.55 + c.tipsize*0.35));
-    let r = domeShade(nx, ny, x, y, DC, 0);
-    if(Math.abs(g) < 0.26) r = shadeDown(r, 2) ?? r;
-    put(roles,w,h,x,y,r);
+  // a lumpy silhouette: a perfect circle is the tell that a shape was generated
+  const lobe = (ang)=> 1 + 0.10*Math.sin(ang*3 + s*0.013) + 0.06*Math.sin(ang*5 - s*0.007)
+                         + 0.04*Math.sin(ang*8 + s*0.021);
+  const grooveScale = 0.55 + c.tipsize*0.35;
+  for(let y=Math.round(cy-R*1.2); y<=baseY; y++)for(let x=Math.round(cx-R*1.2); x<=Math.round(cx+R*1.2); x++){
+    let nx=(x-cx)/R, ny=(y-cy)/(R*0.94);
+    const rr = Math.hypot(nx,ny);
+    if(rr > lobe(Math.atan2(ny,nx))) continue;
+    let nz = Math.sqrt(Math.max(0.0025, 1 - Math.min(0.9999, nx*nx+ny*ny)));
+    // meandering grooves — a warped sine field, differenced to get its slope
+    const gAt=(gx,gy)=>Math.sin((gx*0.55 + gy*0.30 + fbm(gx/7.5,gy/7.5,s+31,3,0.55,0)*11) * grooveScale);
+    const g  = gAt(x,y);
+    const gx = gAt(x+1,y)-g, gy = gAt(x,y+1)-g;
+    let vx = nx - gx*0.55, vy = ny - gy*0.55, vz = nz;
+    const m1 = Math.hypot(vx,vy,vz)||1; vx/=m1; vy/=m1; vz/=m1;
+    // and a coarse boulder lumpiness under the grooves
+    const n2 = bumpNormal(vx,vy,vz, x, y, s+7, 6.5, 0.85);
+    let v = litValue(n2[0],n2[1],n2[2], {amb:0.09,key:0.76,bounce:0.26,spec:0.42,gloss:20,tight:0.66,rim:0.34});
+    v -= Math.max(0, g)*0.10;                       // the trough side of each groove
+    v *= 1 - 0.34*Math.pow(clamp((y-(baseY-R*0.55))/(R*0.55),0,1), 1.6);  // contact AO at the foot
+    put(roles,w,h,x,y, shadeRole(SHADES, clamp(v,0,1), x, y, 0.5, DC));
   }
   return {height:R*1.6, tips:[]};
 }
 
-// Plate / table coral: a wide thin lens on a short stalk. Seen from the side you read the
-// lit upper surface, the dark underside, and the shadow the plate throws on its own stalk.
+// Plate / table coral: a wide thin lens on a short stalk. From the side you read three
+// distinct planes — the lit upper surface catching a sheen, the rolled rim where the
+// terminator sits, and the underside lifted only by bounce off the sand. Three planes at
+// three clearly separated values is what makes a thin object read as thick.
 function formPlate(c,rng,roles,w,h,baseY,DC){
   const R = Math.max(6, w*0.46), TH = Math.max(2.5, R*0.16*c.width*0.35+2);
   const cy = baseY - Math.max(6, h*0.34*c.height);
-  const cx = w/2;
+  const cx = w/2, s = c.seed>>>0;
   for(let i=0;i<Math.max(4,Math.round(3*c.width));i++){       // stalk
     const sx0 = cx + (i - c.width)*1.2;
-    for(let y=Math.round(cy); y<=baseY; y++)
-      put(roles,w,h,Math.round(sx0), y, shadeRole(SHADES, 0.22, sx0, y, 0.5, DC));
+    for(let y=Math.round(cy); y<=baseY; y++){
+      // the plate shadows its own stalk near the top, and the stalk is a small cylinder
+      const cyl = (i - c.width*0.5)/Math.max(1,c.width*1.4);
+      const nz  = Math.sqrt(Math.max(0.04, 1-cyl*cyl));
+      let v = litValue(cyl, 0, nz, {amb:0.07,key:0.50,bounce:0.20,spec:0.20,gloss:26,tight:0.8});
+      v *= 0.45 + 0.55*clamp((y-cy)/Math.max(1,(baseY-cy))*1.9, 0, 1);
+      put(roles,w,h,Math.round(sx0), y, shadeRole(SHADES, clamp(v,0,1), sx0, y, 0.5, DC));
+    }
   }
   for(let y=Math.round(cy-TH); y<=Math.round(cy+TH); y++)for(let x=Math.round(cx-R); x<=Math.round(cx+R); x++){
-    const nx=(x-cx)/R, ny=(y-cy)/TH;
-    if(nx*nx+ny*ny > 1) continue;
-    const top = ny < -0.05;
-    // radial ribs across the plate
-    const rib = Math.sin(Math.abs(nx)*Math.PI*(5+Math.round(c.tipsize*4)));
-    let v = top ? 0.74 + rib*0.10 : 0.16 - Math.abs(nx)*0.06;
-    put(roles,w,h,x,y, shadeRole(SHADES, clamp(v,0,1), x, y, 0.55, DC));
+    const u=(x-cx)/R, t=(y-cy)/TH;
+    if(u*u+t*t > 1) continue;
+    // a plate is a squashed ellipsoid: the normal turns over quickly near the rim, which
+    // is where the whole read of thickness lives
+    let nx = u*0.55, ny = t*1.0, nz = Math.sqrt(Math.max(0.02, 1 - nx*nx - Math.min(0.98,ny*ny)));
+    const m1 = Math.hypot(nx,ny,nz); nx/=m1; ny/=m1; nz/=m1;
+    // radial ribs, cut into the normal so they catch light along their crests
+    const rib = Math.sin(Math.abs(u)*Math.PI*(5+Math.round(c.tipsize*4)));
+    const n2 = bumpNormal(nx - rib*0.16*Math.sign(u||1), ny, nz, x, y, s+13, 4.0, 0.30, 2);
+    let v = litValue(n2[0],n2[1],n2[2], {amb:0.08,key:0.80,bounce:0.30,spec:0.60,gloss:16,tight:0.58,rim:0.40});
+    if(t > 0.15) v *= 0.62;                          // the underside sees no sky at all
+    put(roles,w,h,x,y, shadeRole(SHADES, clamp(v,0,1), x, y, 0.5, DC));
   }
   return {height:baseY-cy+TH, tips:[]};
 }
 
 // Tube sponge: a cluster of tubes with dark oscula. Non-photosynthetic, so this is what
-// fills the dark overhangs where coral cannot live.
+// fills the dark overhangs where coral cannot live. Each tube is shaded as an actual
+// cylinder — the terminator runs down its length and the wet highlight runs beside it —
+// and the osculum is a hole with an occluded lip rather than a dark line on top.
 function formSponge(c,rng,roles,w,h,baseY,DC){
   const n = 2 + Math.round(c.strands*0.8), tips=[];
+  const s = c.seed>>>0;
   let tallest = 0;
+  // back tubes first so the front ones overwrite them and the cluster gains depth order
+  const tubes=[];
   for(let i=0;i<n;i++){
     const rad = Math.max(2, (2.2 + rng()*2.6) * c.width*0.5);
     const len = Math.max(5, (h*0.30 + rng()*h*0.34) * c.height);
-    const bx = w/2 + (i - (n-1)/2) * rad*2.2 + (rng()-0.5)*2;
-    const lean = (rng()-0.5)*0.22;
+    tubes.push({rad, len,
+      bx: w/2 + (i - (n-1)/2) * rad*2.2 + (rng()-0.5)*2,
+      lean: (rng()-0.5)*0.22,
+      back: rng()<0.45});
+  }
+  tubes.sort((a,b)=> (a.back?0:1) - (b.back?0:1) || b.rad - a.rad);
+  for(const T of tubes){
+    const {rad,len,bx,lean} = T;
     tallest = Math.max(tallest, len);
     for(let t=0;t<=len;t++){
       const cxx = bx + lean*t, cyy = baseY - t;
       const taper = 1 - 0.18*(t/len);
       for(let dx=-rad; dx<=rad; dx+=0.5){
-        const nx = dx/(rad*taper);
-        if(Math.abs(nx) > 1) continue;
-        put(roles,w,h, Math.round(cxx+dx), Math.round(cyy), domeShade(nx, 0, Math.round(cxx+dx), Math.round(cyy), DC, 0.04));
+        const u = dx/(rad*taper);
+        if(Math.abs(u) > 1) continue;
+        const px = Math.round(cxx+dx), py = Math.round(cyy);
+        // cylinder: the normal swings across the tube in x and has no y component
+        let nx = u, nz = Math.sqrt(Math.max(0.02, 1-u*u));
+        // vertical ridging, the texture real tube sponges have
+        const n2 = bumpNormal(nx, 0, nz, px, py, s+3, 3.2, 0.45, 2);
+        let v = litValue(n2[0],n2[1],n2[2], {amb:0.10,key:0.74,bounce:0.24,spec:0.50,gloss:22,tight:0.62,rim:0.45});
+        if(T.back) v *= 0.72;                          // tubes behind the cluster stay back
+        v *= 0.60 + 0.40*clamp(t/(len*0.42),0,1);      // the cluster floor is occluded
+        put(roles,w,h, px, py, shadeRole(SHADES, clamp(v,0,1), px, py, 0.5, DC));
       }
     }
-    // the osculum: a dark opening at the top
-    const oy = Math.round(baseY-len);
-    for(let dx=-rad*0.62; dx<=rad*0.62; dx+=0.5)
-      put(roles,w,h, Math.round(bx+lean*len+dx), oy, shadeRole(SHADES, 0.06, dx, oy, 0.4, DC));
-    tips.push([bx+lean*len, oy, rad]);
+    // the osculum: an opening, so it wants a lit near lip, a dark far wall and a black core
+    const oy = Math.round(baseY-len), ox = bx + lean*len;
+    for(let dx=-rad; dx<=rad; dx+=0.5){
+      const u = dx/rad, px = Math.round(ox+dx);
+      if(Math.abs(u) > 1) continue;
+      const inner = Math.abs(u) < 0.64;
+      const v = inner ? 0.03 + 0.10*Math.max(0,-u)
+                      : clamp(litValue(u, -0.55, Math.sqrt(Math.max(0.02,1-u*u-0.30)),
+                              {amb:0.12,key:0.86,spec:0.75,gloss:14,tight:0.5}), 0, 1);
+      put(roles,w,h, px, oy, shadeRole(SHADES, v, px, oy, 0.4, DC));
+      if(inner) put(roles,w,h, px, oy+1, shadeRole(SHADES, 0.02, px, oy+1, 0.3, DC));
+    }
+    tips.push([ox, oy, rad]);
   }
   return {height:tallest, tips};
 }
@@ -842,9 +974,15 @@ function generateFlora(c,rng){
       anchors:{base:[Math.round(w/2),baseY],
                tips:built.tips.slice(0,12).map(t=>[Math.round(t[0]),Math.round(t[1])])}}};
   }
-  const segRole=(u,litSign,py,px)=>{
-    const sgn=u*litSign, deep=clamp((py-h*0.42)/(h*0.58),0,1);
-    let v=0.50+sgn*0.44-deep*0.17;
+  // A branch is a cylinder, and it was being shaded with a straight line across its width
+  // against a sign flag — symmetric, no highlight, no fill. Building the real normal from
+  // the segment's own perpendicular means each branch lights itself according to which way
+  // it happens to be pointing, so a bush stops looking like one repeated brush stroke.
+  const segRole=(u,pX,pY,px,py)=>{
+    const nz=Math.sqrt(Math.max(0.02,1-u*u));
+    const deep=clamp((py-h*0.42)/(h*0.58),0,1);
+    let v=litValue(u*pX,u*pY,nz,{amb:0.12,key:0.74,bounce:0.26,spec:0.46,gloss:17,tight:0.62,rim:0.40});
+    v*=1-deep*0.30;                        // the base of a colony sits in its own shade
     return shadeRole(FLORA_RAMP,clamp(v,0,1),px,py,0.7);
   };
 
@@ -870,9 +1008,9 @@ function generateFlora(c,rng){
         t.ang+=(c.curl*A.curlMul*0.16)+(srng()-0.5)*0.09;
         const nx0=t.x+Math.cos(t.ang)*ln, ny0=t.y+Math.sin(t.ang)*ln;
         const dx=nx0-t.x,dy=ny0-t.y,L=Math.hypot(dx,dy)||1;
-        const litSign=Math.sign((-dy/L)*LIGHT[0]+(dx/L)*LIGHT[1])||1;
+        const pX=-dy/L, pY=dx/L;               // the segment's own perpendicular
         const w1=Math.max(0.9,wd*taperStep);
-        stampSeg(roles,w,h,t.x,t.y,nx0,ny0,wd,w1,(u,tt,px,py)=>segRole(u,litSign,py,px));
+        stampSeg(roles,w,h,t.x,t.y,nx0,ny0,wd,w1,(u,tt,px,py)=>segRole(u,pX,pY,px,py));
         t.x=nx0;t.y=ny0;t.wid=leaf?t.wid:w1;t.len=Math.max(1.2,t.len*(0.965+taperStep*0.035));
         if(ny0<minY)minY=ny0;
         segs++;
@@ -899,9 +1037,12 @@ function generateFlora(c,rng){
     if(r<0.7)continue;
     stampDisc(roles,w,h,tp[0],tp[1],r,(d,dx,dy)=>{
       if(c.bio)return d<0.5?GLOW:GLOWDIM;
-      const len=Math.max(0.7,Math.hypot(dx,dy)),lit=(dx*LIGHT[0]+dy*LIGHT[1])/len;
-      if(d<0.4&&lit>0.1)return SPEC;
-      return shadeRole([S4,S5,S6,S7,S8],clamp(0.5+lit*0.55,0,1),Math.round(tp[0]+dx),Math.round(tp[1]+dy),0.6);});
+      // a polyp is a little dome, so it gets the same hemisphere treatment as a boulder
+      const un=dx/(r||1), vn=dy/(r||1);
+      const nz=Math.sqrt(Math.max(0.02,1-Math.min(0.98,un*un+vn*vn)));
+      const lv=litValue(un,vn,nz,{amb:0.14,key:0.72,bounce:0.20,spec:0.85,gloss:11,tight:0.55,rim:0.35});
+      if(lv>0.93)return SPEC;
+      return shadeRole([S3,S4,S5,S6,S7,S8],lv,Math.round(tp[0]+dx),Math.round(tp[1]+dy),0.6);});
   }
   if(c.bio)for(const tp of tips)stampDisc(roles,w,h,tp[0],tp[1],A.tipR*c.tipsize+2.4,()=>GLOWDIM,true);
 
@@ -977,25 +1118,54 @@ function tileFill(c,x,y){
   // one broad mass, gently perturbed so it isn't an obvious blob
   const form = clamp(0.5 + (nz(x,y,sc,0)*0.74 + nz(x,y,Math.max(2,sc/2),311)*0.26 - 0.5)*k, 0, 0.9999);
 
+  // Relief, not camouflage. The noise field was being read as a VALUE — dark here, light
+  // there — which paints a pattern onto a flat plane; that is why the seabed was the
+  // flattest surface in the game despite covering most of the screen. Read as a HEIGHT
+  // field and lit, the very same noise produces facets: the slope facing the light is
+  // bright, the slope behind it falls into shadow, and the rock acquires a direction.
+  const hAt=(xx,yy,a,bb)=>nz(xx,yy,a,0)*0.74+nz(xx,yy,Math.max(2,a/2),bb)*0.26;
+  const relief=(a,bb,steep,o)=>{
+    const h0=hAt(x,y,a,bb), gx=hAt(x+1,y,a,bb)-h0, gy=hAt(x,y+1,a,bb)-h0;
+    let vx=-gx*steep, vy=-gy*steep, vz=1;
+    const m1=Math.hypot(vx,vy,vz);
+    return litValue(vx/m1,vy/m1,vz/m1,o);
+  };
+
   if(c.material==='sand'){
-    // sediment is nearly featureless — a faint swell and the odd shell fragment
-    let r = shadeRole([S4,S5,S6,S7], form, x, y, 0.35);
-    const g = hash2(x,y,s+11);
-    if(g > 0.991) r = S7;
-    else if(g < 0.012) r = S3;
+    // Sediment is nearly featureless in colour but not in FORM: current works it into
+    // ripples, and ripples are the one thing that tells you a flat expanse is a surface
+    // lying under water rather than a blank fill.
+    const rip=Math.sin(x*0.62+nz(x,y,sc,0)*5.2)*0.5+0.5;
+    const rdx=Math.cos(x*0.62+nz(x,y,sc,0)*5.2)*0.62;
+    let vx=-rdx*0.9, vy=(nz(x,y+1,sc*1.6,55)-nz(x,y,sc*1.6,55))*-5, vz=1;
+    const m1=Math.hypot(vx,vy,vz);
+    const lv=litValue(vx/m1,vy/m1,vz/m1,{amb:0.22,key:0.46,bounce:0.18,spec:0.24,gloss:30,tight:0.80});
+    let r=shadeRole([S1,S2,S3,S4,S5,S6,S7],clamp(lv*0.88+rip*0.16,0,1),x,y,0.35);
+    const g=hash2(x,y,s+11);
+    if(g>0.991)r=S8;                                  // a shell fragment catching the light
+    else if(g<0.012)r=S1;
     return r;
   }
   if(c.material==='rock' || c.material==='rubble'){
-    const rubble = c.material==='rubble';
-    const ramp = rubble ? [S1,S2,S3,S4,S5,S6] : [S1,S2,S3,S4,S5];
-    let r = shadeRole(ramp, form, x, y, 0.30);
+    const rubble=c.material==='rubble';
+    // TWO scales, and only two. Relief at the tile's own scale gives the rock a couple of
+    // broad planes; a finer pass at a fraction of the strength puts grain on them. Lighting
+    // one high-frequency field, or multiplying two noise fields together, produces salt and
+    // pepper — busy, low-contrast, and at 2x zoom indistinguishable from static.
+    const broad=relief(Math.max(6,sc*1.8),311,rubble?4.6:3.8,
+      {amb:0.14,key:0.70,bounce:0.16,spec:0.30,gloss:26,tight:0.68});
+    const fine =relief(Math.max(2,sc*0.7),907,2.2,
+      {amb:0.40,key:0.50,bounce:0.10,spec:0.10,gloss:30,tight:0.85});
+    const lv=clamp(broad*0.80+fine*0.20,0,1);
+    const ramp=[S0,S1,S2,S3,S4,S5,S6,S7];
+    let r=shadeRole(ramp,lv,x,y,0.30);
     // joints: a thin dark network where the noise field crosses a level set
-    const j = nz(x,y,Math.max(3,sc-2),733);
-    if(Math.abs(j-0.5) < (rubble ? 0.055 : 0.035)) r = S0;
+    const j=nz(x,y,Math.max(3,sc-2),733);
+    if(Math.abs(j-0.5)<(rubble?0.055:0.035))r=S0;
     // and a lit lip just off the joint, which is what makes it read as a step not a scratch
-    else if(Math.abs(j-0.5) < (rubble ? 0.085 : 0.062)) r = shadeRole(ramp, Math.min(0.95, form+0.22), x, y, 0.3);
-    const g = hash2(x,y,s+7);
-    if(g > 0.972) r = shadeRole(ramp, Math.min(0.95, form+0.3), x, y, 0.2);
+    else if(Math.abs(j-0.5)<(rubble?0.085:0.062))r=shadeRole(ramp,clamp(lv+0.26,0,1),x,y,0.3);
+    const g=hash2(x,y,s+7);
+    if(g>0.992)r=shadeRole(ramp,clamp(lv+0.34,0,1),x,y,0.2);   // a wet grain catching light
     return r;
   }
   // coral crust — a living skin over the rock: mottled, with polyps and the odd glow
