@@ -1,0 +1,2077 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1c2b">
+  <meta name="description" content="A collaborative, evidence-led research workspace for the 2026 Snohomish County tax-foreclosure auction.">
+  <title>Parcel & Proof — Snohomish Auction Intelligence</title>
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+:root{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#15253c;background:#eef2f5;font-size:14px;--navy:#0b1d2c;--navy2:#102738;--teal:#0f8b77;--tealbr:#27c3a4;--orange:#d57b4b;--ink:#1a2a3b;--muted:#6b7c8e;--line:#e4e9ee;--pale:#f6f8fa;--paper:#fff;--shadow:0 12px 38px rgba(8,30,48,.05)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0}a{color:inherit;text-decoration:none}button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #23b795;outline-offset:2px}small{font-size:11px}h1,h2,h3,h4,p{margin-top:0}h1,h2,h3,h4{font-family:Manrope,'DM Sans',sans-serif;letter-spacing:-.037em}p{line-height:1.62}.shell{min-height:100vh;display:flex}.sidebar{width:258px;background:linear-gradient(180deg,#0b1b2a,#102739 78%,#0e2333);color:#c1cdd5;min-height:100vh;position:sticky;top:0;flex-shrink:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;padding:31px 17px 20px;z-index:30}.identity{display:flex;align-items:center;gap:10px;color:#fff;margin:3px 6px 47px}.identity-icon{background:#174a49;color:#3fe1bf;width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center}.identity-icon svg{width:27px}.identity strong{display:block;font-family:Manrope,sans-serif;font-weight:800;font-size:17px;letter-spacing:-1px}.identity .amp{color:#34c6a3;padding:0 1px}.identity small{font-size:8px;color:#6da5a9;letter-spacing:2.05px;font-weight:700;display:block;margin-top:2px}.side-eyebrow{color:#678295;font-size:10px;letter-spacing:2.2px;font-weight:800;padding:0 16px 11px}.side-eyebrow.second{margin-top:35px}.nav{display:grid;gap:4px}.nav a{display:flex;align-items:center;gap:12px;padding:13px 13px 13px 16px;border-radius:9px;color:#a9bdc9;font-weight:600;font-size:12px;white-space:nowrap;transition:.16s}.nav a:hover{background:#173548;color:#fff}.nav a.active{background:#1b514e;color:#baf4e5;box-shadow:inset 3px 0 #3dd1b2}.nav-ico{font-size:19px;line-height:10px;min-width:18px;text-align:center;color:#88a1b0;font-weight:400}.nav a.active .nav-ico{color:#7af1d5}.nav-count{margin-left:auto;font-size:11px;background:#244051;color:#a6d6d0;border-radius:6px;padding:2px 6px}.side-bottom{margin-top:auto;padding:30px 5px 0}.auction-pill{display:flex;gap:10px;background:#1b3a4a;border:1px solid #2c4a58;border-radius:12px;padding:15px 12px;align-items:center}.auction-pill strong{font-size:11px;color:#f1f9f9;letter-spacing:1.1px}.auction-pill small{color:#8cabb8;display:block;margin-top:4px}.pulse{width:9px;height:9px;border-radius:50%;background:#3ad7ad;box-shadow:0 0 0 4px #2b665c;flex-shrink:0}.side-note{border-top:1px solid #244050;font-size:10px;color:#7792a4;letter-spacing:.5px;padding:23px 8px 15px;margin-top:24px}.side-note strong{color:#b9cbd5;margin-left:6px}.side-note span{display:block;letter-spacing:0;line-height:1.55;margin-top:9px}.side-official{display:flex;justify-content:space-between;color:#80d7c6;font-size:12px;font-weight:700;padding:13px 8px}.workspace{flex:1;min-width:0;display:flex;flex-direction:column}.topbar{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 39px;position:sticky;top:0;z-index:15}.top-left,.top-right{display:flex;align-items:center;gap:15px}.top-left{font-size:11px;letter-spacing:1.3px;font-weight:800;color:#91a0ad}.crumb-main{color:#253e51}.crumb-dot{color:#bec9d0}#breadcrumbs{letter-spacing:0;font-weight:500;font-size:12px;color:#78899c}.sync-indicator{display:flex;gap:9px;align-items:center;border-right:1px solid var(--line);padding-right:22px;color:#708697;font-size:11px}.sync-dot{width:7px;height:7px;border-radius:50%;background:#d6a66e}.sync-indicator.online .sync-dot{background:#23a887}.profile-button{display:flex;align-items:center;gap:9px;padding:6px;border:0;background:none;color:#344f5e;font-weight:700;font-size:12px}.avatar{border-radius:50%;width:30px;height:30px;background:#dff2ec;color:#137965;display:grid;place-items:center;font-size:11px;font-weight:800}.chev{color:#9eabb7;margin-left:4px}.mobile-menu{display:none!important}.offline-banner{padding:12px 39px;background:#fff1dc;border-bottom:1px solid #f0d8b4;color:#84602d;font-size:12px}main{padding:34px 39px 76px;width:100%;max-width:1700px;margin:0 auto;flex:1}.footer{display:flex;justify-content:space-between;gap:20px;border-top:1px solid #dde5ea;padding:16px 40px;color:#8899a8;font-size:10px;line-height:1.5}.eyebrow{font-size:10px;font-weight:800;color:var(--teal);letter-spacing:2px;margin-bottom:12px}.page-heading{display:flex;justify-content:space-between;align-items:end;gap:15px;margin:3px 0 24px}.page-heading h1{font-size:30px;line-height:1.1;margin:0 0 9px;color:#172c3e;font-weight:800}.page-heading p{margin:0;color:var(--muted);font-size:12px}.button{border:1px solid #dae4ea;background:#fff;padding:10px 13px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:800;font-size:11px;color:#2f4859;transition:.15s;white-space:nowrap}.button:hover{border-color:#9fc8bf;transform:translateY(-1px)}.button.primary{background:#0f806f;color:#fff;border-color:#0f806f}.button.primary:hover{background:#066c5e}.button.dark{background:#152e40;color:#fff;border-color:#152e40}.button.ghost{background:transparent;border:1px solid #dbe5e9}.button.danger{background:#fff6f4;color:#af5744;border-color:#f6d9cf}.button.small{padding:7px 10px;font-size:11px}.button.round{border-radius:50%;padding:0;width:35px;height:35px;display:grid;place-items:center;font-size:18px}.muted{color:var(--muted)}.strong{font-weight:800}.nowrap{white-space:nowrap}.panel{background:#fff;border:1px solid #e5ebef;box-shadow:var(--shadow);border-radius:14px}.hero{background:linear-gradient(110deg,#0e2b3a,#0b3f44 67%,#12584b);color:#fff;border-radius:17px;min-height:255px;display:grid;grid-template-columns:1.5fr 1fr;overflow:hidden;position:relative;margin-bottom:23px;box-shadow:0 14px 30px rgba(18,60,65,.13)}.hero-content{padding:36px 38px;position:relative;z-index:1}.hero .eyebrow{color:#61d8ba}.hero h1{font-size:35px;line-height:1.22;margin:0 0 15px;font-weight:800;max-width:540px}.hero p{color:#a5c8ce;font-size:12px;max-width:490px;margin-bottom:23px}.hero-shape{position:absolute;right:-50px;top:-120px;width:480px;height:480px;border:1px solid rgba(76,198,167,.18);transform:rotate(36deg);border-radius:21px}.hero-shape:before,.hero-shape:after{content:'';position:absolute;inset:55px;border:1px solid rgba(76,198,167,.18);border-radius:21px}.hero-shape:after{inset:110px}.hero-stats{position:relative;z-index:1;display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:18px;padding:30px}.hero-metric{min-width:135px;border:1px solid rgba(130,196,188,.2);border-radius:12px;padding:20px 19px;background:rgba(7,40,45,.44);backdrop-filter:blur(4px)}.hero-metric strong{font-family:Manrope,sans-serif;font-size:28px;display:block;letter-spacing:-1.3px;color:#fff}.hero-metric small{color:#a0c6c6;text-transform:uppercase;letter-spacing:1px;font-size:9px;font-weight:700}.tag{display:inline-flex;gap:6px;align-items:center;padding:5px 9px;border-radius:6px;background:#f1f5f7;border:1px solid #e8edf0;color:#526879;font-size:10px;font-weight:800;white-space:nowrap}.tag.teal{color:#087a69;background:#e8f6f1;border-color:#cfebe0}.tag.orange{color:#94613f;background:#fbefe1;border-color:#f6e2d1}.tag.red{color:#a94e4d;background:#fceceb;border-color:#f7d6d4}.tag.blue{color:#4e708e;background:#edf3f9;border-color:#dfebf3}.tag.dark{color:#b3d9d9;background:#163c47;border-color:#2c5660}.overview-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:20px}.kpi-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin:0 0 25px}.kpi{padding:22px 21px;min-height:118px}.kpi-head{display:flex;align-items:center;justify-content:space-between;color:#8294a1;text-transform:uppercase;letter-spacing:1.1px;font-weight:800;font-size:9px}.kpi .kpi-n{font:800 27px Manrope,sans-serif;letter-spacing:-1.2px;color:#1e3946;display:block;margin-top:16px}.kpi .kpi-sub{color:#90a1ad;font-size:10px;margin-top:4px}.section-label{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px}.section-label h2{font-size:17px;margin:0}.section-label a{font-size:11px;font-weight:800;color:var(--teal)}.spotlights{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.spotlight{padding:20px 17px;background:#fff;border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;align-items:start;gap:9px;min-height:172px}.spotlight .seq{font-size:10px;color:#91a3ae;font-weight:800;letter-spacing:1px}.spotlight strong{font-family:Manrope,sans-serif;font-size:13px;color:#203a4b}.spotlight small{color:#8093a2;font-size:11px}.spotlight .button{margin-top:auto}.attention-list{display:grid;gap:10px;padding:18px}.attention-item{display:flex;gap:12px;padding:12px;border:1px solid #eef0f3;border-radius:9px;align-items:flex-start}.attention-dot{width:9px;height:9px;background:#e09666;border-radius:50%;margin-top:5px;flex-shrink:0}.attention-item strong{font-size:12px;display:block}.attention-item p{color:#7f92a0;font-size:11px;margin:4px 0 0;line-height:1.4}.warnbox{border:1px solid #f1dbc6;background:#fffaf3;border-radius:11px;padding:17px 18px;color:#815931;font-size:12px;line-height:1.6}.warnbox strong{display:block;color:#6f4828;margin-bottom:4px}.toolbar{display:grid;grid-template-columns:minmax(180px,1fr) auto auto auto;gap:12px;align-items:center;margin-bottom:19px}.search-box{position:relative}.search-box input{width:100%;border:1px solid #dfe7ec;border-radius:9px;padding:13px 17px 13px 42px;background:#fff;color:#2a3f4c;font-size:12px}.search-box span{position:absolute;top:12px;left:16px;color:#91a5b2;font-size:17px}.select{border:1px solid #dfe7ec;border-radius:9px;padding:12px 12px;background:#fff;color:#3c5363;font-size:11px;min-width:125px;font-weight:700}.filterrow{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px;flex-wrap:wrap}.pills{display:flex;gap:7px;flex-wrap:wrap}.filter-pill{padding:8px 12px;background:#fff;border:1px solid #dfe7ec;border-radius:20px;color:#708798;font-size:11px;font-weight:700}.filter-pill.active{background:#1e4650;border-color:#1e4650;color:#fff}.result-count{font-size:11px;color:#8195a4}.property-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.property-card{background:#fff;border:1px solid #e6ebef;border-radius:13px;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;transition:transform .16s,box-shadow .16s}.property-card:hover{transform:translateY(-3px);box-shadow:0 15px 35px rgba(11,41,55,.10)}.card-media{height:128px;position:relative;overflow:hidden;background:linear-gradient(125deg,#dceae8,#b8d0cc)}.media-art{position:absolute;inset:0;opacity:.84;background-image:linear-gradient(50deg,transparent 45%,#a2c9bd55 45%,#a2c9bd55 48%,transparent 48%),linear-gradient(128deg,transparent 46%,#85c0b455 46%,#85c0b455 49%,transparent 49%),repeating-linear-gradient(90deg,transparent 0,transparent 44px,#ffffff55 45px,#ffffff55 46px)}.card-media.land{background:linear-gradient(120deg,#e8dfd1,#b8c3b2)}.card-media.condo{background:linear-gradient(120deg,#dfebe9,#abbecf)}.media-badge{position:absolute;left:14px;top:13px;background:#ffffffeb;border:1px solid #ffffff55;padding:7px 9px;border-radius:6px;font-size:9px;color:#456274;font-weight:800}.card-media .media-label{position:absolute;bottom:13px;left:14px;color:#365c65;font-size:11px;font-weight:700}.media-label small{display:block;color:#608389;font-size:9px;font-weight:500;margin-top:4px}.media-fav{position:absolute;right:13px;top:13px;border:none;background:#fffffff0;color:#667f89;width:34px;height:34px;border-radius:50%;font-size:19px;line-height:1}.media-fav.active{color:#d06755}.card-body{padding:17px 18px 13px;flex:1;display:flex;flex-direction:column}.card-meta{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:12px}.card-city{font-weight:800;font-size:9px;color:#91a1ad;letter-spacing:1px;text-transform:uppercase}.card-body h3{font-size:16px;margin:0 0 5px;line-height:1.35;min-height:42px;color:#1f3848}.card-attr{font-size:10px;color:#8b9fac;min-height:17px;margin-bottom:15px}.card-price-line{display:flex;align-items:baseline;justify-content:space-between;border-top:1px solid #ecf0f2;padding-top:14px;gap:10px}.price strong{display:block;font:800 24px Manrope,sans-serif;letter-spacing:-1.1px;color:#1d394b}.price small{font-size:9px;color:#9aa8b3;font-weight:700;letter-spacing:.5px;text-transform:uppercase}.rating small{font-size:9px;display:block;color:#9aa8b3;text-align:right}.rating strong{font-size:15px;color:#2d786d}.card-foot{padding:0 18px 17px;display:flex;gap:7px;align-items:center}.card-foot .button{flex:1}.card-foot .button.icon-only{flex:none;min-width:38px}.listpanel{padding:22px}.mini-row{display:grid;grid-template-columns:40px minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:14px 3px;border-bottom:1px solid #eff2f5}.mini-row:last-child{border:0}.position{height:32px;width:32px;display:grid;place-items:center;background:#eff5f5;color:#32675b;border-radius:9px;font-weight:800;font-size:13px}.mini-row h3{font-size:13px;margin:0 0 5px}.mini-row small{font-size:10px;color:#8a9ba8}.mini-row .actions{display:flex;gap:4px;align-items:center}.empty{padding:55px 20px;text-align:center;border:1px dashed #d5e0e6;background:#fff;border-radius:13px}.empty-icon{font-size:34px;color:#b2c8cc}.empty h3{font-size:18px;margin:13px 0 6px}.empty p{font-size:12px;color:#8395a0;max-width:430px;margin:0 auto 17px}.team-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}.team-card{padding:23px;background:#fff;border:1px solid var(--line);border-radius:13px}.team-head{display:flex;align-items:center;gap:12px}.team-card h3{font-size:15px;margin:0 0 5px}.team-card small{color:#899da9}.team-preview{display:grid;gap:7px;padding:15px 0;color:#596d79;font-size:11px}.team-preview div{display:flex;justify-content:space-between;gap:10px}.team-foot{display:flex;gap:7px}.team-foot .button{flex:1}.merged-row{display:grid;grid-template-columns:44px minmax(0,1fr) 100px 96px 80px;gap:13px;align-items:center;padding:17px 14px;border-bottom:1px solid #eaf0f2}.merged-row.head{color:#93a3ae;font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:800;padding:8px 14px}.merged-row strong{font-size:12px}.merged-row small{display:block;color:#93a3af;font-size:10px;margin-top:3px}.merged-row .tally{text-align:center;font-family:Manrope,sans-serif;font-weight:800;font-size:13px;color:#254b56}.merged-row .button{justify-self:end}.guide{padding:25px 26px}.guide h2{font-size:17px;margin-bottom:12px}.guide h3{font-size:13px;margin:22px 0 6px}.guide p,.guide li{color:#697e8a;font-size:12px;line-height:1.85}.guide ol{padding-left:20px}.guide a{color:#0b8876;font-weight:800;text-decoration:underline}.guide hr{border:0;border-top:1px solid #e7ebef;margin:20px 0}.property-breadcrumb{display:flex;align-items:center;gap:8px;font-size:11px;color:#849aa6;margin-bottom:16px}.property-breadcrumb a{color:#107c72;font-weight:800}.detail-top{display:flex;justify-content:space-between;align-items:flex-start;gap:22px;margin:0 0 20px}.detail-top h1{font-size:31px;margin-bottom:8px}.detail-top p{margin:0;color:#8598a5;font-size:12px}.detail-top-actions{display:flex;gap:9px;align-items:center}.detail-layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(300px,.85fr);align-items:start;gap:22px}.detail-left{display:grid;gap:20px}.detail-right{display:grid;gap:18px;position:sticky;top:92px}.detail-visual{overflow:hidden}.visual-head{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:15px 18px;background:#f8fafb;border-bottom:1px solid var(--line)}.visual-tabs{display:flex;gap:5px}.visual-tab{border:none;background:transparent;color:#8395a1;font-size:11px;font-weight:800;padding:8px 10px;border-radius:6px}.visual-tab.active{background:#e3f3ef;color:#087866}.visual-canvas{height:345px;background:#eaf0ef;position:relative}.visual-canvas iframe{border:0;width:100%;height:100%}.visual-fallback{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#71909c;padding:40px}.visual-fallback .big-icon{font-size:35px;opacity:.5}.visual-fallback strong{color:#416172;font-size:14px;margin:15px 0 5px}.visual-fallback p{font-size:11px;max-width:400px}.visual-foot{display:flex;gap:9px;flex-wrap:wrap;padding:13px 16px;border-top:1px solid var(--line)}.detail-section{padding:25px}.detail-section h2{font-size:17px;margin-bottom:17px}.facts-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px}.fact{border-bottom:1px solid #e9eff2;padding-bottom:13px;min-width:0}.fact small{display:block;font-size:9px;letter-spacing:.7px;color:#97a7b2;font-weight:800;text-transform:uppercase;margin-bottom:7px}.fact strong{display:block;font-size:14px;color:#294353;overflow-wrap:anywhere}.fact.wide{grid-column:span 2}.risk-list{display:grid;gap:9px}.risk-card{display:flex;gap:12px;padding:13px 15px;background:#fffaf2;border:1px solid #f3e5d2;border-radius:9px;color:#625a4c;font-size:12px;line-height:1.6}.risk-card .risk-icon{color:#b77943;font-size:15px;flex-shrink:0}.risk-card.warn{background:#fff3ee;border-color:#f4dbcf}.risk-card.warn .risk-icon{color:#bb6050}.risk-card:has(.neutral-icon){background:#f7fafb;border-color:#e9f1f3}.risk-card .neutral-icon{color:#71949a}.evidence-row{border-bottom:1px solid #edf1f4;padding:15px 0;display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center}.evidence-row:last-child{border:0}.evidence-row strong{display:block;font-size:12px;color:#2b4352}.evidence-row small{color:#8b9eab;font-size:10px;display:block;margin-top:3px}.evidence-row p{font-size:11px;color:#778996;margin:6px 0 0;line-height:1.6}.evidence-row a{font-size:11px;color:#0b8474;font-weight:800}.price-panel{padding:22px}.price-panel small{color:#8da1ac;font-size:9px;letter-spacing:.8px;font-weight:800;text-transform:uppercase}.price-panel .big-price{font:800 32px Manrope,sans-serif;letter-spacing:-1px;margin:7px 0 6px}.price-panel .info{font-size:11px;color:#8295a1;line-height:1.5}.cost-line{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;margin-top:14px}.cost-line span{color:#7b919e}.cost-line strong{font-weight:800;color:#263f4e}.cost-total{border-top:1px solid #e3e9ee;padding-top:14px;margin-top:18px}.cost-total strong{color:#0b7969}.price-panel .button{margin-top:18px;width:100%}.profile-panel{padding:20px}.profile-panel h3,.compact-panel h3{font-size:14px;margin-bottom:11px}.compact-panel{padding:19px}.compact-panel p{font-size:11px;color:#8598a4;margin:0;line-height:1.6}.score-wrap{display:flex;align-items:center;gap:10px;margin-bottom:9px}.score-wrap strong{font:800 31px Manrope,sans-serif;color:#167f6c}.score-wrap small{color:#8496a3}.score-help{font-size:10px;color:#8497a3;line-height:1.65;margin-bottom:13px}.stars{display:flex;gap:2px}.star{border:0;background:transparent;color:#cfdae1;font-size:27px;padding:0 2px}.star.on{color:#e0a65c}.check-row{display:flex;gap:8px;align-items:flex-start;padding:9px 0;border-bottom:1px solid #eef3f6;font-size:11px;color:#536d7e;line-height:1.5;cursor:pointer}.check-row input{accent-color:#0e8471;margin-top:3px}.check-row:last-child{border:0}.notearea{width:100%;min-height:95px;padding:12px;border:1px solid #d9e3e9;border-radius:9px;resize:vertical;background:#fdfefe;color:#2b3e48;font-size:12px;margin-bottom:10px}.cost-planner label{display:block;color:#708696;font-size:10px;font-weight:700;margin:12px 0 6px}.cost-planner input{padding:9px 10px;width:100%;border:1px solid #dde6eb;border-radius:7px;color:#294757}.planner-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 11px}.planner-total{margin-top:14px;background:#e7f4ef;border-radius:9px;padding:14px;display:flex;justify-content:space-between;align-items:center}.planner-total strong{color:#097868;font-size:21px}.muted-caption{color:#94a4af;font-size:10px;line-height:1.6;margin-top:9px}.people-list{font-size:11px;color:#8298a7;margin-top:12px}.rank-button{display:inline-flex;justify-content:center;gap:5px;padding:10px;border:1px solid #dce9e8;background:#eff9f6;border-radius:8px;color:#077d6f;font-weight:800;font-size:11px;width:100%}.method-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.stat-stack{display:flex;flex-direction:column;gap:11px}.rank-summary{display:flex;gap:12px;margin-bottom:15px;flex-wrap:wrap}.rank-summary .tag{font-size:11px;padding:8px 12px}.modal-layer{position:fixed;inset:0;z-index:60;background:rgba(7,22,33,.63);display:grid;place-items:center;padding:20px;backdrop-filter:blur(4px)}.modal{width:min(100%,470px);background:#fff;border-radius:16px;box-shadow:0 30px 90px #0005;max-height:90vh;overflow:auto;padding:28px}.modal.wide{width:min(100%,640px)}.modal-top{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:16px}.modal h2{font-size:21px;margin-bottom:4px}.modal p{font-size:12px;color:#7e91a0}.modal-close{border:0;background:#eef3f5;border-radius:8px;width:30px;height:30px;font-size:20px;color:#728898}.modal input,.modal select{width:100%;padding:12px;border:1px solid #dbe4e9;border-radius:8px;background:#fff;color:#213e4e}.modal label{display:block;font-size:11px;color:#6a8493;margin-bottom:6px;font-weight:800}.modal .field{margin-bottom:14px}.modal .button{width:100%;margin-top:8px}.modal .divider{border-top:1px solid #e9eef1;margin:18px 0}.modal .help{color:#8a9eab;font-size:11px;line-height:1.55;margin:10px 0}.modal .error{color:#ba4b4b;font-size:11px;margin:10px 0}.recovery-key{font-family:monospace;letter-spacing:.7px;font-weight:800;padding:14px;background:#eff8f5;border:1px dashed #7ed2ba;border-radius:7px;overflow-wrap:anywhere;color:#156f5d;font-size:14px}.copy-value{display:flex;gap:8px;align-items:center}#toast{position:fixed;bottom:26px;right:29px;z-index:99;background:#173846;color:#fff;border-radius:10px;box-shadow:0 12px 35px #0003;padding:13px 17px;font-size:12px;font-weight:700;opacity:0;transform:translateY(12px);pointer-events:none;transition:.25s}#toast.show{opacity:1;transform:translateY(0)}.icon-button{border:0;background:transparent;color:#47707a;padding:9px}.help-link{text-decoration:underline;color:#0c8175}.small-slate{font-size:10px;color:#9aabb4}.danger-text{color:#b4574e}.muted-rule{border:0;border-top:1px solid #e8eff1;margin:19px 0}.list-views .team-card{margin-bottom:13px}.mobile-overlay{display:none}.cost-warning{margin-top:11px;color:#95633a;font-size:10px;line-height:1.7}.status-token{font-size:10px;color:#a86746;font-weight:800}.detail-hero-note{font-size:11px!important;color:#ba7550!important}
+@media(max-width:1380px){.property-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.spotlights{grid-template-columns:repeat(2,minmax(0,1fr))}.overview-grid{grid-template-columns:1fr}.hero{grid-template-columns:1.2fr 1fr}.detail-layout{grid-template-columns:1fr 330px}}
+@media(max-width:1100px){.sidebar{width:225px}.topbar{padding:0 23px}main{padding:29px 23px 70px}.hero h1{font-size:29px}.hero-metric{min-width:105px}.kpi-row{grid-template-columns:repeat(2,minmax(0,1fr))}.team-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.detail-layout{grid-template-columns:1fr}.detail-right{position:static;grid-template-columns:repeat(2,1fr);display:grid}.detail-right .price-panel{grid-column:span 2}.toolbar{grid-template-columns:1fr 1fr}}
+@media(max-width:750px){.sidebar{position:fixed;transform:translateX(-100%);transition:transform .22s;width:255px;box-shadow:10px 0 35px #0002}.sidebar.open{transform:translateX(0)}.mobile-overlay{display:block;position:fixed;inset:0;background:#071b2ca8;z-index:25}.mobile-menu{display:inline-flex!important}.topbar{height:62px;padding:0 14px}.sync-indicator{display:none}.crumb-main{display:none}.crumb-dot{display:none}.top-left{gap:6px}.profile-button{font-size:11px}main{padding:22px 16px 65px}.footer{padding:15px;display:block}.footer span{display:block;margin:5px 0}.hero{grid-template-columns:1fr}.hero-content{padding:27px 26px}.hero h1{font-size:27px}.hero-stats{justify-content:flex-start;gap:9px;padding:0 24px 25px}.hero-metric{min-width:100px;padding:11px}.hero-metric strong{font-size:22px}.hero-metric small{font-size:8px}.page-heading{align-items:start}.page-heading h1{font-size:25px}.page-heading .button{font-size:9px}.property-grid{grid-template-columns:1fr}.spotlights{grid-template-columns:1fr}.team-grid{grid-template-columns:1fr}.overview-grid{grid-template-columns:1fr}.toolbar{grid-template-columns:1fr 1fr}.toolbar .search-box{grid-column:span 2}.toolbar .select{width:100%}.toolbar .button{width:100%}.detail-top{display:block}.detail-top h1{font-size:24px}.detail-top-actions{margin-top:14px}.visual-canvas{height:290px}.detail-right{grid-template-columns:1fr}.detail-right .price-panel{grid-column:auto}.facts-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.merged-row{grid-template-columns:35px minmax(0,1fr) 55px 54px;gap:7px;padding:13px 4px}.merged-row.head{display:none}.merged-row .button{display:none}.rank-summary{gap:6px}.mini-row{grid-template-columns:30px minmax(0,1fr) auto;gap:7px}.mini-row .value{display:none}.mini-row .actions{gap:2px}.mini-row .button.small{padding:7px;font-size:10px}.method-grid{grid-template-columns:1fr}.hero-shape{display:none}.offline-banner{padding:12px 16px}}
+/* Data-focused visual refinements */
+.card-price{font:800 20px Manrope,sans-serif;letter-spacing:-.7px;color:#172f3d;margin-top:4px}.card-assess{font-size:13px;font-weight:800;color:#5b7c8b;margin-top:7px}.overline{font-size:8px;letter-spacing:1px;font-weight:800;color:#9aa9b5}.active-button{background:#e3f4ed!important;border-color:#a5d3c4!important;color:#0b816f!important}.card-type{position:absolute;top:12px;left:13px;padding:6px 9px;background:#ffffffdd;color:#2d5961;border:1px solid #ffffffc0;border-radius:6px;font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase}.media-graphic{height:100%;position:relative;display:grid;place-items:center;overflow:hidden}.lot-glyph{font-family:serif;font-size:115px;line-height:1;color:#54988e5a;font-weight:400;transform:rotate(-8deg);text-shadow:4px 5px 2px #fff2}.card-media.land .lot-glyph{color:#8fa18a99}.lot-grid{position:absolute;inset:-75px;background:repeating-linear-gradient(90deg,transparent,transparent 29px,#ffffff70 30px,#ffffff70 31px),repeating-linear-gradient(0deg,transparent,transparent 29px,#ffffff70 30px,#ffffff70 31px);transform:skewX(-15deg) rotate(-10deg);opacity:.35}.warning-inline{background:#f7f9fa;border-top:1px solid #e5eaed;padding:12px 15px;color:#778d9a;font-size:10px;line-height:1.7}.image-lead-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.image-lead{display:flex;flex-direction:column;justify-content:center;align-items:start;padding:14px;background:#f5f9fa;border:1px solid #e4edee;border-radius:9px;min-height:116px;gap:5px}.image-lead:hover{border-color:#68c4b0;background:#eff8f5}.image-lead .image-glyph{font-size:21px;color:#188775}.image-lead strong{font-size:11px;color:#32505c}.image-lead small{color:#8b9da6;font-size:10px}.tag input{accent-color:#128a75}.card-media:hover .lot-glyph{transform:rotate(-4deg) scale(1.1);transition:.2s}.app-error{padding:20px;border:1px solid #eed4ca;background:#fff8f4;color:#9e6448;border-radius:10px}
+@media(max-width:650px){.image-lead-grid{grid-template-columns:1fr}.card-foot{flex-wrap:wrap}.detail-top-actions{flex-wrap:wrap}.property-card .card-media{height:118px}.property-grid{gap:12px}}
+@media print{.sidebar,.topbar,.footer,.detail-top-actions,.detail-right .button,.visual-tabs,.visual-foot,.offline-banner,.warning-inline{display:none!important}.workspace{display:block}.shell{display:block}main{padding:0}.detail-layout{grid-template-columns:1fr}.detail-right{position:static}.detail-visual{page-break-after:always}.visual-canvas{height:180px}.panel{box-shadow:none;break-inside:avoid}.detail-left,.detail-right{gap:10px}body{background:#fff}}
+.exposure-table{display:grid;gap:1px;border:1px solid #ebf0f3;border-radius:10px;overflow:hidden}.exposure-entry{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:15px;align-items:center;padding:15px 17px;background:#fbfcfd;border-bottom:1px solid #eaf0f2}.exposure-entry:last-child{border:0}.exposure-entry strong{color:#354f5c;font-size:12px}.exposure-entry p{margin:5px 0 0;color:#8b9eaa;font-size:10px}.exposure-right{display:grid;gap:7px;justify-items:end}.exposure-right a{color:#0a8878;font-size:10px;font-weight:800;white-space:nowrap}
+@media(max-width:750px){.exposure-entry{grid-template-columns:1fr;gap:9px}.exposure-right{display:flex;justify-content:space-between;align-items:center}}
+
+</style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+      <a class="identity" href="#overview" aria-label="Parcel and Proof, dashboard">
+        <span class="identity-icon"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 25V7l10-4 10 4v18l-10 4-10-4Zm10-22v26M6 13l10 4 10-4M6 20l10 4 10-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></span>
+        <span><strong>PARCEL<span class="amp">&</span>PROOF</strong><small>AUCTION INTELLIGENCE</small></span>
+      </a>
+      <div class="side-eyebrow">WORKSPACE</div>
+      <nav class="nav" id="primaryNav">
+        <a href="#overview" data-nav="overview"><span class="nav-ico">▦</span> Command center</a>
+        <a href="#explore" data-nav="explore"><span class="nav-ico">⌕</span> Property explorer <span class="nav-count" id="navCount">24</span></a>
+        <a href="#favorites" data-nav="favorites"><span class="nav-ico">♡</span> My favorites <span class="nav-count" id="favCount">0</span></a>
+        <a href="#my-top20" data-nav="my-top20"><span class="nav-ico">≡</span> My Top 20 <span class="nav-count" id="topCount">0</span></a>
+      </nav>
+      <div class="side-eyebrow second">TEAM INTELLIGENCE</div>
+      <nav class="nav">
+        <a href="#team" data-nav="team"><span class="nav-ico">♧</span> Everyone's lists</a>
+        <a href="#merged" data-nav="merged"><span class="nav-ico">✦</span> Merged ranking</a>
+        <a href="#method" data-nav="method"><span class="nav-ico">◎</span> Evidence & methodology</a>
+      </nav>
+      <div class="side-bottom">
+        <div class="auction-pill"><span class="pulse"></span><div><strong>DEC 03, 2026</strong><small>Scheduled county auction</small></div></div>
+        <div class="side-note">Research snapshot <strong>OCT 29 '26</strong><span>Live lot status is not automatically verified.</span></div>
+        <a href="https://www.bid4assets.com/storefront/SnohomishCoDec26" target="_blank" rel="noopener" class="side-official">Official auction <span>↗</span></a>
+      </div>
+    </aside>
+    <div class="workspace">
+      <header class="topbar">
+        <div class="top-left"><button class="mobile-menu icon-button" id="mobileMenu" aria-label="Open navigation">☰</button><span class="crumb-main">SNOHOMISH COUNTY</span><span class="crumb-dot">/</span><span id="breadcrumbs">Command center</span></div>
+        <div class="top-right"><span class="sync-indicator" id="syncIndicator"><span class="sync-dot"></span><span>Checking collaboration</span></span><button class="profile-button" id="profileButton"><span class="avatar" id="topAvatar">+</span><span id="topProfileName">Create profile</span><span class="chev">⌄</span></button></div>
+      </header>
+      <div class="offline-banner" id="offlineBanner" hidden></div>
+      <main id="app" tabindex="-1"></main>
+      <footer class="footer"><span>PARCEL & PROOF · Independent research workspace, not affiliated with Snohomish County or Bid4Assets.</span><span>Do not bid from this dashboard. Verify each live auction folder before purchase.</span></footer>
+    </div>
+  </div>
+  <div id="modalRoot"></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script>
+window.AUCTION_DATA = {
+  "metadata": {
+    "title": "Snohomish • Auction Intelligence",
+    "researchDate": "2026-10-29",
+    "auctionDate": "2026-12-03",
+    "caseNumber": "26-2-04940-31",
+    "officialAdvertised": 71,
+    "included": 25,
+    "countByCategory": {
+      "Single family": 18,
+      "Condo": 1,
+      "Vacant lot": 6
+    },
+    "priced": 24,
+    "coverage": "Partial: public preview exposes 40 of 71 advertised auction entries. Tracked records include matched court parcels plus one court-filing-only watch candidate. This is NOT the complete sale and cannot establish that every house, condo, or vacant lot is covered.",
+    "auction": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+    "county": "https://snohomishcountywa.gov/220/Tax-Foreclosures",
+    "court": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889",
+    "auditor": "https://www.snohomishcountywa.gov/5840/Search-Recorded-Documents",
+    "flood": "https://www.snohomishcountywa.gov/968/Know-Your-Flood-Risk",
+    "septic": "https://www.snohd.org/159/As-Built-Records",
+    "permits": "https://snohomishcountywa.gov/2299/Project-Status",
+    "critical": "https://snohomishcountywa.gov/2925/Critical-Area-Requirements",
+    "geo": "https://www.snohomishcountywa.gov/3681/Landslide-Hazard-Area",
+    "scopi": "https://www.snohomishcountywa.gov/5414/Interactive-Map-SCOPI",
+    "auditorLoginRequiredSince": "2026-03-02"
+  },
+  "properties": [
+    {
+      "id": "p-00403800006701",
+      "apn": "00403800006701",
+      "address": "9725 164Th St SE Snohomish",
+      "searchAddress": "9725 164Th St SE Snohomish, Snohomish County, WA",
+      "category": "Single family",
+      "openingBid": 35318,
+      "bidVerifiedLive": false,
+      "acres": 0.65,
+      "landAssessment": 532000,
+      "improvementAssessment": 191100,
+      "assessment": 723100,
+      "may2026TaxDue": 33131.92,
+      "delinquentYears": "2023–2026",
+      "classification": "Detached house",
+      "courtPage": 7,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": 2,
+      "bathrooms": 1,
+      "sqft": 1434,
+      "yearBuilt": 1940,
+      "rating": 3.0,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "watch",
+      "riskNotes": [
+        "1940 house; publicly described as having a partial basement and shake roof covering in an older property record. Current roof condition unknown.",
+        "Review utility connections, aging systems, crawl/basement moisture and potential cleanup if occupied."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "Physical condition, access and title not verified.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=7",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        },
+        {
+          "name": "Property characteristics / imagery directory",
+          "type": "third-party property record",
+          "url": "https://www.redfin.com/WA/Snohomish/9725-164th-St-SE-98296/home/2670256",
+          "what": "Historical home facts, public-record characteristics, photographs or Street View where available. Not evidence of present condition.",
+          "asOf": "Historical/public records"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-00667400003200",
+      "apn": "00667400003200",
+      "address": "16927 28Th Dr SE Bothell",
+      "searchAddress": "16927 28Th Dr SE Bothell, Snohomish County, WA",
+      "category": "Single family",
+      "openingBid": 34695,
+      "bidVerifiedLive": false,
+      "acres": 0.19,
+      "landAssessment": 545900,
+      "improvementAssessment": 217200,
+      "assessment": 763100,
+      "may2026TaxDue": 32535.29,
+      "delinquentYears": "2023–2026",
+      "classification": "Detached house",
+      "courtPage": 22,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "sqft": 1978,
+      "yearBuilt": 1978,
+      "rating": 3.0,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "watch",
+      "riskNotes": [
+        "Public property platforms conflict on square footage/bedroom count (Zillow lists 1,174 sq ft; Redfin public record ~1,978 sq ft). Verify actual permitted living area.",
+        "Earlier MLS lists sewer connection; current service status and condition not confirmed."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "Physical condition, access and title not verified.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=22",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        },
+        {
+          "name": "Property characteristics / imagery directory",
+          "type": "third-party property record",
+          "url": "https://www.redfin.com/WA/Bothell/16927-28th-Dr-SE-98012/home/2779833",
+          "what": "Historical home facts, public-record characteristics, photographs or Street View where available. Not evidence of present condition.",
+          "asOf": "Historical/public records"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-32042200101300",
+      "apn": "32042200101300",
+      "address": "2802 280Th St NW Stanwood",
+      "searchAddress": "2802 280Th St NW Stanwood, Snohomish County, WA",
+      "category": "Single family",
+      "openingBid": 32757,
+      "bidVerifiedLive": false,
+      "acres": 9.62,
+      "landAssessment": 496200,
+      "improvementAssessment": 239200,
+      "assessment": 735400,
+      "may2026TaxDue": 30693.85,
+      "delinquentYears": "2022–2026",
+      "classification": "Detached house",
+      "courtPage": 41,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": 4,
+      "bathrooms": 1,
+      "sqft": 1416,
+      "yearBuilt": 1940,
+      "rating": 2.5,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "elevated",
+      "riskNotes": [
+        "1940 dwelling on 9.62 acres. Large rural acreage increases uncertainty around wetlands, critical areas, access and permitted uses.",
+        "Do not assume the full acreage is developable or subdividable."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "Larger parcel; check topography, access, land use and current valuation.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=41",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        },
+        {
+          "name": "Property characteristics / imagery directory",
+          "type": "third-party property record",
+          "url": "https://www.redfin.com/WA/Stanwood/2802-280th-St-NW-98292/home/2575970",
+          "what": "Historical home facts, public-record characteristics, photographs or Street View where available. Not evidence of present condition.",
+          "asOf": "Historical/public records"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-00422900001800",
+      "apn": "00422900001800",
+      "address": "18805 89Th Ave W Edmonds",
+      "searchAddress": "18805 89Th Ave W Edmonds, Snohomish County, WA",
+      "category": "Single family",
+      "openingBid": 32171,
+      "bidVerifiedLive": false,
+      "acres": 0.3,
+      "landAssessment": 737000,
+      "improvementAssessment": 210400,
+      "assessment": 947400,
+      "may2026TaxDue": 30114.37,
+      "delinquentYears": "2023–2026",
+      "classification": "Detached house",
+      "courtPage": 7,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": 4,
+      "bathrooms": 2.5,
+      "sqft": 1916,
+      "yearBuilt": 1971,
+      "rating": 3.0,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "watch",
+      "riskNotes": [
+        "County legal description explicitly states utility easements (PUD and telephone). Confirm exact footprint.",
+        "1971 construction: investigate electrical, plumbing, insulation and any hazardous building materials before work."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "Physical condition, access and title not verified.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=7",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        },
+        {
+          "name": "Property characteristics / imagery directory",
+          "type": "third-party property record",
+          "url": "https://www.redfin.com/WA/Edmonds/18805-89th-Ave-W-98026/home/2678976",
+          "what": "Historical home facts, public-record characteristics, photographs or Street View where available. Not evidence of present condition.",
+          "asOf": "Historical/public records"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-01040200001300",
+      "apn": "01040200001300",
+      "address": "7811 87Th St NE Marysville",
+      "searchAddress": "7811 87Th St NE Marysville, Snohomish County, WA",
+      "category": "Single family",
+      "openingBid": 29240,
+      "bidVerifiedLive": false,
+      "acres": 0.12,
+      "landAssessment": 293600,
+      "improvementAssessment": 324300,
+      "assessment": 617900,
+      "may2026TaxDue": 27563.86,
+      "delinquentYears": "2018–2019; 2023–2026",
+      "classification": "Detached house",
+      "courtPage": 27,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": 3,
+      "bathrooms": 2.5,
+      "sqft": 2066,
+      "yearBuilt": 2006,
+      "rating": 3.4,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "watch",
+      "riskNotes": [
+        "Court filing lists nonconsecutive tax years 2018–2019 and 2023–2026. Obtain a current account ledger to explain the history.",
+        "Suburban residential parcel; HOA/CC&Rs not yet independently checked."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "Nonconsecutive delinquent years in May court filing.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=27",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        },
+        {
+          "name": "Property characteristics / imagery directory",
+          "type": "third-party property record",
+          "url": "https://www.redfin.com/WA/Marysville/7811-87th-St-NE-98270/home/21886292",
+          "what": "Historical home facts, public-record characteristics, photographs or Street View where available. Not evidence of present condition.",
+          "asOf": "Historical/public records"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-00929702200400",
+      "apn": "00929702200400",
+      "address": "14007 69Th Dr SE Unit Z4 Snohomish",
+      "searchAddress": "14007 69Th Dr SE Unit Z4 Snohomish, Snohomish County, WA",
+      "category": "Condo",
+      "openingBid": 28855,
+      "bidVerifiedLive": false,
+      "acres": null,
+      "landAssessment": 120000,
+      "improvementAssessment": 471500,
+      "assessment": 591500,
+      "may2026TaxDue": 26951.8,
+      "delinquentYears": "2023–2026",
+      "classification": "Condominium",
+      "courtPage": 26,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": null,
+      "bathrooms": null,
+      "sqft": null,
+      "yearBuilt": null,
+      "rating": 1.8,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "high",
+      "riskNotes": [
+        "Condo: legal description includes 0.878% undivided interest in common areas; not a separately owned land lot.",
+        "HOA assessments, special assessments, association litigation, insurance, resale certificate and lien priority require document-level research. A different nearby unit showed $625/month; that is NOT verified for Unit Z4."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "Condo; land acreage not separately stated; HOA liens/assessments need review.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=26",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-00373001201802",
+      "apn": "00373001201802",
+      "address": "19803 Filbert Dr Bothell",
+      "searchAddress": "19803 Filbert Dr Bothell, Snohomish County, WA",
+      "category": "Single family",
+      "openingBid": 28513,
+      "bidVerifiedLive": false,
+      "acres": 0.49,
+      "landAssessment": 516800,
+      "improvementAssessment": 149400,
+      "assessment": 666200,
+      "may2026TaxDue": 26629.95,
+      "delinquentYears": "2023–2026",
+      "classification": "Detached house",
+      "courtPage": 4,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": 3,
+      "bathrooms": 1,
+      "sqft": 1300,
+      "yearBuilt": 1960,
+      "rating": 3.0,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "watch",
+      "riskNotes": [
+        "County filing confirms 0.49 acres; older 1960 house. Verify septic, structural condition and utilities.",
+        "Public data suggests a 1,300 sq ft house; this is not a current inspection."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "Court certificate #3, case 26-2-04940-31",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=4",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        },
+        {
+          "name": "Property characteristics / imagery directory",
+          "type": "third-party property record",
+          "url": "https://www.redfin.com/WA/Bothell/19803-Filbert-Dr-98012/home/2648264",
+          "what": "Historical home facts, public-record characteristics, photographs or Street View where available. Not evidence of present condition.",
+          "asOf": "Historical/public records"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-00524400000801",
+      "apn": "00524400000801",
+      "address": "6603 226Th St SW Mountlake Terrace",
+      "searchAddress": "6603 226Th St SW Mountlake Terrace, Snohomish County, WA",
+      "category": "Single family",
+      "openingBid": 28383,
+      "bidVerifiedLive": false,
+      "acres": 0.19,
+      "landAssessment": 499800,
+      "improvementAssessment": 222100,
+      "assessment": 721900,
+      "may2026TaxDue": 26501.47,
+      "delinquentYears": "2023–2026",
+      "classification": "Detached house",
+      "courtPage": 15,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": 3,
+      "bathrooms": 2.5,
+      "sqft": null,
+      "yearBuilt": 1988,
+      "rating": 3.4,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "watch",
+      "riskNotes": [
+        "Historical MLS advertises updated finishes; photographs are not proof of 2026 condition.",
+        "Legal description includes a partial vacated right-of-way; check surveyed legal boundaries."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "Physical condition, access and title not verified.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=15",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        },
+        {
+          "name": "Property characteristics / imagery directory",
+          "type": "third-party property record",
+          "url": "https://www.redfin.com/WA/Mountlake-Terrace/6603-226th-St-SW-98043/home/2724430",
+          "what": "Historical home facts, public-record characteristics, photographs or Street View where available. Not evidence of present condition.",
+          "asOf": "Historical/public records"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-29052500200200",
+      "apn": "29052500200200",
+      "address": "8604 20Th St SE Lake Stevens",
+      "searchAddress": "8604 20Th St SE Lake Stevens, Snohomish County, WA",
+      "category": "Single family",
+      "openingBid": 25114,
+      "bidVerifiedLive": false,
+      "acres": 0.88,
+      "landAssessment": 362800,
+      "improvementAssessment": 195200,
+      "assessment": 558000,
+      "may2026TaxDue": 23375.99,
+      "delinquentYears": "2023–2026",
+      "classification": "Detached house",
+      "courtPage": 35,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": 3,
+      "bathrooms": 1.5,
+      "sqft": 1805,
+      "yearBuilt": 1952,
+      "rating": 3.0,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "watch",
+      "riskNotes": [
+        "Older 1952 building on 0.88 acres; county legal description includes recorded county road right-of-way strips.",
+        "Verify utilities, site drainage, septic status, and whether access is legal and practical."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "Physical condition, access and title not verified.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=35",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        },
+        {
+          "name": "Property characteristics / imagery directory",
+          "type": "third-party property record",
+          "url": "https://www.redfin.com/WA/Lake-Stevens/8604-20th-St-SE-98258/home/2589200",
+          "what": "Historical home facts, public-record characteristics, photographs or Street View where available. Not evidence of present condition.",
+          "asOf": "Historical/public records"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-00432000003500",
+      "apn": "00432000003500",
+      "address": "9216 Goblin Ln Everett",
+      "searchAddress": "9216 Goblin Ln Everett, Snohomish County, WA",
+      "category": "Single family",
+      "openingBid": 23399,
+      "bidVerifiedLive": false,
+      "acres": 0.24,
+      "landAssessment": 400000,
+      "improvementAssessment": 99600,
+      "assessment": 499600,
+      "may2026TaxDue": 21738.22,
+      "delinquentYears": "2023–2026",
+      "classification": "Detached house",
+      "courtPage": 8,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "sqft": 1532,
+      "yearBuilt": 1960,
+      "rating": 3.0,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "watch",
+      "riskNotes": [
+        "1960 construction; Redfin public facts show modest 1,532 sq ft footprint.",
+        "Check foundation, plumbing, roof and any unpermitted additions."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "Physical condition, access and title not verified.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=8",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        },
+        {
+          "name": "Property characteristics / imagery directory",
+          "type": "third-party property record",
+          "url": "https://www.redfin.com/WA/Everett/9216-Goblin-Ln-98208/home/2681777",
+          "what": "Historical home facts, public-record characteristics, photographs or Street View where available. Not evidence of present condition.",
+          "asOf": "Historical/public records"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-00443346500400",
+      "apn": "00443346500400",
+      "address": "2209 Walnut St Everett",
+      "searchAddress": "2209 Walnut St Everett, Snohomish County, WA",
+      "category": "Single family",
+      "openingBid": 20250,
+      "bidVerifiedLive": false,
+      "acres": 0.1,
+      "landAssessment": 300800,
+      "improvementAssessment": 109100,
+      "assessment": 409900,
+      "may2026TaxDue": 18722.26,
+      "delinquentYears": "2022–2026",
+      "classification": "Detached house",
+      "courtPage": 10,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": 2,
+      "bathrooms": 1,
+      "sqft": 816,
+      "yearBuilt": 1920,
+      "rating": 3.0,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "watch",
+      "riskNotes": [
+        "1920 construction; older electrical/plumbing and lead paint/asbestos investigation are prudent if renovations are planned.",
+        "Small 0.10-acre parcel and 816 sq ft dwelling; confirm garage and alley access rights."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "Physical condition, access and title not verified.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=10",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        },
+        {
+          "name": "Property characteristics / imagery directory",
+          "type": "third-party property record",
+          "url": "https://www.redfin.com/WA/Everett/2209-Walnut-St-98201/home/2690891",
+          "what": "Historical home facts, public-record characteristics, photographs or Street View where available. Not evidence of present condition.",
+          "asOf": "Historical/public records"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-00858700003300",
+      "apn": "00858700003300",
+      "address": "4029 140Th St NW Marysville",
+      "searchAddress": "4029 140Th St NW Marysville, Snohomish County, WA",
+      "category": "Single family",
+      "openingBid": 18523,
+      "bidVerifiedLive": false,
+      "acres": 1.16,
+      "landAssessment": 347000,
+      "improvementAssessment": 132700,
+      "assessment": 479700,
+      "may2026TaxDue": 17093.77,
+      "delinquentYears": "2023–2026",
+      "classification": "Detached house",
+      "courtPage": 25,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": null,
+      "bathrooms": null,
+      "sqft": null,
+      "yearBuilt": 1943,
+      "rating": 2.0,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "high",
+      "riskNotes": [
+        "Older MLS expressly described unfinished basement, partially finished bathroom and significant work; those conditions may have changed.",
+        "County legal description includes 1/34 interest in shared common space and a drainage/natural growth protection area (NGPA)."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "Larger parcel; check buildability and land restrictions.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=25",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        },
+        {
+          "name": "Property characteristics / imagery directory",
+          "type": "third-party property record",
+          "url": "https://www.redfin.com/WA/Marysville/4029-140th-St-NW-98271/home/2855873",
+          "what": "Historical home facts, public-record characteristics, photographs or Street View where available. Not evidence of present condition.",
+          "asOf": "Historical/public records"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-01026900200800",
+      "apn": "01026900200800",
+      "address": "22316 151St Pl SE Monroe",
+      "searchAddress": "22316 151St Pl SE Monroe, Snohomish County, WA",
+      "category": "Single family",
+      "openingBid": 18116,
+      "bidVerifiedLive": false,
+      "acres": 0.17,
+      "landAssessment": 345100,
+      "improvementAssessment": 423600,
+      "assessment": 768700,
+      "may2026TaxDue": 16648.69,
+      "delinquentYears": "2023–2026",
+      "classification": "Detached house",
+      "courtPage": 27,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "sqft": 2240,
+      "yearBuilt": 2006,
+      "rating": 2.0,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "high",
+      "riskNotes": [
+        "Historical MLS shows an $80/month HOA fee and CC&Rs; current dues, liens and transfer fees remain unverified.",
+        "Prior MLS also references a septic system; current septic inspection/records needed."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "Physical condition, access and title not verified.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=27",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        },
+        {
+          "name": "Property characteristics / imagery directory",
+          "type": "third-party property record",
+          "url": "https://www.redfin.com/WA/Monroe/22316-151st-Pl-SE-98272/home/11880700",
+          "what": "Historical home facts, public-record characteristics, photographs or Street View where available. Not evidence of present condition.",
+          "asOf": "Historical/public records"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-00461801100700",
+      "apn": "00461801100700",
+      "address": "510 E Gilman Ave Arlington",
+      "searchAddress": "510 E Gilman Ave Arlington, Snohomish County, WA",
+      "category": "Single family",
+      "openingBid": 15563,
+      "bidVerifiedLive": false,
+      "acres": 0.2,
+      "landAssessment": 276000,
+      "improvementAssessment": 109200,
+      "assessment": 385200,
+      "may2026TaxDue": 14242.54,
+      "delinquentYears": "2023–2026",
+      "classification": "Detached house",
+      "courtPage": 10,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": 2,
+      "bathrooms": 1,
+      "sqft": 1164,
+      "yearBuilt": 1936,
+      "rating": 3.0,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "watch",
+      "riskNotes": [
+        "1936 home; due diligence should focus on wiring, foundation, and water/sewer infrastructure.",
+        "The county legal description includes a portion of two platted lots; no subdivision potential verified."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "Physical condition, access and title not verified.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=10",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        },
+        {
+          "name": "Property characteristics / imagery directory",
+          "type": "third-party property record",
+          "url": "https://www.redfin.com/WA/Arlington/510-E-Gilman-Ave-98223/home/2697511",
+          "what": "Historical home facts, public-record characteristics, photographs or Street View where available. Not evidence of present condition.",
+          "asOf": "Historical/public records"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-00589700001400",
+      "apn": "00589700001400",
+      "address": "4430 Sunnyside Blvd Marysville",
+      "searchAddress": "4430 Sunnyside Blvd Marysville, Snohomish County, WA",
+      "category": "Single family",
+      "openingBid": 14060,
+      "bidVerifiedLive": false,
+      "acres": 0.22,
+      "landAssessment": 291600,
+      "improvementAssessment": 84400,
+      "assessment": 376000,
+      "may2026TaxDue": 12806.41,
+      "delinquentYears": "2023–2026",
+      "classification": "Detached house",
+      "courtPage": 19,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": 2,
+      "bathrooms": 1,
+      "sqft": 930,
+      "yearBuilt": 1905,
+      "rating": 1.5,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "critical",
+      "riskNotes": [
+        "CURRENT MLS CONFLICT: a conventional listing was marked Pending at $280,000 on September 22, 2026. Tax auction availability must be verified again.",
+        "Active MLS described this 1905 dwelling as a fixer needing substantial work; do not price as move-in ready."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "Physical condition, access and title not verified.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=19",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        },
+        {
+          "name": "Property characteristics / imagery directory",
+          "type": "third-party property record",
+          "url": "https://www.redfin.com/WA/Marysville/4430-Sunnyside-Blvd-98270/home/2752265",
+          "what": "Historical home facts, public-record characteristics, photographs or Street View where available. Not evidence of present condition.",
+          "asOf": "Historical/public records"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-31053300200900",
+      "apn": "31053300200900",
+      "address": "3529 152Nd St NE Marysville",
+      "searchAddress": "3529 152Nd St NE Marysville, Snohomish County, WA",
+      "category": "Vacant lot",
+      "openingBid": 12322,
+      "bidVerifiedLive": false,
+      "acres": 0.21,
+      "landAssessment": 334600,
+      "improvementAssessment": 0,
+      "assessment": 334600,
+      "may2026TaxDue": 10846.19,
+      "delinquentYears": "2023–2026",
+      "classification": "Undeveloped/vacant land",
+      "courtPage": 41,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": null,
+      "bathrooms": null,
+      "sqft": null,
+      "yearBuilt": null,
+      "rating": 2.3,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "elevated",
+      "riskNotes": [
+        "Vacant 0.21 acre with high assessed land value. Legal description cites 2021 boundary-line adjustment (BLA20-008).",
+        "Verify exact shape, commercial/residential zoning, setbacks, utility availability, legal access and whether it can be independently developed."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "Vacant land; access and zoning/buildability not verified.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=41",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        },
+        {
+          "name": "Property characteristics / imagery directory",
+          "type": "third-party property record",
+          "url": "https://www.loopnet.com/property/3529-152nd-st-ne-marysville-wa-98271/53061-31053300200900/",
+          "what": "Historical home facts, public-record characteristics, photographs or Street View where available. Not evidence of present condition.",
+          "asOf": "Historical/public records"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-00828200002300",
+      "apn": "00828200002300",
+      "address": "7016 76Th Dr NE Marysville",
+      "searchAddress": "7016 76Th Dr NE Marysville, Snohomish County, WA",
+      "category": "Single family",
+      "openingBid": 12017,
+      "bidVerifiedLive": false,
+      "acres": 0.15,
+      "landAssessment": 299700,
+      "improvementAssessment": 278700,
+      "assessment": 578400,
+      "may2026TaxDue": 17358.2,
+      "delinquentYears": "2022–2026",
+      "classification": "Detached house",
+      "courtPage": 25,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": 3,
+      "bathrooms": 2.5,
+      "sqft": 1686,
+      "yearBuilt": 1995,
+      "rating": 2.0,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "high",
+      "riskNotes": [
+        "May 14 tax delinquency ($17,358) exceeds published October preview opening bid ($12,017). Verify current auction amount and reasons for discrepancy.",
+        "Public tax history shows unusual prior tax reductions, possibly exemption-related, but cause is unverified.",
+        "IMPORTANT NUMERICAL MISMATCH: May court balance exceeds October advertised opening bid by over 15%. May reflect changed status/payments or stale data; cannot determine reason from these sources."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "May delinquency exceeds Oct preview bid; amounts are from different dates.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=25",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        },
+        {
+          "name": "Property characteristics / imagery directory",
+          "type": "third-party property record",
+          "url": "https://www.redfin.com/WA/Marysville/7016-76th-Dr-NE-98270/home/2841884",
+          "what": "Historical home facts, public-record characteristics, photographs or Street View where available. Not evidence of present condition.",
+          "asOf": "Historical/public records"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-00576700001711",
+      "apn": "00576700001711",
+      "address": "7629 234Th St SW Edmonds",
+      "searchAddress": "7629 234Th St SW Edmonds, Snohomish County, WA",
+      "category": "Single family",
+      "openingBid": 10449,
+      "bidVerifiedLive": false,
+      "acres": 0.35,
+      "landAssessment": 574300,
+      "improvementAssessment": 149000,
+      "assessment": 723300,
+      "may2026TaxDue": 9368.22,
+      "delinquentYears": "2023–2026",
+      "classification": "Detached house",
+      "courtPage": 18,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": 3,
+      "bathrooms": 1,
+      "sqft": 1245,
+      "yearBuilt": 1956,
+      "rating": 3.0,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "watch",
+      "riskNotes": [
+        "County court filing expressly says SUBJECT TO: SENIOR TAX EXEMPTION REMOVAL. Determine any additional liability.",
+        "1956 structure; check drainage, utilities, occupancy and structural condition."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "SUBJECT TO SENIOR TAX EXEMPTION REMOVAL per county filing.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=18",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        },
+        {
+          "name": "Property characteristics / imagery directory",
+          "type": "third-party property record",
+          "url": "https://www.realtor.com/realestateandhomes-detail/7629-234th-St-SW_Edmonds_WA_98026_M15607-84358",
+          "what": "Historical home facts, public-record characteristics, photographs or Street View where available. Not evidence of present condition.",
+          "asOf": "Historical/public records"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-27090400101200",
+      "apn": "27090400101200",
+      "address": "42926 May Creek Rd Gold Bar",
+      "searchAddress": "42926 May Creek Rd Gold Bar, Snohomish County, WA",
+      "category": "Vacant lot",
+      "openingBid": 10061,
+      "bidVerifiedLive": false,
+      "acres": 5.55,
+      "landAssessment": 166700,
+      "improvementAssessment": 0,
+      "assessment": 166700,
+      "may2026TaxDue": 8783.46,
+      "delinquentYears": "2023–2026",
+      "classification": "Undeveloped/vacant land",
+      "courtPage": 30,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": null,
+      "bathrooms": null,
+      "sqft": null,
+      "yearBuilt": null,
+      "rating": 2.3,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "elevated",
+      "riskNotes": [
+        "5.55 acres of vacant land. Do not assume direct driveway access, soil suitability, or easy utility extensions.",
+        "Check critical areas, slopes, water rights/availability, power costs and septic feasibility."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "5.55 vacant acres; feasibility, road access, topography unknown.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=30",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-29073300100400",
+      "apn": "29073300100400",
+      "address": "23624 Woods Creek Rd Snohomish",
+      "searchAddress": "23624 Woods Creek Rd Snohomish, Snohomish County, WA",
+      "category": "Vacant lot",
+      "openingBid": 7449,
+      "bidVerifiedLive": false,
+      "acres": 4.75,
+      "landAssessment": 116200,
+      "improvementAssessment": 0,
+      "assessment": 116200,
+      "may2026TaxDue": 6350.05,
+      "delinquentYears": "2023–2026",
+      "classification": "Undeveloped/vacant land",
+      "courtPage": 37,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": null,
+      "bathrooms": null,
+      "sqft": null,
+      "yearBuilt": null,
+      "rating": 2.3,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "elevated",
+      "riskNotes": [
+        "4.75-acre vacant parcel; court shows same owner of record as nearby parcel 23830 Woods Creek Rd. This does not establish legal contiguity.",
+        "Check roads, recorded easements, access, wetlands, flood risk, septic and utility installation costs."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "Vacant land; access, utilities, wetland restrictions not verified.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=37",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-29073300100800",
+      "apn": "29073300100800",
+      "address": "23830 Woods Creek Rd Snohomish",
+      "searchAddress": "23830 Woods Creek Rd Snohomish, Snohomish County, WA",
+      "category": "Vacant lot",
+      "openingBid": 6650,
+      "bidVerifiedLive": false,
+      "acres": 4.3,
+      "landAssessment": 108200,
+      "improvementAssessment": 0,
+      "assessment": 108200,
+      "may2026TaxDue": 5990.3,
+      "delinquentYears": "2023–2026",
+      "classification": "Undeveloped/vacant land",
+      "courtPage": 37,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": null,
+      "bathrooms": null,
+      "sqft": null,
+      "yearBuilt": null,
+      "rating": 2.3,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "elevated",
+      "riskNotes": [
+        "4.30-acre vacant parcel; court shows same owner of record as nearby parcel 23624 Woods Creek Rd. Investigate individual legal access.",
+        "Check wetlands, critical areas and ability to obtain septic and building approval before any price-to-assessment comparison."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "Vacant land; access, utilities, wetland restrictions not verified.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=37",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-00383100201000",
+      "apn": "00383100201000",
+      "address": "16812 W Lake Goodwin Rd Stanwood",
+      "searchAddress": "16812 W Lake Goodwin Rd Stanwood, Snohomish County, WA",
+      "category": "Single family",
+      "openingBid": 5294,
+      "bidVerifiedLive": false,
+      "acres": 0.19,
+      "landAssessment": 284100,
+      "improvementAssessment": 133500,
+      "assessment": 417600,
+      "may2026TaxDue": 16195.82,
+      "delinquentYears": "2023–2026",
+      "classification": "Detached house",
+      "courtPage": 6,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "sqft": 930,
+      "yearBuilt": 1973,
+      "rating": 1.5,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "critical",
+      "riskNotes": [
+        "May 14 tax balance ($16,196) substantially exceeds October preview bid ($5,294). Current bid must be independently verified.",
+        "Legal description includes a 1/20 undivided interest in non-exclusive road/access easements and tracts A/B. Investigate shared maintenance and access rights.",
+        "IMPORTANT NUMERICAL MISMATCH: May court balance exceeds October advertised opening bid by over 15%. May reflect changed status/payments or stale data; cannot determine reason from these sources."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "May tax balance much higher than Oct opening bid; re-confirm auction amount.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=6",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        },
+        {
+          "name": "Property characteristics / imagery directory",
+          "type": "third-party property record",
+          "url": "https://www.zillow.com/homedetails/16812-W-Lake-Goodwin-Rd-Stanwood-WA-98292/38475874_zpid/",
+          "what": "Historical home facts, public-record characteristics, photographs or Street View where available. Not evidence of present condition.",
+          "asOf": "Historical/public records"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-00543600001900",
+      "apn": "00543600001900",
+      "address": "416 Beach Dr Snohomish",
+      "searchAddress": "416 Beach Dr Snohomish, Snohomish County, WA",
+      "category": "Vacant lot",
+      "openingBid": 4136,
+      "bidVerifiedLive": false,
+      "acres": 1.08,
+      "landAssessment": 40600,
+      "improvementAssessment": 0,
+      "assessment": 40600,
+      "may2026TaxDue": 3264.4,
+      "delinquentYears": "2023–2026",
+      "classification": "NO-PERK undeveloped land",
+      "courtPage": 17,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": null,
+      "bathrooms": null,
+      "sqft": null,
+      "yearBuilt": null,
+      "rating": 1.2,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "critical",
+      "riskNotes": [
+        "COUNTY-DOCUMENTED NO-PERK LOT. Conventional septic feasibility may be impaired.",
+        "Rural R-5 zoning shown by Redfin; verify whether any permitted building site exists, and check flood/wetland exposure."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "HIGH RISK: county classifies as no-perk land; septic/buildability may be limited.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=17",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        },
+        {
+          "name": "Property characteristics / imagery directory",
+          "type": "third-party property record",
+          "url": "https://www.redfin.com/WA/Snohomish/416-Beach-Dr-98290/home/161248553",
+          "what": "Historical home facts, public-record characteristics, photographs or Street View where available. Not evidence of present condition.",
+          "asOf": "Historical/public records"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-00611300022000",
+      "apn": "00611300022000",
+      "address": "324 W Shore Loop Rd Snohomish",
+      "searchAddress": "324 W Shore Loop Rd Snohomish, Snohomish County, WA",
+      "category": "Vacant lot",
+      "openingBid": 3529,
+      "bidVerifiedLive": false,
+      "acres": 0.4,
+      "landAssessment": 30300,
+      "improvementAssessment": 0,
+      "assessment": 30300,
+      "may2026TaxDue": 2703.16,
+      "delinquentYears": "2023–2026",
+      "classification": "NO-PERK undeveloped land",
+      "courtPage": 21,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": null,
+      "bathrooms": null,
+      "sqft": null,
+      "yearBuilt": null,
+      "rating": 1.2,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "critical",
+      "riskNotes": [
+        "COUNTY-DOCUMENTED NO-PERK LOT; significant risk of nonbuildability or major engineered septic expense.",
+        "0.40 acre: need setbacks, flood/septic, vehicular access and utility feasibility verified before bidding."
+      ],
+      "researchStatus": "Advertised in Oct 28 third-party preview; live folder not checked",
+      "publishedAt": "2026-10-28",
+      "legalCaution": "HIGH RISK: county classifies as no-perk land; septic/buildability may be limited.",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=21",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Independent public bid preview",
+          "type": "secondary preview",
+          "url": "https://taxliensimple.com/auctions/washington/snohomish-county-2026-tax-foreclosure",
+          "what": "Opening bid snapshot only, not the current auction bidding price.",
+          "asOf": "2026-10-28"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    },
+    {
+      "id": "p-00372900600105",
+      "apn": "00372900600105",
+      "address": "2619 156Th St SW Lynnwood",
+      "searchAddress": "2619 156Th St SW Lynnwood, Snohomish County, WA",
+      "category": "Single family",
+      "openingBid": null,
+      "bidVerifiedLive": false,
+      "acres": 0.36,
+      "landAssessment": 620000,
+      "improvementAssessment": 214200,
+      "assessment": 834200,
+      "may2026TaxDue": 32697.86,
+      "delinquentYears": "2023–2026",
+      "classification": "Detached house",
+      "courtPage": 4,
+      "courtCase": "26-2-04940-31",
+      "bedrooms": 3,
+      "bathrooms": 1,
+      "sqft": 1472,
+      "yearBuilt": 1966,
+      "rating": 1.5,
+      "ratingLabel": "Investigation priority",
+      "riskTier": "critical",
+      "riskNotes": [
+        "COURT-FILING-ONLY candidate: no October auction opening bid found; may not be in current sale. Do not treat as available.",
+        "Historical public record lists septic and a 1966 home; check septic permits and standing before considering."
+      ],
+      "researchStatus": "Court filing only; auction inclusion unverified",
+      "publishedAt": null,
+      "legalCaution": "Court filing only; current auction status/price unverified",
+      "sourceLinks": [
+        {
+          "name": "County certificate / parcel filing",
+          "type": "official court record",
+          "url": "https://www.snohomishcountywa.gov/DocumentCenter/View/148889#page=4",
+          "what": "Use classification, legal description, land and improvement assessment, tax years and delinquency amount as of May 14, 2026.",
+          "asOf": "2026-05-14"
+        },
+        {
+          "name": "Auction operator / live folder",
+          "type": "auction official",
+          "url": "https://www.bid4assets.com/storefront/SnohomishCoDec26",
+          "what": "Check current withdrawal/postponement status and bid in the live auction folder. The county warns the spreadsheet is NOT live.",
+          "asOf": "live access required"
+        },
+        {
+          "name": "Property characteristics / imagery directory",
+          "type": "third-party property record",
+          "url": "https://www.redfin.com/WA/Lynnwood/2619-156th-St-SW-98087/home/2646437",
+          "what": "Historical home facts, public-record characteristics, photographs or Street View where available. Not evidence of present condition.",
+          "asOf": "Historical/public records"
+        }
+      ],
+      "listingPhotoUrl": null,
+      "propertyGallery": [],
+      "photoEvidenceStatus": "No property-specific photo independently captured; open verified property records or Street View to inspect imagery.",
+      "photosVerified": false
+    }
+  ]
+};
+
+</script>
+  <script>
+/* Parcel & Proof — 2026 Snohomish County foreclosure intelligence
+   No external JavaScript dependencies. Cloud mode uses same-origin Worker API.
+   Local preview uses clearly-labelled same-browser profiles; it is NOT shared online. */
+(() => {
+  'use strict';
+  const DATA = window.AUCTION_DATA || {metadata:{},properties:[]};
+  const META = DATA.metadata, LOTS = DATA.properties;
+  const BY_ID = Object.fromEntries(LOTS.map(p => [p.id,p]));
+  const $ = id => document.getElementById(id);
+  const STORE = 'pap_snohomish_2026_v1';
+  const CHECKS = [
+    ['auction','Confirm live auction folder, legal description and bid'],
+    ['title','Obtain parcel-specific title commitment and recorded mortgage/lien search'],
+    ['occupancy','Determine occupancy / possession and lawful access requirements'],
+    ['condition','Verify structure, photos, roof, foundations and repair scope'],
+    ['environment','Check flood, wetlands, landslide, septic, hazardous materials'],
+    ['boundaries','Verify legal access, easements, survey, lot boundaries and utility rights'],
+    ['budget','Validate insurance, closing costs, HOA, special assessments and reserve']
+  ];
+  const S = {mode:'local', booted:false, profiles:[], me:null, token:null, route:'overview', search:'', category:'All', sort:'bid-asc', visual:'satellite', extraOnly:false, modal:null, busy:false, planner:{}, lastRoute:'explore', syncing:false, dirty:false, pendingAction:null};
+  try{ S.token=localStorage.getItem('pap_cloud_token')||null }catch(e){}
+  const esc = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const urlEsc = v => esc(v);
+  const cash = v => v==null ? 'Unverified' : new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(v);
+  const decCash = v => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(v||0);
+  const num = v => v==null?'—':Number(v).toLocaleString('en-US');
+  const loc = p => {const parts=p.address.split(' ');return ['Mountlake Terrace','Lake Stevens','Gold Bar','Snohomish','Bothell','Stanwood','Edmonds','Marysville','Everett','Monroe','Arlington','Woodinville','Index','Lynnwood'].find(s=>p.address.toLowerCase().includes(s.toLowerCase())) || 'Snohomish County'};
+  const addr = p => p.address.replace(/\b(\d+)(St|Nd|Rd|Th)\b/gi,(_m,n,s)=>n+s.toLowerCase());
+  const addrQuery = p => `${addr(p)}, Washington`;
+  const routeUrl = p => `#property/${encodeURIComponent(p.id)}`;
+  const getRoute = () => (location.hash||'#overview').slice(1) || 'overview';
+  const safeUrl = u => {try{let url=new URL(u,location.href);return ['https:','http:'].includes(url.protocol)?esc(url.href):'#'}catch{return '#'}};
+  function toast(msg){const e=$('toast');e.textContent=msg;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),3500)}
+  const emptyProfile = (name,id)=>({id,name, favorites:[],top20:[],ratings:{},notes:{},checks:{},createdAt:new Date().toISOString()});
+  function pullLocal(){let db;try{db=JSON.parse(localStorage.getItem(STORE)||'{}')}catch{db={}};
+    S.profiles = Array.isArray(db.profiles)?db.profiles:[];
+    S.me = S.profiles.find(p=>p.id===db.activeId)||null;
+  }
+  function persistLocal(){localStorage.setItem(STORE,JSON.stringify({profiles:S.profiles,activeId:S.me?.id||null}));}
+  function publicProfiles(){return S.profiles;}
+  function current(){return S.me;}
+  const fav = id => !!S.me?.favorites?.includes(id);
+  const ranked = id => (S.me?.top20||[]).indexOf(id);
+  const bidCost = p => p.openingBid==null?null:p.openingBid+Math.max(100,p.openingBid*.05);
+  const tag=(s,variant='')=>`<span class="tag ${variant}">${esc(s)}</span>`;
+  const riskTag=p=>tag(p.riskTier==='critical'?'Critical / do not infer availability':p.riskTier==='high'?'High review':p.riskTier==='elevated'?'Elevated review':'Research watch',p.riskTier==='high'||p.riskTier==='critical'?'red':p.riskTier==='elevated'?'orange':'blue');
+  function merged(){
+    const rankedProfiles=S.profiles.filter(p=>p.top20?.length);
+    const totals=new Map();
+    for(const profile of rankedProfiles){for(const [index,id] of profile.top20.slice(0,20).entries()){
+      if(!BY_ID[id])continue;const x=totals.get(id)||{id,points:0,votes:0,best:21,by:[]};x.points+=20-index;x.votes++;x.best=Math.min(x.best,index+1);x.by.push({name:profile.name,place:index+1});totals.set(id,x);
+    }}
+    return [...totals.values()].sort((a,b)=>b.points-a.points||b.votes-a.votes||a.best-b.best||a.id.localeCompare(b.id));
+  }
+  function pageHead(label,title,subtitle,control=''){return `<div class="page-heading"><div><div class="eyebrow">${esc(label)}</div><h1>${esc(title)}</h1><p>${esc(subtitle)}</p></div>${control}</div>`}
+  function pillButton(name,kind=undefined){return `<button class="filter-pill ${S.category===name?'active':''}" data-act="filter" data-category="${esc(name)}">${esc(name)}${kind?` <span style="opacity:.65">${kind}</span>`:''}</button>`}
+  function propertyCard(p){
+    const pRank=ranked(p.id),cover=p.category==='Vacant lot'?'land':p.category==='Condo'?'condo':'house';
+    const alt=p.category==='Vacant lot'?'Parcel boundary survey needed':p.category==='Condo'?'Unit photos not independently verified':'Exterior photos not independently verified';
+    const title=addr(p);
+    return `<article class="property-card" data-parcel="${p.id}">
+      <a href="${routeUrl(p)}" class="card-media ${cover}" style="display:block">
+        <div class="media-graphic"><span class="lot-glyph">${cover==='land'?'⌗':cover==='condo'?'▤':'⌂'}</span><span class="lot-grid"></span></div>
+        <span class="media-label">${esc(alt)} · view evidence ↗</span>
+        <span class="card-type">${esc(p.category)}</span>
+      </a>
+      <div class="card-body">
+        <div class="card-meta"><span class="card-city">${esc(loc(p))}</span>${riskTag(p)}</div>
+        <a href="${routeUrl(p)}"><h3>${esc(title)}</h3></a>
+        <div class="card-attr">${p.acres!=null?`${p.acres} acres · `:''}${p.sqft?`${num(p.sqft)} sq ft · `:''}Parcel ${p.apn.slice(-7)}</div>
+        <div class="card-price-line"><div><span class="overline">${p.openingBid==null?'NO VERIFIED OPENING BID':'PREVIEW OPENING BID'}</span><div class="card-price">${cash(p.openingBid)}</div></div><div style="text-align:right"><span class="overline">COUNTY ASSESSMENT</span><div class="card-assess">${cash(p.assessment)}</div></div></div>
+      </div><div class="card-foot"><a class="button primary small" href="${routeUrl(p)}">Open case file ↗</a>
+        <button class="button small ${pRank>=0?'active-button':''}" data-act="rank" data-id="${p.id}" title="${pRank>=0?'Remove from Top 20':'Add to my Top 20'}" aria-label="${pRank>=0?'Remove':'Add'} ${esc(title)} ${pRank>=0?'from':'to'} Top 20">${pRank>=0?`#${pRank+1} ✓`:'＋ Top 20'}</button>
+        <button class="button small icon-only ${fav(p.id)?'active-button':''}" data-act="favorite" data-id="${p.id}" title="${fav(p.id)?'Remove favorite':'Favorite'}" aria-label="Toggle favorite for ${esc(title)}">${fav(p.id)?'♥':'♡'}</button>
+      </div>
+    </article>`;
+  }
+  function spotlight(p,i){return `<div class="spotlight"><span class="seq">CASE ${String(i+1).padStart(2,'0')} · ${esc(p.category.toUpperCase())}</span><strong>${esc(addr(p))}</strong><div>${tag(p.riskTier==='critical'?'Listing unconfirmed':p.riskTier==='high'?'Heightened diligence':'Needs verification',p.riskTier==='critical'?'red':'orange')}</div><small>From ${cash(p.openingBid)} · ${p.acres??'—'} acres</small><a href="${routeUrl(p)}" class="button small">Read investigation ↗</a></div>`}
+  function overview(){
+    const bids=LOTS.map(x=>x.openingBid).filter(x=>x!=null);
+    const team=S.profiles.filter(x=>x.top20?.length).length;
+    const crit=LOTS.filter(x=>x.riskTier==='high'||x.riskTier==='critical');
+    const highlights=['p-00589700001400','p-00543500000602','p-00543600001900'].map(x=>BY_ID[x]).filter(Boolean);
+    return `<section class="hero"><div class="hero-shape"></div><div class="hero-content"><div class="eyebrow">2026 TAX FORECLOSURE · INVESTIGATION DASHBOARD</div><h1>Know the parcel.<br>Question the price.<br><span style="color:#76efd0">Document the risk.</span></h1><p>Collaborative evidence dossiers, not a guarantee of title or a bidding recommendation. The county advertises 71 lots; this verified-data subset covers ${LOTS.length} candidates in the categories you selected.</p><a href="#explore" class="button primary">Explore ${LOTS.length} case files &nbsp; ↗</a></div><div class="hero-stats"><div class="hero-metric"><strong>${LOTS.length}</strong><small>Tracked cases</small></div><div class="hero-metric"><strong>${bids.length}</strong><small>Preview bids</small></div><div class="hero-metric"><strong>${team}</strong><small>Active Top 20 lists</small></div><div class="hero-metric"><strong>${crit.length}</strong><small>High-risk flags</small></div></div></section>
+    <div class="kpi-row">
+      <div class="panel kpi"><div class="kpi-head">LOWEST PREVIEW BID <span>↘</span></div><strong class="kpi-n">${cash(Math.min(...bids))}</strong><div class="kpi-sub">Tracked categories · fee extra</div></div>
+      <div class="panel kpi"><div class="kpi-head">SINGLE-FAMILY HOUSES <span>⌂</span></div><strong class="kpi-n">${LOTS.filter(x=>x.category==='Single family').length}</strong><div class="kpi-sub">Includes 1 court-only watch</div></div>
+      <div class="panel kpi"><div class="kpi-head">LAND PARCELS <span>⌗</span></div><strong class="kpi-n">${LOTS.filter(x=>x.category==='Vacant lot').length}</strong><div class="kpi-sub">Buildability unverified</div></div>
+      <div class="panel kpi"><div class="kpi-head">DAYS UNTIL AUCTION <span>◷</span></div><strong class="kpi-n" id="countdownDays">${Math.max(0,Math.ceil((new Date('2026-12-03T09:00:00-08:00')-Date.now())/86400000))}</strong><div class="kpi-sub">Scheduled Dec 3 · recheck</div></div>
+    </div>
+    <div class="overview-grid"><div><div class="section-label"><h2>Featured investigations</h2><a href="#explore">All property records →</a></div><div class="spotlights">${highlights.map(spotlight).join('')}</div><div class="warnbox" style="margin-top:18px"><strong>Critical coverage limitation</strong>These ${LOTS.length} records are not the full ${META.officialAdvertised}-lot auction. The public preview exposes some opening bids, not live availability. No recorded mortgages, IRS interests, occupancy, boundaries, structural integrity, or property photos have been independently verified. Do not bid based solely on this site's scores or assessments.</div></div>
+    <div><div class="section-label"><h2>Red flags on the radar</h2><a href="#method">How to verify →</a></div><div class="panel attention-list">
+    ${[
+      ['p-00589700001400','MLS marked pending','Marysville fixer-upper; confirm this lot is still in the auction.'],
+      ['p-00543500000602','Separate manufactured-home account','Land deed may not convey the separately titled home.'],
+      ['p-00543600001900','No-perk land','Septic suitability / permitted buildability unproven.'],
+      ['p-00576800201800','Shared-road obligations','Access rights, maintenance costs and easements require review.']
+    ].filter(x=>BY_ID[x[0]]).map(x=>`<a class="attention-item" href="${routeUrl(BY_ID[x[0]])}"><span class="attention-dot"></span><div><strong>${esc(x[1])}</strong><p>${esc(x[2])} &nbsp;↗</p></div></a>`).join('')}
+    </div></div></div>`;
+  }
+  function filterData(items){let a=items.filter(p=>S.category==='All'||p.category===S.category);
+    if(S.search.trim()){const q=S.search.toLowerCase().trim();a=a.filter(p=>[p.address,p.apn,p.classification,p.category,...p.riskNotes].join(' ').toLowerCase().includes(q));}
+    if(S.extraOnly)a=a.filter(p=>p.openingBid!=null);
+    a.sort((x,y)=>{const v=(p,k)=>p[k]??(S.sort.startsWith('bid')?Infinity:-Infinity);switch(S.sort){case 'bid-desc':return (y.openingBid??-1)-(x.openingBid??-1);case 'assess-desc':return y.assessment-x.assessment;case 'risk-desc':return ({critical:4,high:3,elevated:2,watch:1}[y.riskTier]||0)-({critical:4,high:3,elevated:2,watch:1}[x.riskTier]||0);case 'rating-desc':return y.rating-x.rating;case 'acre-desc':return(y.acres??0)-(x.acres??0);case 'name-asc':return x.address.localeCompare(y.address);default:return(x.openingBid??Infinity)-(y.openingBid??Infinity);}});
+    return a;
+  }
+  function explorer(onlyFavorites=false){
+    const base=onlyFavorites?LOTS.filter(p=>fav(p.id)):LOTS;const arr=filterData(base);
+    return `${pageHead('CASE LIBRARY',onlyFavorites?'My favorites':'Explore properties',onlyFavorites?'Your private shortlist. Favorites are separate from your ranked Top 20.':`${LOTS.length} research dossiers in three property categories · ${arr.length} shown`,
+      `<button class="button" data-act="export">↓ Export research CSV</button>`)}
+    <div class="toolbar"><label class="search-box"><span>⌕</span><input id="propertySearch" type="search" placeholder="Search address, parcel number, risks…" autocomplete="off" value="${esc(S.search)}" aria-label="Search properties"/></label>
+      <select class="select" id="sortSelect" aria-label="Sort properties"><option value="bid-asc" ${S.sort==='bid-asc'?'selected':''}>Lowest opening bid</option><option value="bid-desc" ${S.sort==='bid-desc'?'selected':''}>Highest opening bid</option><option value="assess-desc" ${S.sort==='assess-desc'?'selected':''}>Highest assessed value</option><option value="risk-desc" ${S.sort==='risk-desc'?'selected':''}>Highest investigation risk</option><option value="rating-desc" ${S.sort==='rating-desc'?'selected':''}>Research priority</option><option value="acre-desc" ${S.sort==='acre-desc'?'selected':''}>Largest acreage</option><option value="name-asc" ${S.sort==='name-asc'?'selected':''}>Address A–Z</option></select>
+      <button class="button" data-act="clear-filters">Reset filters ↺</button>
+      <label class="tag"><input type="checkbox" id="onlyPrice" ${S.extraOnly?'checked':''}/> Priced only</label></div>
+    <div class="pills" style="margin-bottom:19px">${pillButton('All',LOTS.length)}${pillButton('Single family',META.countByCategory['Single family'])}${pillButton('Condo',META.countByCategory['Condo'])}${pillButton('Vacant lot',META.countByCategory['Vacant lot'])}</div>
+    <p class="muted" style="font-size:11px">Showing <strong>${arr.length}</strong> of ${base.length} ${onlyFavorites?'favorites':'tracked properties'}. Preview bids and county assessments are not confirmed selling prices or market values.</p>
+    <div id="gridResults">${arr.length?`<div class="property-grid">${arr.map(propertyCard).join('')}</div>`:emptyCard(onlyFavorites?'No favorite properties yet':'No matching cases',onlyFavorites?'Create a profile, then tap the heart on any property.':'Try clearing filters or searching another address.',onlyFavorites?'#explore':null)}</div>`;
+  }
+  function emptyCard(title,body,link){return `<div class="empty"><div class="empty-icon">◎</div><h3>${esc(title)}</h3><p>${esc(body)}</p>${link?`<a href="${esc(link)}" class="button primary">Browse properties →</a>`:''}</div>`}
+  function myTop(){const a=(S.me?.top20||[]).map(id=>BY_ID[id]).filter(Boolean);
+    return `${pageHead('YOUR PRIORITY BOARD','My Top 20','Order matters. Each team member can rank up to 20 unique properties; the merged board weighs higher ranks more strongly.',`<a href="#explore" class="button primary">＋ Add properties</a>`)}
+    <div class="rank-summary">${tag(`${a.length} / 20 ranked`,'teal')}${tag(S.me?'Changes save automatically':'Sign in to create a list','blue')}${tag('Rank #1 carries 20 team points','orange')}</div>
+    ${a.length?`<div class="panel" style="padding:9px 21px">${a.map((p,i)=>miniRow(p,i,{reorder:true})).join('')}</div>`:emptyCard('Your Top 20 is empty','Explore properties and use “＋ Top 20.” Come back to reorder with ↑ / ↓.', '#explore')}
+    <p class="muted-caption" style="margin-top:19px">You can move items at any time, including after other team members have made lists. The merged ranking recalculates automatically.</p>`;
+  }
+  function miniRow(p,i,{reorder=false,team=false}={}){return `<div class="mini-row"><strong style="font-size:17px;color:#9dadaf;text-align:center">${i+1}</strong><div><a href="${routeUrl(p)}"><h3>${esc(addr(p))}</h3></a><small>${esc(p.category)} · ${cash(p.openingBid)} opening bid · ${esc(p.apn)}</small></div><span class="value"><strong>${cash(p.assessment)}</strong></span><div class="actions">${reorder?`<button class="button small" data-act="move-up" data-id="${p.id}" title="Move up" ${i===0?'disabled':''}>↑</button><button class="button small" data-act="move-down" data-id="${p.id}" title="Move down" ${i===S.me.top20.length-1?'disabled':''}>↓</button><button class="button small danger" data-act="rank" data-id="${p.id}" title="Remove from Top 20">✕</button>`:`<a href="${routeUrl(p)}" class="button small">Open ↗</a>${team?`<button class="button small" data-act="rank" data-id="${p.id}">${ranked(p.id)>=0?'✓':'＋'}</button>`:''}`}</div></div>`;}
+  function team(){
+    const profiles=publicProfiles().slice().sort((a,b)=>a.name.localeCompare(b.name));
+    return `${pageHead('TEAM INTELLIGENCE',"Everyone's lists",'Each profile has an independent, editable Top 20. You can inspect every list without changing it.',`<a href="#merged" class="button primary">See merged board →</a>`)}
+    <div class="warnbox" style="margin-bottom:20px"><strong>${S.mode==='cloud'?'Live shared workspace':'Same-browser preview only'}</strong>${S.mode==='cloud'?'Shared profile rankings update from the server. Reload to see the latest from another device.':'Profiles created in this downloaded/local copy are shared ONLY within this browser. Cross-device collaboration requires deployment with the included Cloudflare database.'}</div>
+    ${profiles.length?`<div class="team-grid">${profiles.map(p=>`<div class="team-card"><div style="display:flex;gap:13px;align-items:center"><span class="avatar" style="width:42px;height:42px">${esc(p.name.slice(0,2).toUpperCase())}</span><div><h3>${esc(p.name)} ${p.id===S.me?.id?'<span class="tag teal">YOU</span>':''}</h3><small>${p.top20.length} of 20 selected · ${p.favoriteCount??p.favorites?.length??0} favorites</small></div></div><p style="font-size:11px;color:#91a3ad;margin:15px 0">${p.top20.length?`Top pick: ${esc(addr(BY_ID[p.top20[0]]||{address:'Unknown parcel'}))}`:'No rankings submitted yet'}</p><a href="#team/${encodeURIComponent(p.id)}" class="button" style="width:100%">View full list ↗</a></div>`).join('')}</div>`:emptyCard('No profiles yet','Create a named profile to rank properties and contribute to the shared list.')}<div style="margin-top:23px"><button class="button" data-act="account">＋ Create a profile / sign in</button></div>`;
+  }
+  function teamDetail(id){const profile=S.profiles.find(x=>x.id===id);if(!profile)return pageHead('TEAM BOARD','Unknown profile','That profile is no longer available.')+`<a class="button" href="#team">← Back to team</a>`;
+    const a=profile.top20.map(id=>BY_ID[id]).filter(Boolean);
+    return `<div class="property-breadcrumb"><a href="#team">Everyone's lists</a><span>›</span>${esc(profile.name)}</div>`+pageHead('COLLEAGUE TOP 20',`${profile.name}'s selections`,`${a.length} ranked properties. Only ${profile.id===S.me?.id?'you can edit your own list':'the owner can edit this list'}.`,profile.id===S.me?.id?`<a href="#my-top20" class="button primary">Edit my list →</a>`:`<button class="button" data-act="copy-team" data-profile="${esc(profile.id)}">Use as starting point</button>`)+
+      (a.length?`<div class="panel" style="padding:10px 23px">${a.map((p,i)=>miniRow(p,i,{team:true})).join('')}</div>`:emptyCard('No ranked properties yet',`${profile.name} has not added a property.`));
+  }
+  function mergedView(){const items=merged();let count=S.profiles.filter(x=>x.top20.length).length;
+    return `${pageHead('COLLECTIVE INTELLIGENCE','The merged ranking','A transparent Borda-style vote: rank 1 = 20 points, rank 20 = 1 point. One profile contributes at most one vote per parcel.',`<a href="#team" class="button">Review individual lists →</a>`)}
+    <div class="rank-summary">${tag(`${count} contributing profiles`,'teal')}${tag(`${items.length} uniquely ranked properties`,'blue')}${tag('Tie break: votes, best rank, parcel ID')}</div>
+    ${!items.length?emptyCard('No combined ranking yet','Create a profile and add properties to your Top 20. Once someone ranks a property, the merged list appears automatically.','#explore'):
+    `<div class="panel" style="padding:13px 18px"><div class="merged-row head"><span>RANK</span><span>PROPERTY / EVIDENCE</span><span>POINTS</span><span>VOTES</span><span>CASE</span></div>${items.map((x,i)=>{const p=BY_ID[x.id];return `<div class="merged-row"><strong style="color:${i===0?'#0a8d74':'#87a0ad'};font-size:19px">${i+1}</strong><div><a href="${routeUrl(p)}"><strong>${esc(addr(p))}</strong></a><small>${esc(p.category)} · ${cash(p.openingBid)} · ${x.by.map(z=>`${z.name} #${z.place}`).join(' · ')}</small></div><div class="tally">${x.points}</div><div class="tally">${x.votes}/${count}</div><a class="button small" href="${routeUrl(p)}">Open ↗</a></div>`}).join('')}</div>`}
+    <div class="warnbox" style="margin-top:19px"><strong>A vote is not due diligence</strong>These ranks reflect group preferences only. They do not represent safety, legal title, verified availability, expected profit or a property valuation.</div>`;
+  }
+  function method(){return `${pageHead('RESEARCH STANDARD','Evidence & methodology','What the case files establish, what remains unknown, and how to finish due diligence.')}<div class="method-grid">
+    <div class="panel detail-section"><h2>Evidence sources</h2>${[
+      ['Official foreclosure case','County court filing lists parcel accounts, delinquency balances, legal descriptions and assessed values as of May 14, 2026.',META.court],
+      ['Auction operator','Live auction folder is authoritative for current availability, bid and payment requirements.',META.auction],
+      ['Auditor recorded documents','Search liens, deeds, trusts and releases. County has required a free account since March 2, 2026.',META.auditor],
+      ['Geographic assessment','Use SCOPI GIS, FEMA/flood tools, wetland and landslide records; no parcel-specific clearance is provided by the site.',META.scopi],
+      ['Septic / permits','Verify historical as-built septic and development/occupancy permits, particularly rural parcels.',META.septic]
+    ].map(x=>`<div class="evidence-row"><div><strong>${esc(x[0])}</strong><p>${esc(x[1])}</p></div><a href="${safeUrl(x[2])}" target="_blank" rel="noopener">Open ↗</a></div>`).join('')}</div>
+    <div class="panel detail-section"><h2>How ratings are assigned</h2><div class="score-wrap"><strong>0–5</strong><small>Investigation priority, not purchase safety</small></div><p style="color:#758b9a;font-size:12px">Scores synthesize public evidence completeness, bid/assessment contrast, parcel utility and the severity of visible warning flags. They are provisional analyst priorities. A high score is not a price target or investment recommendation.</p><div class="risk-list">${['WATCH: common foreclosure uncertainty remains','ELEVATED: additional actionable risk identified','HIGH: significant barrier or mismatch to investigate','CRITICAL: current availability or conveyance unclear'].map((x,i)=>`<div class="risk-card ${i>=2?'warn':''}"><span class="risk-icon">!</span>${esc(x)}</div>`).join('')}</div><h2 style="margin-top:22px">Photos policy</h2><p style="font-size:12px;color:#758b9a">No photograph is labeled as the property without a confirmed parcel-level match and reuse permission. Street-level and satellite views are third-party services embedded or linked live. The court-document viewer links to genuine county filings. MLS/Redfin links can contain original galleries; they are not copied into this website.</p></div>
+    <div class="panel detail-section"><h2>Costs beyond the hammer</h2><p style="color:#758b9a;font-size:12px">The 5% buyer premium (minimum $100) is known. All other line items are user-editable planning allowances and not claimed title balances.</p>
+      ${['Title report / attorney fees','Survey and boundary investigation','Possession / eviction if occupied','HOA dues and surviving assessments','Septic, utility hook-up and permit costs','Structural repair and hazardous-material abatement','Flood/landslide insurance and mitigation'].map(x=>`<div class="evidence-row"><strong>${esc(x)}</strong><span class="tag orange">Unverified</span></div>`).join('')}
+    </div><div class="panel detail-section"><h2>Before anyone bids</h2>${CHECKS.map((x,i)=>`<div class="risk-card" style="margin-bottom:8px"><span class="risk-icon">${i+1}</span>${esc(x[1])}</div>`).join('')}<div class="warnbox" style="margin-top:16px"><strong>No lien clearance implied</strong>Tax foreclosures can extinguish ordinary mortgages, but exceptions or defective notice can create risk. Every lot requires a parcel-specific title review; owner occupancy and structure ownership may also be separate.</div></div>
+    </div>`}
+  const fact=(label,value,wide=false)=>`<div class="fact ${wide?'wide':''}"><small>${esc(label)}</small><strong>${esc(value)}</strong></div>`;
+  function visualHTML(p){let name=S.visual;
+    const map=`https://maps.google.com/maps?q=${encodeURIComponent(addrQuery(p))}&t=k&z=18&output=embed`;
+    const street=`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addrQuery(p))}`;
+    const streetIframe=`https://maps.google.com/maps?q=${encodeURIComponent(addrQuery(p))}&layer=c&cbll=&output=svembed`;
+    const pdf=`${META.court}#page=${p.courtPage||1}`;
+    const media=name==='court'?`<iframe title="County court filing evidence, page ${p.courtPage}" src="${urlEsc(pdf)}" loading="lazy" referrerpolicy="no-referrer"></iframe>`:
+       name==='satellite'?`<iframe title="Third-party map location for ${esc(addr(p))}" src="${urlEsc(map)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>`:
+       `<div class="visual-fallback"><span class="big-icon">⌖</span><strong>Open verified-source imagery</strong><p>Street imagery is provided by third parties. The site does not have a verified, licensed property photograph. Follow the links below to inspect imagery at the actual address.</p><a class="button primary" target="_blank" rel="noopener" href="${safeUrl(street)}">Open Street View / Maps ↗</a></div>`;
+    return `<div class="panel detail-visual"><div class="visual-head"><strong style="font-size:11px">PROPERTY EVIDENCE VIEWER</strong><div class="visual-tabs">${[['satellite','Satellite map'],['street','Street photos'],['court','Court filing']].map(x=>`<button class="visual-tab ${name===x[0]?'active':''}" data-act="visual" data-view="${x[0]}">${x[1]}</button>`).join('')}</div></div><div class="visual-canvas">${media}</div><div class="visual-foot"><a class="button small" href="${safeUrl(street)}" target="_blank" rel="noopener">Google Maps / photos ↗</a><a class="button small" href="${safeUrl(pdf)}" target="_blank" rel="noopener">County evidence p. ${p.courtPage} ↗</a>${p.sourceLinks.filter(l=>/Redfin|Zillow|listing|MLS|Realtor/i.test(l.name)).slice(0,2).map(l=>`<a class="button small" href="${safeUrl(l.url)}" target="_blank" rel="noopener">${esc(l.name)} ↗</a>`).join('')}</div><div class="warning-inline">Official property photographs: <strong>0 independently verified</strong>. Map coordinates and third-party images may not identify parcel boundaries. Verify independently.</div></div>`;
+  }
+  function planner(p){const bid=p.openingBid||0;
+    const fields=[['survey','Survey / boundary',1500],['title','Title / attorney',1200],['inspection','Investigations / permits',800],['repairs','Repairs / abatement',p.category==='Vacant lot'?3000:25000],['utilities','Utility / septic allowance',p.category==='Vacant lot'?12000:2500],['possession','Possession / vacancy',4000],['hoa','HOA / assessments',0],['insurance','Insurance / contingency',3000]];
+    const v=S.planner[p.id]||{};
+    const used=fields.map(x=>({key:x[0],value:Number(v[x[0]]??x[2])}));
+    let total=(bidCost(p)||0)+used.reduce((a,b)=>a+b.value,0);
+    return `<div class="panel compact-panel cost-planner"><h3>Acquisition stress test</h3><p>Edit assumptions in dollars. These are **hypothetical allowances**, not verified invoices or liens.</p><div class="planner-grid">${fields.map(x=>`<div><label for="cost-${x[0]}">${esc(x[1])}</label><input id="cost-${x[0]}" data-cost="${x[0]}" data-parcel="${p.id}" inputmode="numeric" type="number" min="0" step="100" value="${Number(v[x[0]]??x[2])}"></div>`).join('')}</div><div class="planner-total"><span style="font-size:11px;font-weight:800">Scenario total</span><strong id="plannerTotal">${p.openingBid==null?'Bid unknown':cash(total)}</strong></div><div class="cost-warning">Bid assumptions start at the unconfirmed October preview price. Taxes, utility arrears, government claims, tax impacts, structural failures, legal disputes and abnormal insurance costs could exceed these allowances. The $2,000 bidder deposit is generally credited toward the bid, not added a second time. None of these figures constitute quotes.</div></div>`;
+  }
+  function hazardRegister(p){
+    const old=p.yearBuilt!=null&&p.yearBuilt<1978;
+    const rural=p.category==='Vacant lot'||['Gold Bar','Index','Stanwood','Snohomish'].some(x=>p.address.includes(x));
+    const maybeHoa=p.category==='Condo'||p.riskNotes.some(s=>/HOA|CC&R|condo|association/i.test(s));
+    const items=[
+      ['Recorded liens and deed priority','Not cleared','Search all recorded documents, releases, federal liens and court notice.',META.auditor],
+      ['Possession / lawful access','Not established','Foreclosure sale does not necessarily deliver vacant possession.',META.county],
+      ['Floodplain / flood insurance','Unverified','Check county and FEMA parcel-level layers; a countywide rating is not evidence for this lot.',META.flood],
+      ['Wetlands / setback / critical areas','Unverified','Cross-check legal lot geometry with county environmental review.',META.critical],
+      ['Septic / wastewater '+(rural?'(high diligence priority)':''),'Unverified','Obtain as-built and maintenance record; do not assume a buildable lot.',META.septic],
+      ['Slopes / landslide hazard','Unverified','Review parcel-level landslide layers, especially rural and creek-area land.',META.geo],
+      ['Permits / code compliance','Unverified','Review unpermitted work, legal use, setbacks, open code cases.',META.permits],
+      ['HOA / special assessments',maybeHoa?'Relevant; amount unknown':'Unknown','Even where ordinary mortgages are extinguished, review association assessments and any surviving claims.',META.auditor],
+      ['Lead / asbestos in old building',old?'Age-based investigation required':'Not assessed',old?'Building predates 1978; evaluate lead-paint and asbestos exposures before renovation.':'Current construction materials not independently inspected.',META.permits]
+    ];
+    return `<div class="panel detail-section"><div class="section-label"><h2>Property exposure register</h2>${tag('9 due diligence domains','blue')}</div><p class="muted" style="font-size:11px">Each domain below is a <strong>research question</strong>, not a confirmed defect or a certified negative finding. Links open the public agency responsible for the corresponding records.</p><div class="exposure-table">${items.map(([name,status,explain,url])=>`<div class="exposure-entry"><div><strong>${esc(name)}</strong><p>${esc(explain)}</p></div><div class="exposure-right">${tag(status,status.includes('Relevant')||status.includes('required')?'orange':'blue')}<a href="${safeUrl(url)}" target="_blank" rel="noopener">Check source ↗</a></div></div>`).join('')}</div></div>`;
+  }
+  function detail(id){const p=BY_ID[id];if(!p)return `<div class="empty"><h2>Property not found</h2><p>That parcel isn't in this research dataset.</p><a class="button" href="#explore">← All properties</a></div>`;
+    const userChecks=S.me?.checks?.[p.id]||{},done=Object.values(userChecks).filter(Boolean).length;
+    const rk=ranked(p.id), b=p.openingBid??null;
+    const sourceRows=p.sourceLinks||[];
+    const gallerySources=sourceRows.filter(x=>/redfin|zillow|listing|mls|photo|realtor/i.test(x.name+' '+x.what));
+    return `<div class="property-breadcrumb"><a href="#explore">Property explorer</a><span>›</span><span>${esc(p.category)}</span><span>›</span>${esc(addr(p))}</div>
+    <div class="detail-top"><div><div class="eyebrow">PROPERTY INVESTIGATION · PARCEL ${p.apn}</div><h1>${esc(addr(p))}</h1><p>${esc(p.category)} · ${esc(p.classification)} · ${tag(p.researchStatus.includes('COURT')||b==null?'Court-filing watch only':'October preview — not live','orange')} ${riskTag(p)}</p></div><div class="detail-top-actions"><button class="button" data-act="favorite" data-id="${p.id}">${fav(p.id)?'♥ Favorited':'♡ Favorite'}</button><button class="button primary" data-act="rank" data-id="${p.id}">${rk>=0?`✓ Top 20 · #${rk+1}`:'＋ Add to Top 20'}</button><button class="button" data-act="print">Print case ↗</button></div></div>
+    <div class="detail-layout"><div class="detail-left">
+      ${visualHTML(p)}
+      <div class="panel detail-section"><div class="section-label"><h2>Parcel and structure facts</h2>${tag('County-record based','blue')}</div><div class="facts-grid">
+        ${fact('Parcel APN',p.apn,true)}${fact('County assessment',cash(p.assessment))}${fact('Land portion',cash(p.landAssessment))}${fact('Improvements portion',cash(p.improvementAssessment))}${fact('Land area',p.acres==null?'Not confirmed':`${p.acres} acres`)}
+        ${fact('Historical tax delinquency',decCash(p.may2026TaxDue))}${fact('Tax years in May filing',p.delinquentYears)}${fact('Classification',p.classification,true)}
+        ${fact('Bedrooms',p.bedrooms??'Not documented')}${fact('Bathrooms',p.bathrooms??'Not documented')}${fact('Floor area',p.sqft?`${num(p.sqft)} sq ft`:'Not documented')}${fact('Year built',p.yearBuilt??'Not documented')}
+        ${fact('Court case',p.courtCase)}${fact('Court PDF page',p.courtPage?`Page ${p.courtPage}`:'Not located')}
+      </div><div class="warning-inline" style="margin-top:17px">County assessed value is not independently appraised market value. Square footage and building details, where supplied, are historical third-party information and may be stale or inconsistent.</div></div>
+      <div class="panel detail-section"><div class="section-label"><h2>Investigation findings & hazards</h2>${riskTag(p)}</div><div class="risk-list">
+        ${p.riskNotes.map(note=>`<div class="risk-card warn"><span class="risk-icon">⚑</span><span>${esc(note)}</span></div>`).join('')}
+        ${["Mortgage, deeds of trust, federal liens, assessments and title defects have NOT been cleared from recorded documents.","Physical access, occupants, structures included in the deed, road rights and property condition are NOT verified.","Tax foreclosure opening bids are not estimates of fair value; the full title and condition exposure may be much higher."].map(n=>`<div class="risk-card"><span class="risk-icon neutral-icon">◈</span><span>${esc(n)}</span></div>`).join('')}
+      </div></div>
+      ${hazardRegister(p)}
+      <div class="panel detail-section"><div class="section-label"><h2>Document & evidence ledger</h2>${tag(`${sourceRows.length} source links`,'teal')}</div>${sourceRows.map((l,i)=>`<div class="evidence-row"><div><strong>${i+1<10?'0':''}${i+1} &nbsp;${esc(l.name)}</strong><small>${esc(l.type||'External reference')} · ${esc(l.asOf||'Date not confirmed')}</small><p>${esc(l.what||'Open original evidence')}</p></div><a href="${safeUrl(l.url)}" target="_blank" rel="noopener">Inspect ↗</a></div>`).join('')}
+      <div class="warning-inline" style="margin-top:12px">Court PDF page is direct documentary evidence, NOT a parcel-specific title report. Direct auction and assessor pages should be checked again just before bidding.</div></div>
+      <div class="panel detail-section"><h2>Property images and visual leads</h2><p class="muted" style="font-size:12px">No parcel-matched photo could be independently retrieved and licensed for inclusion. The links below lead to third-party map imagery, building history and, where published, listing galleries. Verify that the images actually show the auction parcel.</p><div class="image-lead-grid"><a class="image-lead" target="_blank" rel="noopener" href="${safeUrl(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addrQuery(p))}`)}"><span class="image-glyph">◎</span><strong>Satellite + street imagery</strong><small>Open address in Google Maps ↗</small></a><a class="image-lead" target="_blank" rel="noopener" href="${safeUrl(`https://www.bing.com/maps?q=${encodeURIComponent(addrQuery(p))}`)}"><span class="image-glyph">⌖</span><strong>Independent map reference</strong><small>Open Bing Maps ↗</small></a>${gallerySources.slice(0,4).map(x=>`<a class="image-lead" target="_blank" rel="noopener" href="${safeUrl(x.url)}"><span class="image-glyph">▣</span><strong>${esc(x.name)}</strong><small>Open original source ↗</small></a>`).join('')}</div></div>
+    </div><div class="detail-right">
+      <div class="panel price-panel"><small>${b==null?'NO VERIFIED PREVIEW BID':'OCTOBER 28 PREVIEW OPENING BID'}</small><div class="big-price">${cash(b)}</div><p class="info">Not a live quote. Property can be redeemed or withdrawn. Bidding can exceed the opening price.</p>
+      <div class="cost-line"><span>Opening bid</span><strong>${cash(b)}</strong></div><div class="cost-line"><span>Buyer premium (5%, min $100)</span><strong>${b==null?'Unverified':cash(Math.max(100,b*.05))}</strong></div><div class="cost-line cost-total"><span>Estimated bid + fee</span><strong>${cash(bidCost(p))}</strong></div><a class="button primary" target="_blank" rel="noopener" href="${safeUrl(META.auction)}">Check live auction status ↗</a><div class="warning-inline">Additional title, legal, occupancy, insurance, rehab, septic or HOA costs not included.</div></div>
+      <div class="panel compact-panel"><h3>Analyst investigation priority</h3><div class="score-wrap"><strong>${Number(p.rating).toFixed(1)}<span style="font-size:16px;color:#abbac2"> / 5</span></strong>${riskTag(p)}</div><div class="score-help">This score prioritizes follow-up, not purchase safety, price appreciation or a clear-title probability. Investor rating is recorded separately below.</div>
+      <h3 style="margin-top:18px">My personal rating</h3><div class="stars">${[1,2,3,4,5].map(i=>`<button class="star ${Number(S.me?.ratings?.[p.id]||0)>=i?'on':''}" data-act="rate" data-id="${p.id}" data-value="${i}" title="Rate ${i} out of 5" aria-label="Rate ${i} out of 5">★</button>`).join('')}</div><small class="muted-caption">Only you can change your personal rating.</small></div>
+      <div class="panel compact-panel"><h3>Due diligence checklist <span class="tag ${done===CHECKS.length?'teal':'orange'}">${done}/${CHECKS.length}</span></h3>${CHECKS.map(([key,label])=>`<label class="check-row"><input type="checkbox" data-check="${key}" data-parcel="${p.id}" ${userChecks[key]?'checked':''} ${!S.me?'disabled':''}/><span>${esc(label)}</span></label>`).join('')}<p class="muted-caption" style="margin-top:9px">Check means your own investigation is complete; it is not an authoritative clearance.</p></div>
+      <div class="panel compact-panel"><h3>Private case notes</h3><textarea class="notearea" id="caseNote" placeholder="Observations, call logs, contractor estimates, outstanding questions…" ${!S.me?'disabled':''}>${esc(S.me?.notes?.[p.id]||'')}</textarea><button class="button primary" data-act="save-note" data-id="${p.id}" ${!S.me?'disabled':''}>Save notes</button><p class="muted-caption">Saved to your own profile. Other users cannot edit your notes.</p></div>
+      ${planner(p)}
+    </div></div>`;
+  }
+  function render(){const r=getRoute();S.route=r;const [kind,id]=r.split('/');let html,title;
+    if(kind==='overview'){html=overview();title='Command center'}
+    else if(kind==='explore'){html=explorer();title='Property explorer'}
+    else if(kind==='favorites'){html=explorer(true);title='My favorites'}
+    else if(kind==='my-top20'){html=myTop();title='My Top 20'}
+    else if(kind==='team'){html=id?teamDetail(decodeURIComponent(id)):team();title='Everyone’s lists'}
+    else if(kind==='merged'){html=mergedView();title='Merged ranking'}
+    else if(kind==='method'){html=method();title='Evidence methodology'}
+    else if(kind==='property'){html=detail(decodeURIComponent(id||''));title='Case file'}
+    else {html=overview();title='Command center'}
+    $('app').innerHTML=html;$('breadcrumbs').textContent=title;
+    $('topProfileName').textContent=S.me?.name||'Create profile';$('topAvatar').textContent=S.me?.name?.slice(0,2).toUpperCase()||'+';
+    $('navCount').textContent=LOTS.length;$('favCount').textContent=S.me?.favorites?.length||0;$('topCount').textContent=S.me?.top20?.length||0;
+    document.querySelectorAll('[data-nav]').forEach(el=>el.classList.toggle('active',el.dataset.nav===kind));
+    document.title=title+' · Parcel & Proof';
+    $('sidebar').classList.remove('open');$('mobileOverlay')?.remove();
+    if(S.mode==='local'){$('syncIndicator').classList.remove('online');$('syncIndicator').querySelector('span:last-child').textContent='Local preview only';$('offlineBanner').hidden=false;$('offlineBanner').innerHTML='<strong>LOCAL PREVIEW — not online or cross-device.</strong> Profiles, favorites and Top 20 rankings save in this browser only. Deploy the included Cloudflare Worker and database to share a live link with other people.';}
+    else{$('syncIndicator').classList.add('online');$('syncIndicator').querySelector('span:last-child').textContent='Shared workspace connected';$('offlineBanner').hidden=true;}
+  }
+  const localUpdate = () => {let index=S.profiles.findIndex(p=>p.id===S.me.id);if(index>=0)S.profiles[index]=S.me;persistLocal();};
+  async function saveProfile(){if(!S.me)return false;if(S.mode==='local'){localUpdate();return true}
+    if(S.syncing){S.dirty=true;return true}
+    S.syncing=true;
+    try{
+      do {
+        S.dirty=false;
+        const payload={favorites:[...S.me.favorites],top20:[...S.me.top20],ratings:{...S.me.ratings},notes:{...S.me.notes},checks:structuredClone(S.me.checks)};
+        let res=await fetch('/api/my',{method:'PUT',headers:{'Content-Type':'application/json',Authorization:'Bearer '+S.token},body:JSON.stringify(payload)});
+        let data=await res.json();if(!res.ok)throw Error(data.error||'Save failed');
+      } while(S.dirty);
+      await refreshProfiles();return true;
+    }catch(e){toast(`Save not confirmed: ${e.message}. Reconnect before leaving.`);return false}
+    finally{S.syncing=false}
+  }
+  function needAccount(pending){if(!S.me){S.pendingAction=pending||null;openAccount('choose');toast('Create a profile to save favorites, rankings and notes.');return false}return true}
+  async function finishPendingAction(){const pending=S.pendingAction;S.pendingAction=null;if(!S.me||!pending)return;if(pending.action==='favorite')await toggleFav(pending.id);if(pending.action==='rank')await toggleRank(pending.id);}
+  async function toggleFav(id){if(!needAccount({action:'favorite',id}))return;const a=S.me.favorites;S.me.favorites=a.includes(id)?a.filter(x=>x!==id):[...a,id];let ok=await saveProfile();render();if(ok)toast(a.includes(id)?'Favorite saved':'Favorites updated')}
+  async function toggleRank(id){if(!needAccount({action:'rank',id}))return;const a=S.me.top20;const i=a.indexOf(id);
+    if(i<0&&a.length>=20){toast('Top 20 is full. Remove a property before adding another.');location.hash='#my-top20';return}
+    S.me.top20=i>=0?a.filter(x=>x!==id):[...a,id];let ok=await saveProfile();render();if(ok)toast(i>=0?'Removed from your Top 20':`Added at rank #${S.me.top20.length}`)
+  }
+  async function moveRank(id,delta){if(!needAccount())return;const a=S.me.top20.slice();let i=a.indexOf(id);let j=i+delta;if(i<0||j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];S.me.top20=a;await saveProfile();render()}
+  async function rate(id,value){if(!needAccount())return;S.me.ratings[id]=value;await saveProfile();render();toast(`Rating saved: ${value}/5`)}
+  async function check(id,key,v){if(!needAccount())return;S.me.checks[id]??={};S.me.checks[id][key]=v;await saveProfile();render()}
+  async function saveNote(id){if(!needAccount())return;let n=$('caseNote')?.value||'';if(n.length>20000)return toast('Notes must be under 20,000 characters.');S.me.notes[id]=n;await saveProfile();toast('Case note saved')}
+  function exportCSV(){const header=['Parcel','Address','Category','Opening bid (preview)','County assessed value','May 2026 tax delinquency','Acreage','Investigation priority','Risk tier','Research status','Official auction'];const cells=LOTS.map(p=>[p.apn,p.address,p.category,p.openingBid,p.assessment,p.may2026TaxDue,p.acres,p.rating,p.riskTier,p.researchStatus,META.auction]);const csv=[header,...cells].map(r=>r.map(x=>'"'+String(x??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');const url=URL.createObjectURL(blob);a.href=url;a.download='snohomish_2026_research_export.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+  function modalShell(head,body){$('modalRoot').innerHTML=`<div class="modal-layer" data-act="modal-backdrop"><div class="modal" role="dialog" aria-modal="true" aria-label="Account access"><div class="modal-top"><div><div class="eyebrow">TEAM WORKSPACE</div><h2>${esc(head)}</h2></div><button class="modal-close" data-act="close-modal" aria-label="Close dialog">×</button></div>${body}</div></div>`}
+  function openAccount(view='choose',message=''){
+    S.modal=view;
+    const extra=message?`<p class="error">${esc(message)}</p>`:'';
+    if(view==='choose'){
+      modalShell('Account & collaboration',`<p>${S.mode==='cloud'?'Named profiles synchronize with this website. You can view all rankings; only you can edit your own.':'Local preview: each profile lives only in this browser. For a real team, deploy the website with the included database.'}</p>
+      ${S.me?`<div class="warnbox"><strong>Signed in as ${esc(S.me.name)}</strong>Your favorites, rankings, personal ratings and notes belong to this profile.</div><button class="button" data-act="signout">Sign out / switch user</button>`:`<button class="button primary" data-act="modal-view" data-view="register">Create new profile</button><button class="button" data-act="modal-view" data-view="login">Sign in to existing profile</button>`}
+      ${S.mode==='cloud'?`<button class="button" data-act="modal-view" data-view="reset">Lost PIN? Use recovery key</button>`:''}<div class="divider"></div><button class="button ghost" data-act="close-modal">Continue browsing as guest</button>`);return;
+    }
+    if(view==='register')modalShell('Create your profile',`${extra}<p>Use your own name and a 6+ character PIN. Your Top 20 is independently editable. On the shared site, keep the recovery key issued next.</p><form id="registerForm"><div class="field"><label for="createName">Display name</label><input id="createName" name="name" required minlength="2" maxlength="50" placeholder="e.g. Alex" autocomplete="nickname"></div><div class="field"><label for="createPin">Private PIN (6+ characters)</label><input id="createPin" type="password" name="pin" required minlength="6" maxlength="128" autocomplete="new-password"></div><button class="button primary" type="submit">Create profile & start ranking</button></form><button class="button" data-act="modal-view" data-view="choose">← Back</button>`);
+    else if(view==='login')modalShell('Sign in',`${extra}<form id="loginForm"><div class="field"><label for="loginName">Profile name</label><input id="loginName" name="name" required placeholder="Your display name" autocomplete="username"></div><div class="field"><label for="loginPin">PIN</label><input id="loginPin" name="pin" type="password" required autocomplete="current-password"></div><button class="button primary" type="submit">Access my list</button></form><button class="button" data-act="modal-view" data-view="${S.mode==='cloud'?'reset':'choose'}">${S.mode==='cloud'?'Forgot PIN? Recover access':'← Back'}</button>`);
+    else if(view==='reset')modalShell('Recover account',`${extra}<p>Use the one-time recovery key you saved when creating your profile. A reset changes the PIN but keeps all your rankings.</p><form id="resetForm"><div class="field"><label for="resetName">Profile name</label><input id="resetName" name="name" required></div><div class="field"><label for="resetCode">Recovery key</label><input id="resetCode" name="recovery" required autocomplete="off"></div><div class="field"><label for="resetPin">New PIN (6+ characters)</label><input id="resetPin" name="newPin" type="password" minlength="6" required></div><button type="submit" class="button primary">Reset PIN and sign in</button></form><button class="button" data-act="modal-view" data-view="choose">← Back</button>`);
+    else if(view==='recovery')modalShell('Profile created — save this key',`<p>Store the recovery key in a safe place. It is shown <strong>once</strong>. You'll need it if you forget your PIN; the team cannot retrieve it for you.</p><div class="copy-value"><div class="recovery-key" id="recoveryValue">${esc(S.pendingRecovery||'')}</div></div><button class="button" data-act="copy-recovery">Copy recovery key</button><div class="divider"></div><button class="button primary" data-act="close-modal">I saved my key — continue</button>`);
+  }
+  function closeModal(){S.modal=null;$('modalRoot').innerHTML=''}
+  async function api(route,body=null,method='POST'){
+    const response=await fetch('/api/'+route,{method,headers:{'Content-Type':'application/json',...(S.token?{Authorization:'Bearer '+S.token}:{})},body:body==null?undefined:JSON.stringify(body)});
+    const json=await response.json().catch(()=>({error:'Server did not return JSON'}));if(!response.ok)throw Error(json.error||`Request failed (${response.status})`);return json;
+  }
+  async function refreshProfiles(){if(S.mode==='cloud'){
+    const body=await api('state',null,'GET');S.profiles=(body.profiles||[]).map(x=>({...emptyProfile(x.name,x.id),...x}));if(body.me){S.me={...emptyProfile(body.me.name,body.me.id),...body.me};}
+    else if(S.token){S.token=null;try{localStorage.removeItem('pap_cloud_token')}catch{}S.me=null;}else S.me=null;
+  }}
+  async function accountSubmit(ev){ev.preventDefault();const form=ev.target;const values=Object.fromEntries(new FormData(form));const name=String(values.name||'').trim();S.busy=true;
+    try{
+      if(form.id==='registerForm'){
+        if(S.mode==='cloud'){
+          const result=await api('register',{name,pin:values.pin});S.token=result.token;localStorage.setItem('pap_cloud_token',S.token);S.pendingRecovery=result.recoveryKey;await refreshProfiles();render();openAccount('recovery');toast('Profile created');
+        }else{
+          if(S.profiles.some(p=>p.name.toLowerCase()===name.toLowerCase()))throw Error('That display name already exists. Sign in instead.');
+          let id='local-'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);let p={...emptyProfile(name,id),localPin:String(values.pin)};S.profiles.push(p);S.me=p;persistLocal();closeModal();render();toast('Local profile created');await finishPendingAction();
+        }
+      }else if(form.id==='loginForm'){
+        if(S.mode==='cloud'){
+          const result=await api('login',{name,pin:values.pin});S.token=result.token;localStorage.setItem('pap_cloud_token',S.token);await refreshProfiles();closeModal();render();toast(`Welcome back, ${S.me.name}`);await finishPendingAction();
+        }else{
+          const p=S.profiles.find(p=>p.name.toLowerCase()===name.toLowerCase());if(!p||p.localPin!==String(values.pin))throw Error('Name or PIN incorrect. Local browser data is not available from another device.');S.me=p;persistLocal();closeModal();render();toast(`Welcome back, ${p.name}`);await finishPendingAction();
+        }
+      }else if(form.id==='resetForm'){
+        const result=await api('reset',{name,recovery:values.recovery,newPin:values.newPin});S.token=result.token;localStorage.setItem('pap_cloud_token',S.token);await refreshProfiles();closeModal();render();toast('Account access recovered');await finishPendingAction();
+      }
+    }catch(e){openAccount(form.id==='registerForm'?'register':form.id==='loginForm'?'login':'reset',e.message)}finally{S.busy=false}
+  }
+  async function signout(){if(S.mode==='cloud'){try{await api('logout',{},'POST')}catch{}S.token=null;localStorage.removeItem('pap_cloud_token');S.me=null;await refreshProfiles()}else{S.me=null;persistLocal()}closeModal();render();toast('Signed out. Public lists remain visible.')}
+  function copyTeam(profileId){if(!needAccount())return;const p=S.profiles.find(x=>x.id===profileId);if(!p)return;
+    if(S.me.top20.length && !window.confirm(`Replace your ${S.me.top20.length} Top 20 selections with ${p.name}'s current list? Your notes and favorites will stay unchanged.`))return;
+    S.me.top20=p.top20.slice(0,20);saveProfile().then(ok=>{render();if(ok)toast('Copied list. You can reorder it any time.')});}
+  function costUpdate(input){let p=BY_ID[input.dataset.parcel];if(!p)return;S.planner[p.id]??={};S.planner[p.id][input.dataset.cost]=Math.max(0,Number(input.value)||0);
+    const fields=['survey','title','inspection','repairs','utilities','possession','hoa','insurance'];let init={survey:1500,title:1200,inspection:800,repairs:p.category==='Vacant lot'?3000:25000,utilities:p.category==='Vacant lot'?12000:2500,possession:4000,hoa:0,insurance:3000};const total=bidCost(p)+fields.reduce((sum,key)=>sum+Math.max(0,Number(S.planner[p.id][key]??init[key])),0);let output=$('plannerTotal');if(output)output.textContent=p.openingBid==null?'Bid unknown':cash(total);
+  }
+  function refreshGrid(){const area=$('gridResults');if(!area)return;const base=S.route==='favorites'?LOTS.filter(p=>fav(p.id)):LOTS;let arr=filterData(base);area.innerHTML=arr.length?`<div class="property-grid">${arr.map(propertyCard).join('')}</div>`:emptyCard('No matching properties','Try changing the search or filters.');const tag=$('resultCount');if(tag)tag.textContent=arr.length;}
+  async function start(){
+    if(location.protocol==='http:'||location.protocol==='https:'){
+      try{const health=await fetch('/api/health',{cache:'no-store',signal:AbortSignal.timeout(3000)});if(health.ok){const h=await health.json();if(h.ok&&h.collaboration){S.mode='cloud';await refreshProfiles()}}}catch(e){/* static preview without backend */}
+    }
+    if(S.mode==='local')pullLocal();
+    S.booted=true;render();
+    window.addEventListener('hashchange',()=>{S.visual='satellite';render();window.scrollTo({top:0,behavior:'instant'})});
+    document.addEventListener('click',async ev=>{
+      const t=ev.target.closest('[data-act]');if(!t)return;
+      const act=t.dataset.act,id=t.dataset.id;
+      if(act==='modal-backdrop'&&ev.target===t){closeModal();return}
+      if(act==='close-modal'){if(S.modal==='recovery'){closeModal();await finishPendingAction();return}closeModal();return}
+      if(act==='modal-view'){openAccount(t.dataset.view);return}
+      if(act==='account'){openAccount();return}
+      if(act==='copy-recovery'){try{await navigator.clipboard.writeText(S.pendingRecovery||'');toast('Recovery key copied')}catch{toast('Select the recovery key and copy it manually')}return}
+      if(act==='favorite'){await toggleFav(id);return}
+      if(act==='rank'){await toggleRank(id);return}
+      if(act==='move-up'){await moveRank(id,-1);return}
+      if(act==='move-down'){await moveRank(id,1);return}
+      if(act==='rate'){await rate(id,Number(t.dataset.value));return}
+      if(act==='save-note'){await saveNote(id);return}
+      if(act==='copy-team'){copyTeam(t.dataset.profile);return}
+      if(act==='signout'){await signout();return}
+      if(act==='export'){exportCSV();return}
+      if(act==='print'){window.print();return}
+      if(act==='visual'){S.visual=t.dataset.view;let p=BY_ID[S.route.split('/')[1]];let host=document.querySelector('.detail-visual');if(host&&p)host.outerHTML=visualHTML(p);return}
+      if(act==='filter'){S.category=t.dataset.category;render();$('propertySearch')?.focus();return}
+      if(act==='clear-filters'){S.search='';S.category='All';S.sort='bid-asc';S.extraOnly=false;render();return}
+    });
+    document.addEventListener('input',e=>{
+      if(e.target.id==='propertySearch'){S.search=e.target.value;refreshGrid();}
+      if(e.target.hasAttribute('data-cost'))costUpdate(e.target);
+    });
+    document.addEventListener('change',e=>{
+      if(e.target.id==='sortSelect'){S.sort=e.target.value;refreshGrid()}
+      if(e.target.id==='onlyPrice'){S.extraOnly=e.target.checked;refreshGrid()}
+      if(e.target.hasAttribute('data-check'))check(e.target.dataset.parcel,e.target.dataset.check,e.target.checked);
+    });
+    document.addEventListener('submit',e=>{if(['registerForm','loginForm','resetForm'].includes(e.target.id))accountSubmit(e)});
+    $('profileButton').addEventListener('click',()=>openAccount());
+    $('mobileMenu').addEventListener('click',()=>{let s=$('sidebar');let open=!s.classList.contains('open');s.classList.toggle('open',open);$('mobileOverlay')?.remove();if(open){let div=document.createElement('div');div.className='mobile-overlay';div.id='mobileOverlay';div.onclick=()=>{s.classList.remove('open');div.remove()};document.body.appendChild(div)}});
+    window.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.modal)closeModal()});
+  }
+  start();
+})();
+
+</script>
+</body>
+</html>
